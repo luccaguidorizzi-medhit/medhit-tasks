@@ -42,8 +42,8 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-screen overflow-hidden bg-transparent text-foreground transition-colors duration-200">
       {/* Sidebar Fixa à Esquerda */}
       <Sidebar
-        currentAreaSlug={currentArea.slug}
-        currentProjectSlug={currentProject.slug}
+        currentAreaSlug={currentArea?.slug || "marketing"}
+        currentProjectSlug={currentProject?.slug || ""}
         pendingApprovalsCount={pendingApprovalsCount}
       />
 
@@ -51,10 +51,10 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         {/* Topbar Global */}
         <Topbar
-          areaSlug={currentArea.slug}
-          areaName={currentArea.name}
-          projectSlug={currentProject.slug}
-          projectName={currentProject.name}
+          areaSlug={currentArea?.slug || "marketing"}
+          areaName={currentArea?.name || "Workspace"}
+          projectSlug={currentProject?.slug || ""}
+          projectName={currentProject?.name || "MedHit Tasks"}
           onOpenNewTask={() => setIsNewTaskModalOpen(true)}
         />
 
@@ -82,7 +82,7 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
         isOpen={isNewTaskModalOpen}
         onClose={() => setIsNewTaskModalOpen(false)}
         statuses={statuses}
-        currentProjectId={currentProject.id}
+        currentProjectId={currentProject?.id || ""}
         onCreateTask={createTask}
       />
 
@@ -102,7 +102,7 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
       <DeleteBoardModal
         isOpen={isDeleteBoardModalOpen}
         onClose={() => setIsDeleteBoardModalOpen(false)}
-        project={boardToDelete || currentProject}
+        project={boardToDelete || currentProject || null}
       />
     </div>
   );

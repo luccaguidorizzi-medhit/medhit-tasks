@@ -15,6 +15,7 @@ import {
   Edit3,
   Inbox,
   Trash2,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EducationalTooltip } from "@/components/ui/tooltip";
@@ -55,6 +56,20 @@ export function ProjectToolbar({
       tooltip: { title: "Visão em Quadro (Kanban)", description: "Visualização espacial de fluxo contínuo com cartões arrastáveis e limites de WIP." },
     },
     {
+      id: "matrix",
+      label: "Matriz",
+      icon: LayoutGrid,
+      href: `/medhit/${areaSlug}/${projectSlug}/matrix`,
+      tooltip: { title: "Matriz de Priorização (Eisenhower)", description: "Organize demandas por Urgente vs Importante em 4 quadrantes para decisão ágil." },
+    },
+    {
+      id: "calendar",
+      label: "Calendário",
+      icon: CalendarDays,
+      href: `/medhit/${areaSlug}/${projectSlug}/calendar`,
+      tooltip: { title: "Visão em Calendário", description: "Prazos e tarefas organizados em grade mensal com badges de status e prioridade." },
+    },
+    {
       id: "backlog",
       label: "Backlog",
       icon: Inbox,
@@ -66,7 +81,7 @@ export function ProjectToolbar({
       label: "List",
       icon: ListTodo,
       href: `/medhit/${areaSlug}/${projectSlug}/list`,
-      tooltip: { title: "Visão em Lista", description: "Agrupamento vertical compacto por status para varredura rápida de tarefas." },
+      tooltip: { title: "Visão em Lista", description: "Agrupamento dinâmico por Status, Prioridade ou Responsável com totalizadores." },
     },
     {
       id: "table",

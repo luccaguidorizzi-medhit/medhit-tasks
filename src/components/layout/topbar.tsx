@@ -12,6 +12,9 @@ import {
   Settings,
   Sparkles,
   ChevronRight,
+  Layers,
+  CalendarCheck2,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/settings-modal";
@@ -36,6 +39,7 @@ export function Topbar({
 }: TopbarProps) {
   const { theme, setTheme } = useTheme();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "ai" | "mcp" | "telemetry">("appearance");
 
   return (
     <>
@@ -115,6 +119,59 @@ export function Topbar({
 
         {/* Direita: Ações & Perfil com Tooltips Educativos */}
         <div className="flex items-center gap-2">
+          {/* Acesso Rápido: Tarefas de Hoje */}
+          <EducationalTooltip
+            title="Tarefas para Hoje"
+            description="Visão consolidada das suas demandas com vencimento hoje, atrasadas e próximos prazos."
+          >
+            <Link href="/medhit/today">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
+              >
+                <CalendarCheck2 className="h-4 w-4 text-sky-400" />
+                <span className="hidden md:inline font-medium">Hoje</span>
+              </Button>
+            </Link>
+          </EducationalTooltip>
+
+          {/* Acesso Rápido: Gestão de Squads */}
+          <EducationalTooltip
+            title="Gestão de Squads & Times"
+            description="Painel de controle central de equipes, distribuição de boards e alocação de capacidade."
+          >
+            <Link href="/medhit/squads">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
+              >
+                <Layers className="h-4 w-4 text-sky-400" />
+                <span className="hidden md:inline font-medium">Squads</span>
+              </Button>
+            </Link>
+          </EducationalTooltip>
+
+          {/* Botão Telemetria & Logs */}
+          <EducationalTooltip
+            title="Telemetria & Auditoria (Lagana Flow)"
+            description="Visualize em tempo real o histórico de eventos, criação e exclusão de quadros, tarefas e diagnósticos de integridade."
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSettingsDefaultTab("telemetry");
+                setIsSettingsOpen(true);
+              }}
+              className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
+            >
+              <Activity className="h-3.5 w-3.5 text-sky-400 animate-pulse" />
+              <span className="hidden lg:inline font-mono text-[11px]">Telemetria</span>
+            </Button>
+          </EducationalTooltip>
+
           {/* Botão Configurações */}
           <EducationalTooltip
             title="Configurações do Workspace"
@@ -123,7 +180,10 @@ export function Topbar({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsSettingsOpen(true)}
+              onClick={() => {
+                setSettingsDefaultTab("appearance");
+                setIsSettingsOpen(true);
+              }}
               className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-transparent hover:border-sky-500/20"
             >
               <Settings className="h-4 w-4 text-sky-400" />
@@ -198,7 +258,11 @@ export function Topbar({
       </header>
 
       {/* Modal de Configurações */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        defaultTab={settingsDefaultTab}
+      />
     </>
   );
 }

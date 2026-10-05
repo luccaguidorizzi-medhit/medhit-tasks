@@ -27,6 +27,7 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
   const {
     tasks,
     statuses,
+    areas,
     currentProject,
     setCurrentProjectBySlug,
     setIsNewTaskModalOpen,
@@ -36,7 +37,27 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
     setCurrentProjectBySlug(area, project);
   }, [area, project, setCurrentProjectBySlug]);
 
-  const projectTasks = tasks.filter((t) => t.projectId === currentProject.id);
+  const existingProjectMatch = React.useMemo(() => {
+    return areas
+      .flatMap((a) => a.projects.map((p) => ({ project: p, area: a })))
+      .find((item) => item.project.slug === project);
+  }, [areas, project]);
+
+  const activeProject =
+    currentProject && currentProject.slug === project
+      ? currentProject
+      : existingProjectMatch?.project || null;
+
+  if (!activeProject) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px] h-full p-8 text-center space-y-4">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Carregando métricas do projeto...</h2>
+        <p className="text-xs text-slate-500">Se o projeto foi removido, você será redirecionado para o workspace.</p>
+      </div>
+    );
+  }
+
+  const projectTasks = tasks.filter((t) => t.projectId === activeProject.id);
 
   // Métricas de progresso
   const totalTasks = projectTasks.length;
@@ -62,7 +83,7 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
       <ProjectToolbar
         areaSlug={area}
         projectSlug={project}
-        projectName={currentProject.name}
+        projectName={activeProject.name}
         totalTasksCount={totalTasks}
         onOpenNewTask={() => setIsNewTaskModalOpen(true)}
       />

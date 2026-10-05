@@ -318,6 +318,17 @@ function initializeData(): {
           }
         }
 
+        const now = new Date();
+        const dueDates = [
+          new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(), // Hoje
+          new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(), // Hoje
+          new Date(now.getFullYear(), now.getMonth(), now.getDate() - 2).toISOString(), // Atrasada
+          new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).toISOString(), // Em 2 dias
+          new Date(now.getFullYear(), now.getMonth(), now.getDate() + 4).toISOString(), // Em 4 dias
+          new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7).toISOString(), // Em 7 dias
+        ];
+        const assignedDueDate = dueDates[(taskCounter - 1) % dueDates.length];
+
         tasks.push({
           id: `task-${taskCounter++}`,
           workspaceId: WORKSPACE_ID,
@@ -334,6 +345,7 @@ function initializeData(): {
           sprintId: sprintList[0]?.id,
           storyPoints: t.storyPoints,
           aiContext: t.aiContext,
+          dueDate: assignedDueDate,
           checklists: [
             {
               id: `chk-${taskCounter}`,

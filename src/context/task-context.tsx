@@ -1,3 +1,12 @@
+/**
+ * Lagana Flow - Core Reliability & UX Architect
+ * Contexto de Tarefas, Quadros e Equipes do MedHit Tasks.
+ * 
+ * Atualizado com tratamento resiliente contra crashes de deleção de board,
+ * auto-fallback seguro e telemetria transparente de ações e ciclo de vida.
+ * Assinado por: Lagana Flow
+ */
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
@@ -10,9 +19,11 @@ import {
   Approval,
   Project,
   Area,
+  Comment,
   store,
 } from "@/server/services/data-store";
 import { toast } from "sonner";
+import { telemetry } from "@/lib/telemetry";
 
 interface TaskContextType {
   tasks: Task[];
@@ -22,8 +33,8 @@ interface TaskContextType {
   agentRuns: AgentRun[];
   approvals: Approval[];
   areas: Area[];
-  currentArea: Area;
-  currentProject: Project;
+  currentArea: Area | null;
+  currentProject: Project | null;
   selectedTask: Task | null;
   isNewTaskModalOpen: boolean;
   isNewBoardModalOpen: boolean;
@@ -70,14 +81,59 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDelete, setBoardToDelete] = useState<Project | null>(null);
 
-  const [currentArea, setCurrentArea] = useState<Area>(store.workspace.areas[0]);
-  const [currentProject, setCurrentProject] = useState<Project>(store.workspace.areas[0].projects[0]);
+  // Inicializa com primeiro projeto/área seguro ou null
+  const [currentArea, setCurrentArea] = useState<Area | null>(store.workspace.areas[0] || null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(
+    store.workspace.areas[0]?.projects[0] || null
+  );
 
+  /**
+   * Resolução à prova de falhas: busca projeto por slug da área e do projeto.
+   * Se o projeto não for localizado (por exemplo, após exclusão ou slug inválido),
+   * registra aviso na telemetria e define currentProject como null de forma segura,
+   * permitindo que as páginas ativem seu fallback elegante e auto-redirect.
+   */
   const setCurrentProjectBySlug = (areaSlug: string, projectSlug: string) => {
-    const area = areas.find((a) => a.slug === areaSlug) || areas[0];
-    const project = area.projects.find((p) => p.slug === projectSlug) || area.projects[0];
-    setCurrentArea(area);
-    setCurrentProject(project);
+    // 1. Procura na área indicada pelo slug
+    let targetArea = areas.find((a) => a.slug === areaSlug) || null;
+    let targetProject = targetArea?.projects?.find((p) => p.slug === projectSlug) || null;
+
+    // 2. Se não encontrou na área indicada, busca em todas as outras áreas
+    if (!targetProject) {
+      for (const a of areas) {
+        const found = a.projects?.find((p) => p.slug === projectSlug);
+        if (found) {
+          targetArea = a;
+          targetProject = found;
+          break;
+        }
+      }
+    }
+
+    if (targetArea) {
+      setCurrentArea(targetArea);
+    }
+
+    if (targetProject) {
+      setCurrentProject(targetProject);
+      telemetry.track(
+        "view_switched",
+        `Quadro ativo selecionado: "${targetProject.name}"`,
+        { areaSlug: targetArea?.slug, projectSlug: targetProject.slug, projectId: targetProject.id },
+        "info",
+        "task-context"
+      );
+    } else {
+      // Projeto não existe mais ou slug inválido
+      telemetry.track(
+        "navigation",
+        `Quadro "${projectSlug}" não localizado na área "${areaSlug}". Ativando modo de segurança.`,
+        { areaSlug, projectSlug },
+        "warn",
+        "task-context"
+      );
+      setCurrentProject(null);
+    }
   };
 
   const createTeam = (data: { name: string; description?: string; color?: string; icon?: string }): Area => {
@@ -124,6 +180,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const updated = [...areas, newArea];
     setAreas(updated);
     store.workspace.areas = updated;
+
+    telemetry.track(
+      "team_created",
+      `Time "${data.name}" criado com sucesso`,
+      { teamId: newTeamId, name: data.name, slug: newArea.slug },
+      "success",
+      "task-context"
+    );
+
     toast.success(`Time "${data.name}" criado com sucesso!`);
     return newArea;
   };
@@ -133,21 +198,32 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       toast.error("O workspace precisa ter pelo menos uma equipe ativa.");
       return;
     }
+
+    const teamToRemove = areas.find((a) => a.id === teamId);
     const updated = areas.filter((a) => a.id !== teamId);
     setAreas(updated);
     store.workspace.areas = updated;
     // Remove também as tarefas vinculadas
     setTasks((prev) => prev.filter((t) => t.areaId !== teamId));
 
-    if (currentArea.id === teamId) {
-      setCurrentArea(updated[0]);
-      setCurrentProject(updated[0].projects[0]);
+    if (currentArea?.id === teamId) {
+      const fallbackArea = updated[0];
+      setCurrentArea(fallbackArea);
+      setCurrentProject(fallbackArea?.projects[0] || null);
     }
+
+    telemetry.track(
+      "team_deleted",
+      `Equipe "${teamToRemove?.name || teamId}" removida`,
+      { teamId, name: teamToRemove?.name },
+      "warn",
+      "task-context"
+    );
+
     toast.success("Time removido com sucesso!");
   };
 
   const deleteProject = (projectId: string) => {
-    // Localiza em qual área o projeto está
     let removedName = "";
     let nextProjectToSelect: Project | null = null;
     let nextAreaToSelect: Area | null = null;
@@ -170,32 +246,53 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setAreas(updatedAreas);
     store.workspace.areas = updatedAreas;
 
-    // Se o projeto deletado for o projeto ativo atual, seleciona o próximo projeto disponível
+    // Busca o primeiro projeto disponível remanescente em qualquer equipe
     for (const a of updatedAreas) {
-      if (a.projects.length > 0) {
+      if (a.projects && a.projects.length > 0) {
         nextAreaToSelect = a;
         nextProjectToSelect = a.projects[0];
         break;
       }
     }
 
-    if (currentProject.id === projectId && nextProjectToSelect && nextAreaToSelect) {
-      setCurrentArea(nextAreaToSelect);
-      setCurrentProject(nextProjectToSelect);
+    // Se o projeto deletado for o projeto ativo atual, seleciona o próximo projeto disponível de forma segura
+    if (currentProject?.id === projectId) {
+      if (nextProjectToSelect && nextAreaToSelect) {
+        setCurrentArea(nextAreaToSelect);
+        setCurrentProject(nextProjectToSelect);
+      } else {
+        setCurrentProject(null);
+      }
     }
 
     setIsDeleteBoardModalOpen(false);
     setBoardToDelete(null);
+
+    telemetry.track(
+      "project_deleted",
+      `Quadro "${removedName || projectId}" excluído`,
+      {
+        projectId,
+        projectName: removedName,
+        nextProjectId: nextProjectToSelect?.id || null,
+        nextAreaSlug: nextAreaToSelect?.slug || null,
+      },
+      "warn",
+      "task-context"
+    );
+
     toast.success(`Quadro "${removedName || "selecionado"}" excluído com sucesso!`);
   };
 
   const updateProject = (projectId: string, updates: Partial<Project>) => {
+    let updatedProjName = "";
     const updatedAreas = areas.map((area) => ({
       ...area,
       projects: area.projects.map((p) => {
         if (p.id === projectId) {
           const updated = { ...p, ...updates };
-          if (currentProject.id === projectId) {
+          updatedProjName = updated.name;
+          if (currentProject?.id === projectId) {
             setCurrentProject(updated);
           }
           return updated;
@@ -206,6 +303,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     setAreas(updatedAreas);
     store.workspace.areas = updatedAreas;
+
+    telemetry.track(
+      "project_updated",
+      `Quadro "${updatedProjName || projectId}" atualizado`,
+      { projectId, updates },
+      "info",
+      "task-context"
+    );
+
     toast.success("Quadro atualizado com sucesso!");
   };
 
@@ -213,6 +319,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, role } : m))
     );
+    telemetry.track("member_action", `Papel do membro alterado para ${role}`, { memberId, role }, "info", "task-context");
     toast.success("Papel do usuário atualizado!");
   };
 
@@ -228,6 +335,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
     setMembers((prev) => [...prev, newMember]);
     store.workspace.members.push(newMember);
+    telemetry.track("member_action", `Novo membro convidado: ${data.name} (${data.email})`, { member: newMember }, "success", "task-context");
     toast.success(`Convite enviado para ${data.email}!`);
   };
 
@@ -248,136 +356,127 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const targetArea = areas.find((a) => a.slug === data.areaSlug) || areas[0];
     const newProjId = `proj-${targetArea.id}-${Date.now()}`;
 
-    const defaultStatuses: Status[] = [
-      {
-        id: `status-${newProjId}-1`,
-        workspaceId: store.workspace.id,
-        projectId: newProjId,
-        name: "A Fazer",
-        color: "#64748b",
-        position: 1000,
-        category: "todo",
-      },
-      {
-        id: `status-${newProjId}-2`,
-        workspaceId: store.workspace.id,
-        projectId: newProjId,
-        name: "Em Andamento",
-        color: "#38bdf8",
-        position: 2000,
-        category: "in_progress",
-        wipLimit: 4,
-      },
-      {
-        id: `status-${newProjId}-3`,
-        workspaceId: store.workspace.id,
-        projectId: newProjId,
-        name: "Revisão / QA",
-        color: "#f59e0b",
-        position: 3000,
-        category: "review",
-      },
-      {
-        id: `status-${newProjId}-4`,
-        workspaceId: store.workspace.id,
-        projectId: newProjId,
-        name: "Concluído",
-        color: "#10b981",
-        position: 4000,
-        category: "done",
-      },
+    let defaultStatuses: Status[] = [
+      { id: `st-${newProjId}-1`, workspaceId: store.workspace.id, projectId: newProjId, name: "A Fazer", color: "#64748b", position: 1000, category: "todo" },
+      { id: `st-${newProjId}-2`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Andamento", color: "#38bdf8", position: 2000, category: "in_progress", wipLimit: 4 },
+      { id: `st-${newProjId}-3`, workspaceId: store.workspace.id, projectId: newProjId, name: "Concluído", color: "#10b981", position: 3000, category: "done" },
     ];
+
+    if (data.methodology === "scrum") {
+      defaultStatuses = [
+        { id: `st-${newProjId}-0`, workspaceId: store.workspace.id, projectId: newProjId, name: "Backlog do Produto", color: "#94a3b8", position: 500, category: "backlog" },
+        { id: `st-${newProjId}-1`, workspaceId: store.workspace.id, projectId: newProjId, name: "Sprint Backlog", color: "#64748b", position: 1000, category: "todo" },
+        { id: `st-${newProjId}-2`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Desenvolvimento", color: "#38bdf8", position: 2000, category: "in_progress", wipLimit: 3 },
+        { id: `st-${newProjId}-3`, workspaceId: store.workspace.id, projectId: newProjId, name: "Revisão / QA", color: "#a855f7", position: 2500, category: "review", wipLimit: 2 },
+        { id: `st-${newProjId}-4`, workspaceId: store.workspace.id, projectId: newProjId, name: "Concluído (Done)", color: "#10b981", position: 3000, category: "done" },
+      ];
+    }
 
     const newProject: Project = {
       id: newProjId,
       workspaceId: store.workspace.id,
       areaId: targetArea.id,
       name: data.name,
-      slug: slug || `projeto-${Date.now()}`,
+      slug: slug || `quadro-${Date.now()}`,
       description: data.description || "",
       icon: "layout",
-      color: data.color || targetArea.color || "#38bdf8",
+      color: data.color || "#38bdf8",
       methodology: data.methodology || "kanban",
       statuses: defaultStatuses,
       sprints: [],
     };
 
-    // Atualiza estado de áreas
     const updatedAreas = areas.map((a) => {
-      if (a.id !== targetArea.id) return a;
-      return {
-        ...a,
-        projects: [...a.projects, newProject],
-      };
+      if (a.id === targetArea.id) {
+        return {
+          ...a,
+          projects: [...a.projects, newProject],
+        };
+      }
+      return a;
     });
 
     setAreas(updatedAreas);
     store.workspace.areas = updatedAreas;
+    setCurrentArea(targetArea);
+    setCurrentProject(newProject);
 
-    // Cria uma primeira tarefa de boas-vindas
-    const welcomeTask: Task = {
-      id: `task-${Date.now()}`,
-      workspaceId: store.workspace.id,
-      projectId: newProjId,
-      areaId: targetArea.id,
-      title: `Planejamento inicial de ${data.name}`,
-      description: "Definir metas principais, marcos de entrega e alocação da squad.",
-      taskType: "task",
-      statusId: defaultStatuses[0].id,
-      priority: "high",
-      position: 1000,
-      assigneeIds: [{
-        type: "user",
-        id: store.workspace.members[0].id,
-        name: store.workspace.members[0].name,
-        avatarUrl: store.workspace.members[0].avatarUrl,
-      }],
-      checklists: [
-        {
-          id: `chk-${Date.now()}`,
-          taskId: `task-${Date.now()}`,
-          title: "Setup do Board",
-          items: [
-            { id: "item-1", checklistId: `chk-${Date.now()}`, title: "Convidar colaboradores", isCompleted: false },
-            { id: "item-2", checklistId: `chk-${Date.now()}`, title: "Cadastrar primeiras demandas", isCompleted: true },
-          ],
-        },
-      ],
-      comments: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setTasks((prev) => [welcomeTask, ...prev]);
+    telemetry.track(
+      "project_created",
+      `Quadro "${data.name}" criado com metodologia ${data.methodology || "kanban"}`,
+      { projectId: newProjId, name: data.name, areaSlug: targetArea.slug },
+      "success",
+      "task-context"
+    );
 
     return newProject;
   };
 
   const moveTask = (taskId: string, targetStatusId: string) => {
+    let movedTaskTitle = "";
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, statusId: targetStatusId, updatedAt: new Date().toISOString() } : t))
+      prev.map((t) => {
+        if (t.id === taskId) {
+          movedTaskTitle = t.title;
+          return {
+            ...t,
+            statusId: targetStatusId,
+            updatedAt: new Date().toISOString(),
+          };
+        }
+        return t;
+      })
     );
+
     if (selectedTask?.id === taskId) {
-      setSelectedTask((prev) => (prev ? { ...prev, statusId: targetStatusId } : null));
+      setSelectedTask((prev) =>
+        prev ? { ...prev, statusId: targetStatusId, updatedAt: new Date().toISOString() } : null
+      );
     }
+
+    telemetry.track(
+      "task_moved",
+      `Tarefa "${movedTaskTitle || taskId}" movida para novo status`,
+      { taskId, targetStatusId },
+      "info",
+      "task-context"
+    );
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
+    let updatedTitle = "";
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, ...updates, updatedAt: new Date().toISOString() } : t))
+      prev.map((t) => {
+        if (t.id === taskId) {
+          updatedTitle = updates.title || t.title;
+          return { ...t, ...updates, updatedAt: new Date().toISOString() };
+        }
+        return t;
+      })
     );
     if (selectedTask?.id === taskId) {
       setSelectedTask((prev) => (prev ? { ...prev, ...updates } : null));
     }
+
+    telemetry.track(
+      "task_updated",
+      `Tarefa "${updatedTitle || taskId}" atualizada`,
+      { taskId, updates: Object.keys(updates) },
+      "info",
+      "task-context"
+    );
   };
 
   const createTask = (data: any) => {
     const newId = `task-${Date.now()}`;
+    const fallbackProjectId = currentProject?.id || areas[0]?.projects[0]?.id || "proj-default";
+    const fallbackAreaId = currentArea?.id || areas[0]?.id || "area-default";
+
     const newTask: Task = {
       id: newId,
       workspaceId: store.workspace.id,
-      projectId: data.projectId || currentProject.id,
-      areaId: data.areaId || currentArea.id,
+      projectId: data.projectId || fallbackProjectId,
+      areaId: data.areaId || fallbackAreaId,
       title: data.title,
       description: data.description || "",
       taskType: data.taskType || "task",
@@ -389,6 +488,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         : [{ type: "user", id: store.workspace.members[0].id, name: store.workspace.members[0].name, avatarUrl: store.workspace.members[0].avatarUrl }],
       storyPoints: data.storyPoints,
       aiContext: data.aiContext,
+      dueDate: data.dueDate,
       tags: data.tags || [],
       checklists: [
         {
@@ -404,38 +504,81 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     setTasks((prev) => [newTask, ...prev]);
+
+    telemetry.track(
+      "task_created",
+      `Nova tarefa criada: "${newTask.title}"`,
+      { taskId: newId, projectId: newTask.projectId, priority: newTask.priority },
+      "success",
+      "task-context"
+    );
+
+    toast.success("Tarefa criada com sucesso!");
   };
 
   const deleteTask = (taskId: string) => {
+    const taskToDelete = tasks.find((t) => t.id === taskId);
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     if (selectedTask?.id === taskId) {
       setSelectedTask(null);
     }
+
+    telemetry.track(
+      "task_deleted",
+      `Tarefa "${taskToDelete?.title || taskId}" excluída`,
+      { taskId },
+      "warn",
+      "task-context"
+    );
+
+    toast.success("Tarefa excluída");
   };
 
   const toggleChecklist = (taskId: string, checklistId: string, itemId: string) => {
     setTasks((prev) =>
       prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const updatedChecklists = t.checklists.map((c) => {
-          if (c.id !== checklistId) return c;
-          const updatedItems = c.items.map((i) =>
-            i.id === itemId ? { ...i, isCompleted: !i.isCompleted } : i
-          );
-          return { ...c, items: updatedItems };
-        });
-        const updated = { ...t, checklists: updatedChecklists };
-        if (selectedTask?.id === taskId) setSelectedTask(updated);
-        return updated;
+        if (t.id === taskId) {
+          const updatedChecklists = t.checklists.map((c) => {
+            if (c.id === checklistId) {
+              return {
+                ...c,
+                items: c.items.map((i) =>
+                  i.id === itemId ? { ...i, isCompleted: !i.isCompleted } : i
+                ),
+              };
+            }
+            return c;
+          });
+          return { ...t, checklists: updatedChecklists };
+        }
+        return t;
       })
     );
+
+    if (selectedTask?.id === taskId) {
+      setSelectedTask((prev) => {
+        if (!prev) return null;
+        const updatedChecklists = prev.checklists.map((c) => {
+          if (c.id === checklistId) {
+            return {
+              ...c,
+              items: c.items.map((i) =>
+                i.id === itemId ? { ...i, isCompleted: !i.isCompleted } : i
+              ),
+            };
+          }
+          return c;
+        });
+        return { ...prev, checklists: updatedChecklists };
+      });
+    }
   };
 
   const addComment = (taskId: string, content: string) => {
-    const newComment = {
+    const newComment: Comment = {
       id: `comm-${Date.now()}`,
       taskId,
-      authorType: "user" as const,
+      authorType: "user",
       authorId: store.workspace.members[0].id,
       authorName: store.workspace.members[0].name,
       authorAvatar: store.workspace.members[0].avatarUrl,
@@ -444,36 +587,79 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     };
 
     setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const updated = { ...t, comments: [...t.comments, newComment] };
-        if (selectedTask?.id === taskId) setSelectedTask(updated);
-        return updated;
-      })
+      prev.map((t) =>
+        t.id === taskId ? { ...t, comments: [...(t.comments || []), newComment] } : t
+      )
     );
+
+    if (selectedTask?.id === taskId) {
+      setSelectedTask((prev) =>
+        prev ? { ...prev, comments: [...(prev.comments || []), newComment] } : null
+      );
+    }
+
+    telemetry.track(
+      "task_updated",
+      `Comentário adicionado à tarefa ${taskId}`,
+      { taskId, commentId: newComment.id },
+      "info",
+      "task-context"
+    );
+
+    toast.success("Comentário adicionado!");
   };
 
   const reviewApproval = (approvalId: string, decision: "approved" | "rejected", comment?: string) => {
     setApprovals((prev) =>
-      prev.map((a) =>
-        a.id === approvalId
+      prev.map((app) =>
+        app.id === approvalId
           ? {
-              ...a,
+              ...app,
               status: decision,
-              reviewedBy: "Lucca Lagana",
+              reviewerComment: comment,
               reviewedAt: new Date().toISOString(),
-              reviewComment: comment,
             }
-          : a
+          : app
       )
     );
+
+    telemetry.track(
+      "approval_decision",
+      `Aprovação ${approvalId} foi ${decision === "approved" ? "aprovada" : "rejeitada"}`,
+      { approvalId, decision, comment },
+      decision === "approved" ? "success" : "warn",
+      "task-context"
+    );
+
+    toast.success(decision === "approved" ? "Solicitação aprovada!" : "Solicitação reprovada.");
   };
 
   const triggerClaim = (agentId: string) => {
     const agent = store.workspace.agents.find((a) => a.id === agentId);
     if (!agent) return;
 
-    const targetTask = tasks.find((t) => t.taskType === "agent_task") || tasks[0];
+    const unassignedTasks = tasks.filter(
+      (t) =>
+        t.taskType === "agent_task" &&
+        !agentRuns.some((r) => r.taskId === t.id && r.status === "running")
+    );
+
+    if (unassignedTasks.length === 0) {
+      toast.info(`Não há tarefas pendentes para ${agent.name}`);
+      return;
+    }
+
+    const targetTask = unassignedTasks[0];
+    toast.success(`${agent.name} reivindicou a tarefa: "${targetTask.title}"`);
+
+    telemetry.track(
+      "task_updated",
+      `Agente ${agent.name} reivindicou a tarefa: "${targetTask.title}"`,
+      { agentId, taskId: targetTask.id },
+      "info",
+      "task-context"
+    );
+
     const newRun: AgentRun = {
       id: `run-${Date.now()}`,
       workspaceId: store.workspace.id,
