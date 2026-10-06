@@ -119,51 +119,9 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
             </select>
           </div>
 
-          {/* Metodologia */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Metodologia de Gestão
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setMethodology("kanban")}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  methodology === "kanban"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-400 font-semibold"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 text-slate-400"
-                }`}
-              >
-                <div className="text-xs font-bold">Kanban</div>
-                <div className="text-[10px] opacity-75">Fluxo Contínuo</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMethodology("scrum")}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  methodology === "scrum"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-400 font-semibold"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 text-slate-400"
-                }`}
-              >
-                <div className="text-xs font-bold">Scrum</div>
-                <div className="text-[10px] opacity-75">Sprints & Pontos</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setMethodology("simple")}
-                className={`p-2.5 rounded-xl border text-left transition-all ${
-                  methodology === "simple"
-                    ? "border-sky-500 bg-sky-500/10 text-sky-400 font-semibold"
-                    : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-950/40 text-slate-400"
-                }`}
-              >
-                <div className="text-xs font-bold">Lista Simples</div>
-                <div className="text-[10px] opacity-75">To-do Linear</div>
-              </button>
-            </div>
+          {/* Explicação de Visualizações Universais */}
+          <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Flexíveis:</strong> Qualquer quadro criado no MedHit Tasks pode ser visualizado como <strong className="text-sky-500">Quadro Kanban</strong>, <strong className="text-sky-500">Lista</strong>, <strong className="text-sky-500">Tabela</strong>, <strong className="text-sky-500">Calendário</strong>, <strong className="text-sky-500">Matriz Eisenhower</strong>, <strong className="text-sky-500">Sprints</strong> e <strong className="text-sky-500">Marcos</strong>.
           </div>
 
           {/* Cor do Projeto */}

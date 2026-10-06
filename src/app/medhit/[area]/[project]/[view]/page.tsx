@@ -20,6 +20,7 @@ import { TableView } from "@/components/views/table-view";
 import { CalendarView } from "@/components/views/calendar-view";
 import { MatrixView } from "@/components/views/matrix-view";
 import { AgileView } from "@/components/views/agile-view";
+import { RoadmapView } from "@/components/views/roadmap-view";
 import { BacklogView } from "@/components/views/backlog-view";
 import { DeleteBoardModal } from "@/components/boards/delete-board-modal";
 import { Button } from "@/components/ui/button";
@@ -293,6 +294,27 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
               }}
             />
           </div>
+        );
+
+      case "sprints":
+        return (
+          <div className="flex-1 overflow-y-auto p-6">
+            <AgileView
+              tasks={projectTasks}
+              sprints={activeProject.sprints || []}
+              onTaskClick={setSelectedTask}
+            />
+          </div>
+        );
+
+      case "roadmap":
+        return (
+          <RoadmapView
+            tasks={projectTasks}
+            statuses={statuses}
+            onTaskClick={setSelectedTask}
+            onQuickAddTask={handleQuickAdd}
+          />
         );
 
       case "table":

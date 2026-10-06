@@ -16,6 +16,8 @@ import {
   Inbox,
   Trash2,
   LayoutGrid,
+  Flame,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EducationalTooltip } from "@/components/ui/tooltip";
@@ -56,27 +58,6 @@ export function ProjectToolbar({
       tooltip: { title: "Visão em Quadro (Kanban)", description: "Visualização espacial de fluxo contínuo com cartões arrastáveis e limites de WIP." },
     },
     {
-      id: "matrix",
-      label: "Matriz",
-      icon: LayoutGrid,
-      href: `/medhit/${areaSlug}/${projectSlug}/matrix`,
-      tooltip: { title: "Matriz de Priorização (Eisenhower)", description: "Organize demandas por Urgente vs Importante em 4 quadrantes para decisão ágil." },
-    },
-    {
-      id: "calendar",
-      label: "Calendário",
-      icon: CalendarDays,
-      href: `/medhit/${areaSlug}/${projectSlug}/calendar`,
-      tooltip: { title: "Visão em Calendário", description: "Prazos e tarefas organizados em grade mensal com badges de status e prioridade." },
-    },
-    {
-      id: "backlog",
-      label: "Backlog",
-      icon: Inbox,
-      href: `/medhit/${areaSlug}/${projectSlug}/backlog`,
-      tooltip: { title: "Backlog de Demandas", description: "Triagem de tarefas pendentes, priorização rápida e envio em lote para o quadro ativo." },
-    },
-    {
       id: "list",
       label: "List",
       icon: ListTodo,
@@ -89,6 +70,41 @@ export function ProjectToolbar({
       icon: TableIcon,
       href: `/medhit/${areaSlug}/${projectSlug}/table`,
       tooltip: { title: "Visão em Tabela (Monday Style)", description: "Planilha interativa com dados tabulares, somas agregadas e métricas." },
+    },
+    {
+      id: "calendar",
+      label: "Calendário",
+      icon: CalendarDays,
+      href: `/medhit/${areaSlug}/${projectSlug}/calendar`,
+      tooltip: { title: "Visão em Calendário", description: "Prazos e tarefas organizados em grade mensal com badges de status e prioridade." },
+    },
+    {
+      id: "matrix",
+      label: "Matriz",
+      icon: LayoutGrid,
+      href: `/medhit/${areaSlug}/${projectSlug}/matrix`,
+      tooltip: { title: "Matriz de Priorização (Eisenhower)", description: "Organize demandas por Urgente vs Importante em 4 quadrantes para decisão ágil." },
+    },
+    {
+      id: "sprints",
+      label: "Sprints",
+      icon: Flame,
+      href: `/medhit/${areaSlug}/${projectSlug}/sprints`,
+      tooltip: { title: "Ciclos Ágeis (Sprints & Burndown)", description: "Gestão por ciclos iterativos, capacidade da equipe, story points e queima de sprint." },
+    },
+    {
+      id: "roadmap",
+      label: "Marcos",
+      icon: Flag,
+      href: `/medhit/${areaSlug}/${projectSlug}/roadmap`,
+      tooltip: { title: "Marcos & Roadmap (Milestones)", description: "Entregáveis macro com barra de progresso percentual e acompanhamento temporal." },
+    },
+    {
+      id: "backlog",
+      label: "Backlog",
+      icon: Inbox,
+      href: `/medhit/${areaSlug}/${projectSlug}/backlog`,
+      tooltip: { title: "Backlog de Demandas", description: "Triagem de tarefas pendentes, priorização rápida e envio em lote para o quadro ativo." },
     },
     {
       id: "dashboard",

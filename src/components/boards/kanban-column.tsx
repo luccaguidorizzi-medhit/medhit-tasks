@@ -64,14 +64,26 @@ export function KanbanColumn({
     >
       {/* Cabeçalho da Coluna: Dot Color + Tasks name + Plus Circle + More Options */}
       <div className="flex items-center justify-between pb-3 px-1 border-b border-slate-200 dark:border-white/[0.06] select-none">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <span className={cn("h-2.5 w-2.5 rounded-full shrink-0 shadow-[0_0_8px_currentColor]", getDotColor())} />
           <h2 className="text-xs font-bold text-slate-800 dark:text-slate-100 tracking-wide truncate">
             {status.name}
           </h2>
-          <span className="text-[10px] font-mono text-slate-400 font-semibold">
-            {tasks.length}
+          <span className={cn(
+            "text-[10px] font-mono px-1.5 py-0.2 rounded-full font-semibold",
+            status.wipLimit && tasks.length > status.wipLimit
+              ? "bg-rose-500/20 text-rose-500 border border-rose-500/30 animate-pulse"
+              : status.wipLimit && tasks.length === status.wipLimit
+              ? "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+              : "text-slate-400"
+          )}>
+            {tasks.length}{status.wipLimit ? `/${status.wipLimit}` : ""}
           </span>
+          {status.wipLimit && tasks.length > status.wipLimit && (
+            <span className="text-[9px] font-mono uppercase bg-rose-500/15 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/30 font-bold" title="Limite WIP excedido: risco de gargalo no fluxo">
+              WIP Excedido
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1 text-slate-400 dark:text-slate-400">
