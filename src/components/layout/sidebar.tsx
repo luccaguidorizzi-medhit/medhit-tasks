@@ -68,6 +68,7 @@ export function Sidebar({
   const {
     areas,
     hasPermission,
+    isAiConfigured,
     setIsNewBoardModalOpen,
     setIsNewTeamModalOpen,
     setBoardToDelete,
@@ -219,7 +220,7 @@ export function Sidebar({
       isActive: pathname === "/medhit/today",
     },
     {
-      title: "Squads & Times",
+      title: "Equipes & Áreas",
       icon: Layers,
       href: "/medhit/squads",
       isActive: pathname === "/medhit/squads",
@@ -232,6 +233,8 @@ export function Sidebar({
       icon: Bot,
       href: "/medhit/agents",
       isActive: pathname === "/medhit/agents",
+      disabled: !isAiConfigured,
+      disabledReason: "Requer chave de API configurada",
     },
     {
       title: "Aprovações",
@@ -384,34 +387,62 @@ export function Sidebar({
             </div>
 
             <div className="space-y-0.5">
-              {automationActions.map((action) => (
-                <Link
-                  key={action.title}
-                  href={action.href}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                    action.isActive
-                      ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <action.icon
-                      className={cn(
-                        "h-4 w-4",
-                        action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                      )}
-                    />
-                    <span>{action.title}</span>
-                  </div>
+              {automationActions.map((action) => {
+                if (action.disabled) {
+                  return (
+                    <div
+                      key={action.title}
+                      onClick={() => {
+                        toast.error("Módulo de IA Inativo", {
+                          description: "Nenhuma chave de API de IA conectada. Adicione uma chave em Configurações para habilitar os Agentes.",
+                        });
+                      }}
+                      title="Módulo de IA inativo: Nenhuma chave de API configurada"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-600 opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-all select-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <action.icon className="h-4 w-4 text-slate-400 dark:text-slate-600" />
+                        <span>{action.title}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                          Requer Chave
+                        </span>
+                        <Lock className="h-3 w-3 text-amber-500" />
+                      </div>
+                    </div>
+                  );
+                }
 
-                  {action.badge !== undefined && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-500 text-slate-950">
-                      {action.badge}
-                    </span>
-                  )}
-                </Link>
-              ))}
+                return (
+                  <Link
+                    key={action.title}
+                    href={action.href}
+                    className={cn(
+                      "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      action.isActive
+                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <action.icon
+                        className={cn(
+                          "h-4 w-4",
+                          action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                        )}
+                      />
+                      <span>{action.title}</span>
+                    </div>
+
+                    {action.badge !== undefined && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-500 text-slate-950">
+                        {action.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
@@ -447,23 +478,13 @@ export function Sidebar({
             </div>
           </div>
 
-          {/* Boards do Workspace & Botão + Novo Board */}
+          {/* Projetos do Workspace & Botão + Novo Projeto */}
           <div>
             <div className="px-3 mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
               <div className="flex items-center gap-1.5">
                 <Star className="h-3 w-3 text-amber-400" />
-                <span>Quadros Ativos</span>
+                <span>Projetos & Quadros</span>
               </div>
-
-              {canCreateBoard && (
-                <button
-                  onClick={() => setIsNewBoardModalOpen(true)}
-                  className="h-5 w-5 rounded-md hover:bg-sky-500/10 hover:text-sky-400 flex items-center justify-center transition-colors cursor-pointer text-slate-400"
-                  title="Criar novo quadro"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              )}
             </div>
 
             <div className="space-y-0.5">
@@ -515,7 +536,7 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* Botão Criar Board no Rodapé da Sidebar */}
+        {/* Botão Criar Projeto no Rodapé da Sidebar */}
         {canCreateBoard && (
           <div className="px-3 pb-2">
             <button
@@ -523,7 +544,7 @@ export function Sidebar({
               className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-600 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-xs font-medium transition-all cursor-pointer"
             >
               <FolderPlus className="h-3.5 w-3.5" />
-              <span>+ Criar Novo Board</span>
+              <span>+ Novo Projeto</span>
             </button>
           </div>
         )}

@@ -93,10 +93,10 @@ export function Topbar({
 
           <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
 
-          {/* Nível 2: Área de Trabalho / Squad (Agora Clicável!) */}
+          {/* Nível 2: Área de Trabalho / Equipe (Agora Clicável!) */}
           <EducationalTooltip
-            title={`Squad: ${areaName}`}
-            description="Clique para abrir o painel executivo desta área de trabalho e ver todos os boards pertencentes a ela."
+            title={`Equipe / Área: ${areaName}`}
+            description="Clique para abrir o painel executivo desta área de trabalho e ver todos os projetos pertencentes a ela."
           >
             <Link
               href={`/medhit/${areaSlug}`}
@@ -110,7 +110,7 @@ export function Topbar({
 
           {/* Nível 3: Projeto / Board Ativo */}
           <EducationalTooltip
-            title={`Board: ${projectName}`}
+            title={`Projeto: ${projectName}`}
             description="Projeto ativo atual. Alterne entre Quadro, Lista, Tabela e Dashboard na barra de ferramentas."
           >
             <Link
@@ -159,23 +159,6 @@ export function Topbar({
               >
                 <CalendarCheck2 className="h-4 w-4 text-sky-400" />
                 <span className="hidden md:inline font-medium">Hoje</span>
-              </Button>
-            </Link>
-          </EducationalTooltip>
-
-          {/* Acesso Rápido: Gestão de Squads */}
-          <EducationalTooltip
-            title="Gestão de Squads & Times"
-            description="Painel de controle central de equipes, distribuição de boards e alocação de capacidade."
-          >
-            <Link href="/medhit/squads">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
-              >
-                <Layers className="h-4 w-4 text-sky-400" />
-                <span className="hidden md:inline font-medium">Squads</span>
               </Button>
             </Link>
           </EducationalTooltip>

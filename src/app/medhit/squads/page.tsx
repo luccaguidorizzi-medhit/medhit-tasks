@@ -126,25 +126,25 @@ export default function SquadsManagementPage() {
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Layers className="h-6 w-6 text-sky-400" />
-            <span>Gestão de Squads & Times Operacionais</span>
+            <span>Gestão de Equipes & Áreas</span>
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Controle de estrutura matricial, fluxos de entrega contínua e distribuição de membros entre esteiras.
+            Organização departamental, esteiras de entrega contínua e distribuição de membros entre projetos.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
           {canCreateTeam && (
             <EducationalTooltip
-              title="Cadastrar Nova Squad"
-              description="Crie uma nova esteira autônoma com seus próprios quadros kanban e metodologias."
+              title="Cadastrar Nova Equipe"
+              description="Crie uma nova equipe ou área de trabalho com seus próprios projetos e fluxos."
             >
               <Button
                 onClick={() => setIsNewTeamModalOpen(true)}
                 className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 shadow-lg shadow-sky-500/25 rounded-xl cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                <span>+ Nova Squad</span>
+                <span>+ Nova Equipe</span>
               </Button>
             </EducationalTooltip>
           )}
@@ -187,20 +187,20 @@ export default function SquadsManagementPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl border border-slate-200 dark:border-sky-500/20 bg-white/70 dark:bg-[#0c1830]/70 backdrop-blur-xl shadow-xs">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-wider">Squads Ativas</span>
+            <span className="font-mono text-[11px] uppercase tracking-wider">Equipes Ativas</span>
             <Layers className="h-4 w-4 text-sky-400" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             {areas.length}
           </div>
           <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Esteiras operando
+            Áreas operando
           </div>
         </div>
 
         <div className="p-4 rounded-2xl border border-slate-200 dark:border-sky-500/20 bg-white/70 dark:bg-[#0c1830]/70 backdrop-blur-xl shadow-xs">
           <div className="flex items-center justify-between text-slate-400 text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-wider">Boards Totais</span>
+            <span className="font-mono text-[11px] uppercase tracking-wider">Projetos Totais</span>
             <FolderKanban className="h-4 w-4 text-indigo-400" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
@@ -250,7 +250,7 @@ export default function SquadsManagementPage() {
           )}
         >
           <Layers className="h-4 w-4" />
-          <span>Squads & Times ({areas.length})</span>
+          <span>Equipes & Áreas ({areas.length})</span>
         </button>
 
         <button

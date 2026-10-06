@@ -133,6 +133,11 @@ interface TaskContextType {
   updateMemberPassword: (memberId: string, newPass: string) => void;
   regenerateMemberMcpToken: (memberId: string) => string;
   inviteMember: (data: { name: string; email: string; role: Member["role"]; initialPassword?: string }) => void;
+  isAiConfigured: boolean;
+  aiApiKey: string | null;
+  saveAiApiKey: (key: string) => void;
+  removeAiApiKey: () => void;
+  isTaskVisibleForCurrentUser: (task: Task) => boolean;
 }
 
 const TaskContext = createContext<TaskContextType | null>(null);
@@ -198,6 +203,75 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       toast.success(`Usuário ativo: ${found.name}`);
     }
   };
+
+  // Gestão de Chave de IA e Estado de Ativação dos Agentes
+  const [aiApiKey, setAiApiKey] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedKey = localStorage.getItem("medhit_ai_api_key");
+      if (storedKey && storedKey.trim().length > 0) {
+        setAiApiKey(storedKey.trim());
+      }
+    }
+  }, []);
+
+  const isAiConfigured = Boolean(aiApiKey && aiApiKey.trim().length > 0);
+
+  const saveAiApiKey = (key: string) => {
+    if (!hasPermission("manage_ai_tokens")) {
+      toast.error("Permissão insuficiente para alterar credenciais de IA.");
+      return;
+    }
+    const cleanKey = key.trim();
+    if (!cleanKey) {
+      removeAiApiKey();
+      return;
+    }
+    setAiApiKey(cleanKey);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("medhit_ai_api_key", cleanKey);
+    }
+    telemetry.track(
+      "ai_key_configured",
+      "Chave de API de Inteligência Artificial vinculada com sucesso",
+      { provider: cleanKey.startsWith("sk-") ? "openai" : "custom" },
+      "success",
+      "task-context"
+    );
+    toast.success("Chave de IA configurada! Módulo de Agentes ativado.");
+  };
+
+  const removeAiApiKey = () => {
+    if (!hasPermission("manage_ai_tokens")) {
+      toast.error("Permissão insuficiente para alterar credenciais de IA.");
+      return;
+    }
+    setAiApiKey(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("medhit_ai_api_key");
+    }
+    telemetry.track(
+      "ai_key_removed",
+      "Chave de API de Inteligência Artificial desconectada. Agentes desativados.",
+      {},
+      "warn",
+      "task-context"
+    );
+    toast.info("Chave de IA removida. Agentes desativados.");
+  };
+
+  const isTaskVisibleForCurrentUser = (task: Task): boolean => {
+    if (currentUser.role === "guest") {
+      const isAssigned = task.assigneeIds.some(
+        (a) => a.id === currentUser.id || a.name.toLowerCase() === currentUser.name.toLowerCase()
+      );
+      const isReporter = task.reporterId === currentUser.id;
+      return isAssigned || isReporter;
+    }
+    return true;
+  };
+
 
   // Inicializa com primeiro projeto/área seguro ou null
   const [currentArea, setCurrentArea] = useState<Area | null>(store.workspace.areas[0] || null);
@@ -672,7 +746,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleChecklist = (taskId: string, checklistId: string, itemId: string) => {
-    if (!hasPermission("edit_task")) {
+    const targetTask = tasks.find((t) => t.id === taskId);
+    const canToggle =
+      hasPermission("edit_task") ||
+      (currentUser.role === "guest" && targetTask && isTaskVisibleForCurrentUser(targetTask));
+
+    if (!canToggle) {
       toast.error("Permissão insuficiente para alterar critérios de aceite.");
       return;
     }
@@ -717,7 +796,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addComment = (taskId: string, content: string) => {
-    if (!hasPermission("create_task") && !hasPermission("edit_task")) {
+    const targetTask = tasks.find((t) => t.id === taskId);
+    const canComment =
+      hasPermission("create_task") ||
+      hasPermission("edit_task") ||
+      (currentUser.role === "guest" && targetTask && isTaskVisibleForCurrentUser(targetTask));
+
+    if (!canComment) {
       toast.error("Permissão insuficiente para comentar em tarefas.");
       return;
     }
@@ -787,6 +872,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const triggerClaim = (agentId: string) => {
+    if (!isAiConfigured) {
+      toast.error("Módulo de IA Inativo", {
+        description: "Configure uma chave de API de IA em Configurações para habilitar a execução de agentes.",
+      });
+      return;
+    }
+
     const agent = store.workspace.agents.find((a) => a.id === agentId);
     if (!agent) return;
 
@@ -1023,6 +1115,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         updateMemberPassword,
         regenerateMemberMcpToken,
         inviteMember,
+        isAiConfigured,
+        aiApiKey,
+        saveAiApiKey,
+        removeAiApiKey,
+        isTaskVisibleForCurrentUser,
       }}
     >
       {children}

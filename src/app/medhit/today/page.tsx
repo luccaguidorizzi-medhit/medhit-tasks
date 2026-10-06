@@ -20,6 +20,11 @@ import {
   Sparkles,
   Layers,
   ChevronRight,
+  User,
+  Users,
+  Lock,
+  ShieldCheck,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EducationalTooltip } from "@/components/ui/tooltip";
@@ -39,9 +44,17 @@ export default function TodayTasksPage() {
     setSelectedTask,
     createTask,
     updateTask,
+    currentUser,
+    hasPermission,
+    isTaskVisibleForCurrentUser,
   } = useTasks();
 
+  const isGuest = currentUser.role === "guest";
+  const canCreateTask = hasPermission("create_task");
+  const canEditTask = hasPermission("edit_task");
+
   const [activeFilter, setActiveFilter] = useState<"today" | "overdue" | "next7days" | "all">("today");
+  const [viewScope, setViewScope] = useState<"my_tasks" | "team_tasks">("my_tasks");
   const [quickTitle, setQuickTitle] = useState("");
   const [quickPriority, setQuickPriority] = useState<Task["priority"]>("high");
   const [selectedProjectId, setSelectedProjectId] = useState<string>(currentProject?.id || "");
@@ -94,14 +107,44 @@ export default function TodayTasksPage() {
     });
   }, [tasks, areas]);
 
-  // Classificação por data
+  // Contadores para o alternador de escopo (Minhas Tarefas vs Equipe)
+  const myTasksCount = useMemo(() => {
+    return enrichedTasks.filter((t) => {
+      const isAssigned = t.assigneeIds.some(
+        (a) => a.id === currentUser.id || a.name.toLowerCase() === currentUser.name.toLowerCase()
+      );
+      const isReporter = t.reporterId === currentUser.id;
+      return isAssigned || isReporter;
+    }).length;
+  }, [enrichedTasks, currentUser]);
+
+  const teamTasksCount = useMemo(() => {
+    return enrichedTasks.filter((t) => isTaskVisibleForCurrentUser(t)).length;
+  }, [enrichedTasks, isTaskVisibleForCurrentUser]);
+
+  // Filtra as tarefas de acordo com o escopo pessoal ou da equipe com validação RBAC
+  const scopedTasks = useMemo(() => {
+    return enrichedTasks.filter((task) => {
+      // Convidados NUNCA veem tarefas que não lhes pertencem
+      if (isGuest || viewScope === "my_tasks") {
+        const isAssigned = task.assigneeIds.some(
+          (a) => a.id === currentUser.id || a.name.toLowerCase() === currentUser.name.toLowerCase()
+        );
+        const isReporter = task.reporterId === currentUser.id;
+        return isAssigned || isReporter;
+      }
+      return isTaskVisibleForCurrentUser(task);
+    });
+  }, [enrichedTasks, isGuest, viewScope, currentUser, isTaskVisibleForCurrentUser]);
+
+  // Classificação por data a partir das tarefas autorizadas do escopo
   const { todayList, overdueList, next7DaysList, allActiveList } = useMemo(() => {
     const today: typeof enrichedTasks = [];
     const overdue: typeof enrichedTasks = [];
     const next7: typeof enrichedTasks = [];
     const allActive: typeof enrichedTasks = [];
 
-    enrichedTasks.forEach((t) => {
+    scopedTasks.forEach((t) => {
       if (!t.isDone) {
         allActive.push(t);
       }
@@ -134,7 +177,7 @@ export default function TodayTasksPage() {
       next7DaysList: next7,
       allActiveList: allActive,
     };
-  }, [enrichedTasks, todayStart, todayEnd, next7DaysEnd]);
+  }, [scopedTasks, todayStart, todayEnd, next7DaysEnd]);
 
   // Lista selecionada de acordo com o filtro ativo
   const displayedTasks = useMemo(() => {
@@ -177,6 +220,10 @@ export default function TodayTasksPage() {
   // Criação de tarefa rápida para hoje
   const handleCreateTodayTask = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canCreateTask) {
+      toast.error("Permissão insuficiente. Convidados não podem criar novas tarefas.");
+      return;
+    }
     if (!quickTitle.trim()) {
       toast.error("Informe o título da demanda.");
       return;
@@ -252,7 +299,7 @@ export default function TodayTasksPage() {
       <div className="pointer-events-none absolute -top-40 left-1/3 h-96 w-96 rounded-full bg-sky-500/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-10 right-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
 
-      {/* Header com Data Dinâmica */}
+      {/* Header com Data Dinâmica e Alternador de Escopo */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-sky-500/15">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -261,6 +308,9 @@ export default function TodayTasksPage() {
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-mono capitalize">
               {formattedToday}
+            </span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">
+              Papel: {currentUser.role}
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
@@ -272,19 +322,56 @@ export default function TodayTasksPage() {
           </p>
         </div>
 
+        {/* Alternador de Escopo: Minhas Tarefas vs Toda a Equipe */}
         <div className="flex items-center gap-2">
-          <Link href="/medhit/squads">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200 dark:border-sky-500/20"
+          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-white/10 shadow-xs">
+            <button
+              onClick={() => setViewScope("my_tasks")}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                viewScope === "my_tasks"
+                  ? "bg-sky-500 text-slate-950 shadow-xs font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              )}
             >
-              <Layers className="h-4 w-4 text-sky-400" />
-              <span>Ver Squads</span>
-            </Button>
-          </Link>
+              <User className="h-3.5 w-3.5" />
+              <span>Minhas Tarefas ({myTasksCount})</span>
+            </button>
+
+            <button
+              disabled={isGuest}
+              onClick={() => !isGuest && setViewScope("team_tasks")}
+              title={
+                isGuest
+                  ? "Acesso restrito: Convidados só podem ver tarefas atribuídas a si mesmos"
+                  : "Ver todas as tarefas da equipe"
+              }
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                isGuest && "opacity-45 cursor-not-allowed",
+                !isGuest && "cursor-pointer",
+                viewScope === "team_tasks" && !isGuest
+                  ? "bg-sky-500 text-slate-950 shadow-xs font-bold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              )}
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span>Toda a Equipe ({teamTasksCount})</span>
+              {isGuest && <Lock className="h-3 w-3 text-amber-500" />}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Banner de Aviso de Convidado (se aplicável) */}
+      {isGuest && (
+        <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-3 text-xs text-amber-700 dark:text-amber-400">
+          <ShieldAlert className="h-4 w-4 shrink-0 text-amber-500" />
+          <span>
+            <strong>Acesso de Convidado (Guest):</strong> Seu usuário tem permissão para visualizar apenas as tarefas atribuídas diretamente a você. Demandas de outros membros permanecem ocultas.
+          </span>
+        </div>
+      )}
 
       {/* Métricas e Barra de Ritmo de Entrega */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -407,42 +494,52 @@ export default function TodayTasksPage() {
       </div>
 
       {/* Input Rápido: Adicionar Tarefa para Hoje */}
-      <form
-        onSubmit={handleCreateTodayTask}
-        className="p-3 rounded-2xl border border-slate-200 dark:border-sky-500/25 bg-white/90 dark:bg-[#0c1830]/90 backdrop-blur-xl flex flex-col md:flex-row items-center gap-3 shadow-lg shadow-black/5"
-      >
-        <div className="flex items-center gap-2 flex-1 w-full pl-2">
-          <Plus className="h-4 w-4 text-sky-400 shrink-0" />
-          <input
-            type="text"
-            placeholder="+ Adicionar nova demanda para hoje com prazo imediato..."
-            value={quickTitle}
-            onChange={(e) => setQuickTitle(e.target.value)}
-            className="w-full bg-transparent border-none outline-none text-xs text-slate-900 dark:text-white placeholder:text-slate-400"
-          />
+      {!canCreateTask ? (
+        <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 text-amber-500 shrink-0" />
+            <span>A criação de novas tarefas para hoje é permitida apenas para Membros da equipe e Administradores.</span>
+          </div>
+          <span className="font-mono text-[10px] uppercase font-bold text-slate-400">Apenas Leitura</span>
         </div>
+      ) : (
+        <form
+          onSubmit={handleCreateTodayTask}
+          className="p-3 rounded-2xl border border-slate-200 dark:border-sky-500/25 bg-white/90 dark:bg-[#0c1830]/90 backdrop-blur-xl flex flex-col md:flex-row items-center gap-3 shadow-lg shadow-black/5"
+        >
+          <div className="flex items-center gap-2 flex-1 w-full pl-2">
+            <Plus className="h-4 w-4 text-sky-400 shrink-0" />
+            <input
+              type="text"
+              placeholder="+ Adicionar nova demanda para hoje com prazo imediato..."
+              value={quickTitle}
+              onChange={(e) => setQuickTitle(e.target.value)}
+              className="w-full bg-transparent border-none outline-none text-xs text-slate-900 dark:text-white placeholder:text-slate-400"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
-          <select
-            value={quickPriority}
-            onChange={(e) => setQuickPriority(e.target.value as Task["priority"])}
-            className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900 text-xs font-semibold outline-none cursor-pointer"
-          >
-            <option value="urgent">Urgente</option>
-            <option value="high">Alta</option>
-            <option value="medium">Média</option>
-            <option value="low">Baixa</option>
-          </select>
+          <div className="flex items-center gap-2 w-full md:w-auto shrink-0">
+            <select
+              value={quickPriority}
+              onChange={(e) => setQuickPriority(e.target.value as Task["priority"])}
+              className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-slate-900 text-xs font-semibold outline-none cursor-pointer"
+            >
+              <option value="urgent">Urgente</option>
+              <option value="high">Alta</option>
+              <option value="medium">Média</option>
+              <option value="low">Baixa</option>
+            </select>
 
-          <Button
-            type="submit"
-            size="sm"
-            className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-sky-500/20 cursor-pointer"
-          >
-            Adicionar Hoje
-          </Button>
-        </div>
-      </form>
+            <Button
+              type="submit"
+              size="sm"
+              className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-md shadow-sky-500/20 cursor-pointer"
+            >
+              Adicionar Hoje
+            </Button>
+          </div>
+        </form>
+      )}
 
       {/* Barra de Filtros Rápidos */}
       <div className="flex items-center justify-between flex-wrap gap-2 pt-2">
@@ -522,9 +619,19 @@ export default function TodayTasksPage() {
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
                 {/* Checkbox de Conclusão Rápida */}
                 <button
-                  onClick={(e) => handleToggleDone(task, e)}
-                  className="p-1 text-slate-400 hover:text-emerald-500 transition-colors cursor-pointer shrink-0"
-                  title={task.isDone ? "Marcar como não concluída" : "Concluir tarefa"}
+                  disabled={!canEditTask}
+                  onClick={(e) => canEditTask && handleToggleDone(task, e)}
+                  className={cn(
+                    "p-1 text-slate-400 transition-colors shrink-0",
+                    canEditTask ? "hover:text-emerald-500 cursor-pointer" : "opacity-45 cursor-not-allowed"
+                  )}
+                  title={
+                    !canEditTask
+                      ? "Apenas membros e administradores podem alterar o status da tarefa diretamente"
+                      : task.isDone
+                      ? "Marcar como não concluída"
+                      : "Concluir tarefa"
+                  }
                 >
                   {task.isDone ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-500" />

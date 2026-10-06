@@ -25,11 +25,13 @@ export default function WorkspaceHomePage() {
     setIsNewTaskModalOpen,
     setBoardToDelete,
     setIsDeleteBoardModalOpen,
+    isTaskVisibleForCurrentUser,
   } = useTasks();
 
-  const totalTasks = tasks.length;
-  const inProgressCount = tasks.filter((t) => t.statusId.includes("2") || t.statusId.includes("in_progress")).length;
-  const urgentCount = tasks.filter((t) => t.priority === "urgent").length;
+  const visibleTasks = tasks.filter(isTaskVisibleForCurrentUser);
+  const totalTasks = visibleTasks.length;
+  const inProgressCount = visibleTasks.filter((t) => t.statusId.includes("2") || t.statusId.includes("in_progress")).length;
+  const urgentCount = visibleTasks.filter((t) => t.priority === "urgent").length;
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto p-8 space-y-8 relative select-none">
@@ -134,7 +136,7 @@ export default function WorkspaceHomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {areas.flatMap((area) =>
             area.projects.map((proj) => {
-              const projTasks = tasks.filter((t) => t.projectId === proj.id);
+              const projTasks = tasks.filter((t) => t.projectId === proj.id && isTaskVisibleForCurrentUser(t));
 
               return (
                 <div

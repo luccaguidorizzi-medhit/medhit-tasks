@@ -29,7 +29,16 @@ import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { currentUser, hasPermission, switchActiveRole } = useTasks();
+  const {
+    currentUser,
+    hasPermission,
+    switchActiveRole,
+    isAiConfigured,
+    aiApiKey,
+    saveAiApiKey,
+    removeAiApiKey,
+  } = useTasks();
+  const [inputAiKey, setInputAiKey] = useState("");
 
   const canViewTelemetry = hasPermission("view_telemetry");
   const canManageSettings = hasPermission("manage_settings");
@@ -287,19 +296,87 @@ export default function SettingsPage() {
 
         {activeTab === "ai" && (
           <div className="max-w-xl space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Agentes & Token IA</h3>
-            <p className="text-xs text-slate-400">
-              Credenciais centralizadas no servidor para alimentar agentes LLM de forma segura.
-            </p>
-            <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-black/30 border border-slate-200 dark:border-white/10 space-y-2">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">OpenAI API Key</span>
-              <input
-                type="password"
-                disabled
-                value="••••••••••••••••••••••••••••••••"
-                className="w-full bg-slate-200/50 dark:bg-black/50 border border-slate-300 dark:border-white/10 rounded-lg p-2 text-xs font-mono cursor-not-allowed text-slate-400"
-              />
-              <span className="text-[10px] text-slate-500 block">Gerenciado via variáveis de ambiente seguras.</span>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Agentes & Token IA</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Conecte sua chave de API para habilitar os Agentes Autônomos de Inteligência Artificial no MedHit Tasks.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/80 dark:border-white/5">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Status do Módulo de IA</span>
+                {isAiConfigured ? (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 font-bold uppercase">
+                    🟢 Conectada & Ativa
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/15 text-rose-500 border border-rose-500/30 font-bold uppercase">
+                    🔴 Nenhuma Chave Conectada
+                  </span>
+                )}
+              </div>
+
+              {isAiConfigured ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                      Chave Ativa no Workspace
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 font-bold uppercase">
+                      Pronta para uso
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={aiApiKey ? `${aiApiKey.slice(0, 7)}••••••••••••${aiApiKey.slice(-4)}` : "••••••••••••••••••••••••"}
+                      className="flex-1 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-500 cursor-not-allowed"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={removeAiApiKey}
+                      className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 border-rose-500/30 cursor-pointer"
+                    >
+                      Desconectar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
+                    Conectar Chave de API (OpenAI, Gemini ou Anthropic)
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <input
+                      type="password"
+                      value={inputAiKey}
+                      onChange={(e) => setInputAiKey(e.target.value)}
+                      placeholder="Cole sua chave (ex: sk-... ou AIza...)"
+                      className="flex-1 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500/50"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        if (!inputAiKey.trim()) {
+                          return;
+                        }
+                        saveAiApiKey(inputAiKey);
+                        setInputAiKey("");
+                      }}
+                      className="text-xs bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold cursor-pointer"
+                    >
+                      Salvar & Ativar
+                    </Button>
+                  </div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+                    A chave é mantida de forma segura no ambiente local da sua sessão do MedHit Tasks.
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

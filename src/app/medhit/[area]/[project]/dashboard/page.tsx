@@ -31,6 +31,7 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
     currentProject,
     setCurrentProjectBySlug,
     setIsNewTaskModalOpen,
+    isTaskVisibleForCurrentUser,
   } = useTasks();
 
   React.useEffect(() => {
@@ -57,7 +58,9 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
     );
   }
 
-  const projectTasks = tasks.filter((t) => t.projectId === activeProject.id);
+  const projectTasks = tasks.filter(
+    (t) => t.projectId === activeProject.id && isTaskVisibleForCurrentUser(t)
+  );
 
   // Métricas de progresso
   const totalTasks = projectTasks.length;

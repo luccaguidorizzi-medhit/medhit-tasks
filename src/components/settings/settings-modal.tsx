@@ -53,7 +53,16 @@ interface SettingsModalProps {
 
 export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: SettingsModalProps) {
   const { theme, setTheme } = useTheme();
-  const { currentUser, hasPermission, switchActiveRole } = useTasks();
+  const {
+    currentUser,
+    hasPermission,
+    switchActiveRole,
+    isAiConfigured,
+    aiApiKey,
+    saveAiApiKey,
+    removeAiApiKey,
+  } = useTasks();
+  const [inputAiKey, setInputAiKey] = useState("");
 
   const canViewTelemetry = hasPermission("view_telemetry");
   const canManageMembers = hasPermission("manage_members");
@@ -417,39 +426,103 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
             )}
 
             {activeTab === "ai" && (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 font-mono">
-                    Chaves de API & Modelos LLM
+                  <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1 font-mono flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-sky-400" />
+                    <span>Chaves de API & Modelos LLM</span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Gerenciamento seguro de credenciais para os agentes autônomos.
+                    Gerenciamento seguro de credenciais para os agentes autônomos e automações do MedHit Tasks.
                   </p>
                 </div>
 
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5">
-                  <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
-                    As chaves são gerenciadas via variáveis de ambiente no servidor (.env.local) para garantir total conformidade de segurança.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">OpenAI API Key</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="password"
-                      disabled
-                      value="••••••••••••••••••••••••••••••••"
-                      className="flex-1 bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-400 cursor-not-allowed"
-                    />
-                    <Button variant="secondary" size="sm" disabled className="text-xs opacity-50">
-                      Vincular Token
-                    </Button>
+                {/* Status da Conexão */}
+                <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+                  isAiConfigured
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                    : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                }`}>
+                  {isAiConfigured ? (
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold flex items-center gap-2">
+                      <span>{isAiConfigured ? "Chave de IA Conectada — Agentes Ativos" : "Nenhuma Chave Conectada — Agentes Inativos"}</span>
+                    </div>
+                    <p className="text-[11px] opacity-90 leading-relaxed text-slate-600 dark:text-slate-300">
+                      {isAiConfigured
+                        ? "O motor de inteligência artificial está habilitado. Tarefas automáticas e o painel de agentes estão disponíveis para a equipe."
+                        : "Por segurança e para evitar custos inesperados, os agentes autônomos ficam desabilitados no menu até que uma chave válida de API seja configurada."}
+                    </p>
                   </div>
-                  <span className="text-[10px] text-slate-500 block">
-                    Integração sob demanda por chave de serviço dedicada.
-                  </span>
+                </div>
+
+                {/* Painel de Configuração da Chave */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] space-y-4">
+                  {isAiConfigured ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                          Chave Ativa no Workspace
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 font-bold uppercase">
+                          Pronta para uso
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={aiApiKey ? `${aiApiKey.slice(0, 7)}••••••••••••${aiApiKey.slice(-4)}` : "••••••••••••••••••••••••"}
+                          className="flex-1 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-500 cursor-not-allowed"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={removeAiApiKey}
+                          className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 border-rose-500/30"
+                        >
+                          Desconectar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
+                        Conectar Chave de API (OpenAI, Gemini ou Anthropic)
+                      </label>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <input
+                          type="password"
+                          value={inputAiKey}
+                          onChange={(e) => setInputAiKey(e.target.value)}
+                          placeholder="Cole sua chave (ex: sk-... ou AIza...)"
+                          className="flex-1 bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500/50"
+                        />
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            if (!inputAiKey.trim()) {
+                              toast.error("Por favor, informe uma chave de API válida.");
+                              return;
+                            }
+                            saveAiApiKey(inputAiKey);
+                            setInputAiKey("");
+                          }}
+                          className="text-xs bg-sky-500 hover:bg-sky-400 text-slate-950 font-semibold"
+                        >
+                          Salvar & Ativar
+                        </Button>
+                      </div>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+                        A chave é mantida de forma segura no ambiente local da sua sessão do MedHit Tasks.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

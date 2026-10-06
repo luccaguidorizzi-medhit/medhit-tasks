@@ -61,7 +61,11 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     setIsDeleteBoardModalOpen,
     boardToDelete,
     setBoardToDelete,
+    isTaskVisibleForCurrentUser,
+    hasPermission,
   } = useTasks();
+
+  const canCreateTask = hasPermission("create_task");
 
   const [activeFilter, setActiveFilter] = useState("all");
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -192,8 +196,10 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     );
   }
 
-  // Filtragem ultra segura das tarefas pertencentes a este projeto
-  const rawProjectTasks = tasks.filter((t) => t.projectId === activeProject.id);
+  // Filtragem ultra segura das tarefas pertencentes a este projeto respeitando RBAC
+  const rawProjectTasks = tasks.filter(
+    (t) => t.projectId === activeProject.id && isTaskVisibleForCurrentUser(t)
+  );
 
   const projectTasks = rawProjectTasks.filter((t) => {
     if (activeFilter === "agent") return t.taskType === "agent_task";
@@ -202,6 +208,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
   });
 
   const handleQuickAdd = (statusId: string, title: string) => {
+    if (!canCreateTask) return;
     createTask({
       title,
       statusId,
@@ -213,6 +220,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
   };
 
   const handleBacklogQuickAdd = (title: string, priority: any) => {
+    if (!canCreateTask) return;
     createTask({
       title,
       statusId: statuses[0]?.id,
