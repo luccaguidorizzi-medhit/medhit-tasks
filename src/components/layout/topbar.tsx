@@ -144,49 +144,12 @@ export function Topbar({
           </EducationalTooltip>
         </div>
 
-        {/* Direita: Ações & Perfil com Tooltips Educativos */}
+        {/* Direita: Ações & Perfil */}
         <div className="flex items-center gap-2">
-          {/* Acesso Rápido: Tarefas de Hoje */}
-          <EducationalTooltip
-            title="Tarefas para Hoje"
-            description="Visão consolidada das suas demandas com vencimento hoje, atrasadas e próximos prazos."
-          >
-            <Link href="/medhit/today">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
-              >
-                <CalendarCheck2 className="h-4 w-4 text-sky-400" />
-                <span className="hidden md:inline font-medium">Hoje</span>
-              </Button>
-            </Link>
-          </EducationalTooltip>
-
-
-
-          {/* Acesso Rápido: Auditoria & Telemetria (Apenas Admin / Owner) */}
-          {canViewTelemetry && (
-            <EducationalTooltip
-              title="Auditoria & Telemetria"
-              description="Acesso restrito de administrador aos registros em tempo real de integridade e ações."
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsTelemetryOpen(true)}
-                className="h-8 px-2.5 gap-1.5 text-xs text-sky-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-sky-500/30"
-              >
-                <Activity className="h-4 w-4 text-sky-400 animate-pulse" />
-                <span className="hidden lg:inline font-semibold">Auditoria</span>
-              </Button>
-            </EducationalTooltip>
-          )}
-
           {/* Botão Configurações */}
           <EducationalTooltip
             title="Configurações do Workspace"
-            description="Alterne temas, gerencie credenciais de IA, regras RBAC e endpoints MCP."
+            description="Alterne temas, gerencie credenciais de IA, regras RBAC e membros."
           >
             <Button
               variant="ghost"
@@ -205,7 +168,7 @@ export function Topbar({
           {/* Theme Toggle */}
           <EducationalTooltip
             title="Alternador de Tema"
-            description="Alterne entre o Modo Claro (alto contraste) e o Modo Escuro (fundo espacial cósmico)."
+            description="Alterne entre o Modo Claro e o Modo Escuro."
           >
             <Button
               variant="ghost"
@@ -218,25 +181,6 @@ export function Topbar({
               ) : (
                 <Moon className="h-4 w-4 text-sky-500" />
               )}
-            </Button>
-          </EducationalTooltip>
-
-          {/* Notificações */}
-          <EducationalTooltip
-            title="Central de Notificações"
-            description="Avisos de novas menções, conclusões de tarefas e solicitações de aprovação."
-          >
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setSettingsDefaultTab("permissions");
-                setIsSettingsOpen(true);
-              }}
-              className="h-8 w-8 text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg relative"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#070e1e]"></span>
             </Button>
           </EducationalTooltip>
 

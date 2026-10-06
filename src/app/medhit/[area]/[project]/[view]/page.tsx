@@ -233,49 +233,14 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
 
   const renderView = () => {
     switch (view) {
-      case "backlog":
-        return (
-          <BacklogView
-            statuses={statuses}
-            tasks={rawProjectTasks}
-            onTaskClick={setSelectedTask}
-            onMoveToBoard={moveTask}
-            onQuickAddTask={handleBacklogQuickAdd}
-          />
-        );
-
+      case "table":
       case "list":
         return (
-          <div className="flex-1 overflow-y-auto p-6">
-            <ListView
+          <div className="flex-1 overflow-auto p-6">
+            <TableView
               statuses={statuses}
               tasks={projectTasks}
               onTaskClick={setSelectedTask}
-              onQuickAddTask={handleQuickAdd}
-            />
-          </div>
-        );
-
-      case "matrix":
-        return (
-          <div className="flex-1 overflow-hidden">
-            <MatrixView
-              statuses={statuses}
-              tasks={projectTasks}
-              onTaskClick={setSelectedTask}
-              onQuickAddTask={(statusId, title, priority) => {
-                createTask({
-                  title,
-                  statusId: statusId || statuses[0]?.id,
-                  projectId: activeProject.id,
-                  areaId: activeProject.areaId,
-                  priority: priority || "medium",
-                  taskType: "task",
-                });
-              }}
-              onUpdateTaskPriority={(taskId, priority) => {
-                updateTask(taskId, { priority });
-              }}
             />
           </div>
         );
@@ -298,38 +263,6 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
                   taskType: "task",
                 });
               }}
-            />
-          </div>
-        );
-
-      case "sprints":
-        return (
-          <div className="flex-1 overflow-y-auto p-6">
-            <AgileView
-              tasks={projectTasks}
-              sprints={activeProject.sprints || []}
-              onTaskClick={setSelectedTask}
-            />
-          </div>
-        );
-
-      case "roadmap":
-        return (
-          <RoadmapView
-            tasks={projectTasks}
-            statuses={statuses}
-            onTaskClick={setSelectedTask}
-            onQuickAddTask={handleQuickAdd}
-          />
-        );
-
-      case "table":
-        return (
-          <div className="flex-1 overflow-auto p-6">
-            <TableView
-              statuses={statuses}
-              tasks={projectTasks}
-              onTaskClick={setSelectedTask}
             />
           </div>
         );

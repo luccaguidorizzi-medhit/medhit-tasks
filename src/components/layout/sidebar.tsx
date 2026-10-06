@@ -1,9 +1,11 @@
 /**
  * MedHit Integrações & Automações
- * Sidebar de Navegação do MedHit Tasks.
+ * Sidebar de Navegação Simplificada e Pragmática (Estilo Monday.com).
  * 
- * Estrutura refinada de navegação conforme padrões de mercado (Linear, ClickUp, Monday),
- * menu de contexto interativo, controle de permissões por perfil (RBAC) e atalhos rápidos.
+ * 3 seções limpas e objetivas:
+ * 1. Início & Minhas Tarefas
+ * 2. Projetos & Quadros com menu de contexto
+ * 3. Membros, Configurações e Rodapé
  * Assinado por: MedHit Integrações & Automações
  */
 
@@ -14,23 +16,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
-  CheckSquare,
-  Sparkles,
-  Star,
-  Plus,
-  FolderPlus,
-  Zap,
-  Users,
-  Layers,
   CalendarCheck2,
+  FolderKanban,
+  Plus,
+  Users,
+  Settings,
   ExternalLink,
   Copy,
   Trash2,
   Check,
   MoreVertical,
-  Bot,
-  ShieldCheck,
-  Activity,
   Lock,
 } from "lucide-react";
 import { useTasks } from "@/context/task-context";
@@ -59,18 +54,15 @@ interface ContextMenuState {
 }
 
 export function Sidebar({
-  currentProjectSlug = "workshop-medicina-integrativa",
-  currentAreaSlug = "marketing",
-  pendingApprovalsCount = 0,
+  currentProjectSlug = "",
+  currentAreaSlug = "",
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const {
     areas,
     hasPermission,
-    isAiConfigured,
     setIsNewBoardModalOpen,
-    setIsNewTeamModalOpen,
     setBoardToDelete,
     setIsDeleteBoardModalOpen,
   } = useTasks();
@@ -78,7 +70,7 @@ export function Sidebar({
   const canCreateBoard = hasPermission("create_board");
   const canDeleteBoard = hasPermission("delete_board");
 
-  // Estado do Menu de Contexto do Botão Direito
+  // Estado do Menu de Contexto
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     isOpen: false,
     x: 0,
@@ -89,7 +81,6 @@ export function Sidebar({
   const [copiedLink, setCopiedLink] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  // Fecha o menu de contexto ao clicar fora ou rolar
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
@@ -119,7 +110,6 @@ export function Sidebar({
     e.preventDefault();
     e.stopPropagation();
 
-    // Calcula posição na tela sem ultrapassar as bordas
     const menuWidth = 220;
     const menuHeight = 170;
     const x = Math.min(e.clientX, window.innerWidth - menuWidth);
@@ -136,13 +126,6 @@ export function Sidebar({
   const handleOpenBoard = () => {
     if (!contextMenu.project) return;
     const targetUrl = `/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/board`;
-    telemetry.track(
-      "context_menu_action",
-      `Abrir board "${contextMenu.project.name}" via menu de contexto`,
-      { projectId: contextMenu.project.id, url: targetUrl },
-      "info",
-      "sidebar"
-    );
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
     router.push(targetUrl);
   };
@@ -151,18 +134,10 @@ export function Sidebar({
     if (!contextMenu.project) return;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const fullUrl = `${origin}/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/board`;
-    
+
     navigator.clipboard.writeText(fullUrl);
     setCopiedLink(true);
-    toast.success("Link do quadro copiado para a área de transferência!");
-
-    telemetry.track(
-      "context_menu_action",
-      `Link do quadro "${contextMenu.project.name}" copiado`,
-      { projectId: contextMenu.project.id, url: fullUrl },
-      "info",
-      "sidebar"
-    );
+    toast.success("Link do quadro copiado!");
 
     setTimeout(() => {
       setCopiedLink(false);
@@ -173,14 +148,12 @@ export function Sidebar({
   const handleDeleteBoard = () => {
     if (!contextMenu.project) return;
     if (!canDeleteBoard) {
-      toast.error("Permissão insuficiente. Apenas Administradores podem excluir quadros.");
+      toast.error("Apenas administradores podem excluir quadros.");
       setContextMenu((prev) => ({ ...prev, isOpen: false }));
       return;
     }
 
     const targetProj = contextMenu.project;
-
-    // Localiza o objeto completo do projeto a partir de areas
     let fullProject: any = null;
     for (const a of areas) {
       const match = a.projects.find((p) => p.id === targetProj.id);
@@ -193,95 +166,12 @@ export function Sidebar({
     if (fullProject) {
       setBoardToDelete(fullProject);
       setIsDeleteBoardModalOpen(true);
-      telemetry.track(
-        "context_menu_action",
-        `Modal de exclusão do quadro "${fullProject.name}" acionado via menu de contexto`,
-        { projectId: fullProject.id },
-        "warn",
-        "sidebar"
-      );
     }
 
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // Seções de Navegação Estruturadas
-  const workspaceActions = [
-    {
-      title: "Visão Geral",
-      icon: Sparkles,
-      href: "/medhit",
-      isActive: pathname === "/medhit",
-    },
-    {
-      title: "Minhas Tarefas",
-      icon: CalendarCheck2,
-      href: "/medhit/today",
-      isActive: pathname === "/medhit/today",
-    },
-    {
-      title: "Equipes & Áreas",
-      icon: Layers,
-      href: "/medhit/squads",
-      isActive: pathname === "/medhit/squads",
-    },
-  ];
-
-  const automationActions = [
-    {
-      title: "Agentes IA",
-      icon: Bot,
-      href: "/medhit/agents",
-      isActive: pathname === "/medhit/agents",
-      disabled: !isAiConfigured,
-      disabledReason: "Requer chave de API configurada",
-    },
-    {
-      title: "Aprovações",
-      icon: ShieldCheck,
-      href: "/medhit/approvals",
-      isActive: pathname === "/medhit/approvals",
-      badge: pendingApprovalsCount > 0 ? pendingApprovalsCount : undefined,
-    },
-    {
-      title: "Automações",
-      icon: Zap,
-      href: "/medhit/automations",
-      isActive: pathname === "/medhit/automations",
-    },
-  ];
-
-  const governanceActions = [
-    {
-      title: "Membros & Acessos",
-      icon: Users,
-      href: "/medhit/members",
-      isActive: pathname === "/medhit/members",
-    },
-  ];
-
-  const activeProjectActions = currentProjectSlug ? [
-    {
-      title: "Quadro Kanban",
-      icon: LayoutDashboard,
-      href: `/medhit/${currentAreaSlug}/${currentProjectSlug}/board`,
-      isActive: pathname.endsWith("/board"),
-    },
-    {
-      title: "Lista de Tarefas",
-      icon: CheckSquare,
-      href: `/medhit/${currentAreaSlug}/${currentProjectSlug}/list`,
-      isActive: pathname.endsWith("/list") || pathname.endsWith("/table"),
-    },
-    {
-      title: "Dashboard do Projeto",
-      icon: Activity,
-      href: `/medhit/${currentAreaSlug}/${currentProjectSlug}/dashboard`,
-      isActive: pathname.endsWith("/dashboard"),
-    },
-  ] : [];
-
-  // Coleta todos os projetos das áreas dinamicamente
+  // Coleta projetos de todas as áreas
   const allProjects = areas.flatMap((area) =>
     area.projects.map((proj) => ({
       ...proj,
@@ -293,11 +183,11 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="w-64 border-r border-slate-200 dark:border-sky-500/15 bg-white/80 dark:bg-[#070e1e]/90 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
+      <aside className="w-60 border-r border-slate-200 dark:border-sky-500/15 bg-white/90 dark:bg-[#070e1e]/90 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
         {/* Brand Header */}
-        <div className="p-4 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
-          <Link href="/medhit" className="flex items-center gap-3 group">
-            <div className="h-9 w-9 rounded-xl bg-sky-500/10 border border-sky-500/20 p-1.5 flex items-center justify-center shadow-lg shadow-sky-500/20 ring-1 ring-white/10 group-hover:scale-105 transition-transform">
+        <div className="p-3.5 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
+          <Link href="/medhit" className="flex items-center gap-2.5 group">
+            <div className="h-8 w-8 rounded-xl bg-sky-500/10 border border-sky-500/20 p-1 flex items-center justify-center shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
               <img
                 src="/logo.svg"
                 alt="MedHit Logo"
@@ -305,189 +195,77 @@ export function Sidebar({
               />
             </div>
             <div>
-              <div className="font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+              <div className="font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
                 <span>MedHit Tasks</span>
               </div>
-              <p className="text-[10px] text-sky-500 dark:text-sky-400 font-mono tracking-wider font-semibold truncate">
+              <p className="text-[9px] text-sky-500 dark:text-sky-400 font-mono tracking-wider font-semibold truncate">
                 INTEGRAÇÕES & AUTOMAÇÕES
               </p>
             </div>
           </Link>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-          {/* Workspace Hub */}
-          <div>
-            <div className="px-3 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
-              Workspace
-            </div>
+        {/* Corpo da Navegação */}
+        <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
+          {/* Seção 1: Início & Tarefas */}
+          <div className="space-y-0.5">
+            <Link
+              href="/medhit"
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                pathname === "/medhit"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+              )}
+            >
+              <LayoutDashboard
+                className={cn(
+                  "h-4 w-4",
+                  pathname === "/medhit" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                )}
+              />
+              <span>Início</span>
+            </Link>
 
-            <div className="space-y-0.5">
-              {workspaceActions.map((action) => (
-                <Link
-                  key={action.title}
-                  href={action.href}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                    action.isActive
-                      ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <action.icon
-                      className={cn(
-                        "h-4 w-4",
-                        action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                      )}
-                    />
-                    <span>{action.title}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+            <Link
+              href="/medhit/today"
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                pathname === "/medhit/today"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+              )}
+            >
+              <CalendarCheck2
+                className={cn(
+                  "h-4 w-4",
+                  pathname === "/medhit/today" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                )}
+              />
+              <span>Minhas Tarefas</span>
+            </Link>
           </div>
 
-          {/* Seção do Quadro Ativo (se estiver em um projeto) */}
-          {activeProjectActions.length > 0 && (
-            <div>
-              <div className="px-3 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
-                Quadro Ativo
-              </div>
-
-              <div className="space-y-0.5">
-                {activeProjectActions.map((action) => (
-                  <Link
-                    key={action.title}
-                    href={action.href}
-                    className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      action.isActive
-                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                    )}
-                  >
-                    <action.icon
-                      className={cn(
-                        "h-4 w-4",
-                        action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                      )}
-                    />
-                    <span className="truncate">{action.title}</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Automação & IA */}
+          {/* Seção 2: Projetos & Quadros */}
           <div>
-            <div className="px-3 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
-              Automações & IA
-            </div>
-
-            <div className="space-y-0.5">
-              {automationActions.map((action) => {
-                if (action.disabled) {
-                  return (
-                    <div
-                      key={action.title}
-                      onClick={() => {
-                        toast.error("Módulo de IA Inativo", {
-                          description: "Nenhuma chave de API de IA conectada. Adicione uma chave em Configurações para habilitar os Agentes.",
-                        });
-                      }}
-                      title="Módulo de IA inativo: Nenhuma chave de API configurada"
-                      className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-slate-400 dark:text-slate-600 opacity-60 cursor-not-allowed hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-all select-none"
-                    >
-                      <div className="flex items-center gap-3">
-                        <action.icon className="h-4 w-4 text-slate-400 dark:text-slate-600" />
-                        <span>{action.title}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                          Requer Chave
-                        </span>
-                        <Lock className="h-3 w-3 text-amber-500" />
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={action.title}
-                    href={action.href}
-                    className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                      action.isActive
-                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <action.icon
-                        className={cn(
-                          "h-4 w-4",
-                          action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                        )}
-                      />
-                      <span>{action.title}</span>
-                    </div>
-
-                    {action.badge !== undefined && (
-                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono font-bold bg-amber-500 text-slate-950">
-                        {action.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Governança */}
-          <div>
-            <div className="px-3 mb-1.5 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
-              Governança
-            </div>
-
-            <div className="space-y-0.5">
-              {governanceActions.map((action) => (
-                <Link
-                  key={action.title}
-                  href={action.href}
-                  className={cn(
-                    "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
-                    action.isActive
-                      ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <action.icon
-                      className={cn(
-                        "h-4 w-4",
-                        action.isActive ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                      )}
-                    />
-                    <span>{action.title}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Projetos do Workspace & Botão + Novo Projeto */}
-          <div>
-            <div className="px-3 mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+            <div className="px-2.5 mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
               <div className="flex items-center gap-1.5">
-                <Star className="h-3 w-3 text-amber-400" />
+                <FolderKanban className="h-3 w-3 text-sky-500" />
                 <span>Projetos & Quadros</span>
               </div>
+              {canCreateBoard && (
+                <button
+                  type="button"
+                  onClick={() => setIsNewBoardModalOpen(true)}
+                  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
+                  title="Criar novo quadro"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              )}
             </div>
 
-            <div className="space-y-0.5">
+            <div className="space-y-0.5 max-h-[calc(100vh-320px)] overflow-y-auto">
               {allProjects.map((proj) => (
                 <div
                   key={proj.id}
@@ -497,13 +275,13 @@ export function Sidebar({
                   <Link
                     href={`/medhit/${proj.areaSlug}/${proj.slug}/board`}
                     className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all",
+                      "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
                       proj.active
-                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30 shadow-xs font-semibold"
+                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                     )}
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-2 truncate">
                       <span
                         className="h-2 w-2 rounded-full shrink-0 shadow-xs"
                         style={{ backgroundColor: proj.color || "#38bdf8" }}
@@ -511,11 +289,10 @@ export function Sidebar({
                       <span className="truncate">{proj.name}</span>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1">
                       {proj.active && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shrink-0 shadow-[0_0_8px_#38bdf8]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shrink-0 shadow-[0_0_6px_#38bdf8]" />
                       )}
-                      {/* Botão sutil de menu rápido (3 pontinhos) visível no hover */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -524,7 +301,7 @@ export function Sidebar({
                           handleBoardContextMenu(e, proj);
                         }}
                         className="opacity-0 group-hover/item:opacity-100 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-opacity cursor-pointer"
-                        title="Opções do quadro (Botão Direito)"
+                        title="Opções do quadro"
                       >
                         <MoreVertical className="h-3 w-3" />
                       </button>
@@ -533,47 +310,66 @@ export function Sidebar({
                 </div>
               ))}
             </div>
+
+            {canCreateBoard && (
+              <div className="pt-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsNewBoardModalOpen(true)}
+                  className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Novo Projeto</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Botão Criar Projeto no Rodapé da Sidebar */}
-        {canCreateBoard && (
-          <div className="px-3 pb-2">
-            <button
-              onClick={() => setIsNewBoardModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-600 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-xs font-medium transition-all cursor-pointer"
-            >
-              <FolderPlus className="h-3.5 w-3.5" />
-              <span>+ Novo Projeto</span>
-            </button>
-          </div>
-        )}
+        {/* Seção 3: Rodapé com Configurações e Membros */}
+        <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
+          <Link
+            href="/medhit/members"
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+              pathname === "/medhit/members"
+                ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+            )}
+          >
+            <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span>Membros & Equipe</span>
+          </Link>
 
-        {/* Workspace Footer Card */}
-        <div className="p-3 border-t border-slate-200 dark:border-sky-500/15">
-          <div className="p-3.5 rounded-xl border border-sky-500/30 bg-gradient-to-br from-sky-500/10 to-indigo-500/10 dark:from-sky-500/15 dark:to-indigo-500/15 space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-900 dark:text-white">Workspace MedHit</span>
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-400 font-semibold">
-                MedHit
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-              MedHit Integrações & Automações corporativas de alta performance.
-            </p>
+          <Link
+            href="/medhit/settings"
+            className={cn(
+              "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+              pathname === "/medhit/settings"
+                ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+            )}
+          >
+            <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <span>Configurações</span>
+          </Link>
+
+          {/* Assinatura no Rodapé */}
+          <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex items-center justify-between font-mono">
+            <span>MedHit Tasks</span>
+            <span className="text-sky-500 font-semibold">v1.0</span>
           </div>
         </div>
       </aside>
 
-      {/* Menu de Contexto Elegante no Botão Direito */}
+      {/* Menu de Contexto do Botão Direito */}
       {contextMenu.isOpen && contextMenu.project && (
         <div
           ref={contextMenuRef}
           style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-          className="fixed z-50 w-56 rounded-2xl bg-white/95 dark:bg-[#081226]/95 border border-slate-200 dark:border-sky-500/30 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 select-none"
+          className="fixed z-50 w-52 rounded-xl bg-white/95 dark:bg-[#081226]/95 border border-slate-200 dark:border-sky-500/30 p-1 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 select-none"
         >
-          {/* Header do Menu */}
-          <div className="px-2.5 py-1.5 border-b border-slate-200/80 dark:border-white/10 mb-1 flex items-center gap-2">
+          <div className="px-2 py-1 border-b border-slate-200/80 dark:border-white/10 mb-1 flex items-center gap-2">
             <span
               className="h-2 w-2 rounded-full shrink-0"
               style={{ backgroundColor: contextMenu.project.color || "#38bdf8" }}
@@ -584,19 +380,17 @@ export function Sidebar({
           </div>
 
           <div className="space-y-0.5">
-            {/* Opção 1: Abrir Board */}
             <button
               onClick={handleOpenBoard}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer text-left"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer text-left"
             >
               <ExternalLink className="h-3.5 w-3.5 text-sky-500" />
-              <span>Abrir Board</span>
+              <span>Abrir Quadro</span>
             </button>
 
-            {/* Opção 2: Copiar Link */}
             <button
               onClick={handleCopyLink}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer text-left"
             >
               {copiedLink ? (
                 <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -606,29 +400,21 @@ export function Sidebar({
               <span>{copiedLink ? "Link Copiado!" : "Copiar Link"}</span>
             </button>
 
-            {/* Separador */}
             <div className="my-1 border-t border-slate-200/60 dark:border-white/5" />
 
-            {/* Opção 3: Excluir Board */}
             <button
               onClick={handleDeleteBoard}
               disabled={!canDeleteBoard}
               className={cn(
-                "w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors text-left",
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors text-left",
                 canDeleteBoard
                   ? "text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
                   : "opacity-40 cursor-not-allowed text-slate-400"
               )}
-              title={canDeleteBoard ? "Excluir quadro" : "Apenas administradores podem excluir quadros"}
             >
               {canDeleteBoard ? <Trash2 className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              <span>{canDeleteBoard ? "Excluir Board" : "Excluir (Restrito)"}</span>
+              <span>{canDeleteBoard ? "Excluir Quadro" : "Excluir (Restrito)"}</span>
             </button>
-          </div>
-
-          {/* Mini Rodapé */}
-          <div className="px-2.5 pt-1 mt-1 border-t border-slate-200/50 dark:border-white/5 text-[9px] font-mono text-slate-400 text-right">
-            MedHit Integrações & Automações
           </div>
         </div>
       )}

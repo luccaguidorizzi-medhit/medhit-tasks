@@ -156,6 +156,81 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDelete, setBoardToDelete] = useState<Project | null>(null);
 
+  // Flag para controle de hidratação e persistência em localStorage
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  // Hidratação a partir de localStorage no carregamento inicial
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedAreas = localStorage.getItem("medhit_areas_data_v1");
+        if (storedAreas) {
+          const parsed = JSON.parse(storedAreas);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAreas(parsed);
+            store.workspace.areas = parsed;
+          }
+        }
+        const storedTasks = localStorage.getItem("medhit_tasks_data_v1");
+        if (storedTasks) {
+          const parsed = JSON.parse(storedTasks);
+          if (Array.isArray(parsed)) {
+            setTasks(parsed);
+            store.tasks = parsed;
+          }
+        }
+        const storedMembers = localStorage.getItem("medhit_members_data_v1");
+        if (storedMembers) {
+          const parsed = JSON.parse(storedMembers);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMembers(parsed);
+            store.workspace.members = parsed;
+          }
+        }
+      } catch (err) {
+        console.error("Falha ao recuperar dados do localStorage:", err);
+      } finally {
+        setHasHydrated(true);
+      }
+    }
+  }, []);
+
+  // Persiste tasks sempre que alteradas após hidratação
+  useEffect(() => {
+    if (hasHydrated && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(tasks));
+        store.tasks = tasks;
+      } catch (e) {
+        console.error("Erro ao salvar tarefas:", e);
+      }
+    }
+  }, [tasks, hasHydrated]);
+
+  // Persiste areas sempre que alteradas após hidratação
+  useEffect(() => {
+    if (hasHydrated && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("medhit_areas_data_v1", JSON.stringify(areas));
+        store.workspace.areas = areas;
+      } catch (e) {
+        console.error("Erro ao salvar áreas:", e);
+      }
+    }
+  }, [areas, hasHydrated]);
+
+  // Persiste members sempre que alterados após hidratação
+  useEffect(() => {
+    if (hasHydrated && typeof window !== "undefined") {
+      try {
+        localStorage.setItem("medhit_members_data_v1", JSON.stringify(members));
+        store.workspace.members = members;
+      } catch (e) {
+        console.error("Erro ao salvar membros:", e);
+      }
+    }
+  }, [members, hasHydrated]);
+
   // Controle de Usuário Ativo e Simulação de Role (RBAC)
   const [activeUserId, setActiveUserId] = useState<string>(() => {
     const defaultUser = store.workspace.members.find(
