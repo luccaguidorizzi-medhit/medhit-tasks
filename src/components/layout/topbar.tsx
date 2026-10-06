@@ -46,7 +46,7 @@ export function Topbar({
   onOpenSearch,
 }: TopbarProps) {
   const { theme, setTheme } = useTheme();
-  const { currentUser, hasPermission, switchActiveRole } = useTasks();
+  const { currentUser, hasPermission, switchActiveRole, switchActiveUser, members } = useTasks();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
