@@ -47,6 +47,14 @@ export const seedData = {
       mcpToken: "medtask_user_rafael_sec2026",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rafael",
     },
+    {
+      name: "Carlos Eduardo (Convidado Externo)",
+      email: "carlos.convidado@medhit.com.br",
+      role: "guest" as const,
+      password: "medhit_carlos_guest_2026",
+      mcpToken: "medtask_user_carlos_sec2026",
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos",
+    },
   ],
   agents: [
     {

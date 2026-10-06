@@ -292,8 +292,39 @@ export function Topbar({
 
                 {/* Simulador de Papéis RBAC */}
                 <div className="p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl mb-2 border border-slate-200/50 dark:border-white/5">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5">
-                    Simular Perfil de Acesso:
+                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center justify-between">
+                    <span>Alternar Usuário Ativo:</span>
+                    <span className="text-[9px] text-sky-400 font-normal">({members.length} usuários)</span>
+                  </div>
+                  <div className="space-y-1 mb-2 max-h-36 overflow-y-auto pr-1">
+                    {members.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => {
+                          switchActiveUser(m.id);
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all ${
+                          currentUser.id === m.id
+                            ? "bg-sky-500/15 border border-sky-500/30 text-sky-400"
+                            : "hover:bg-slate-200/60 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img src={m.avatarUrl} alt={m.name} className="h-4 w-4 rounded-full object-cover shrink-0" />
+                          <span className="text-xs truncate">{m.name}</span>
+                        </div>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase shrink-0 ${
+                          m.role === "admin" || m.role === "owner" ? "text-amber-400 bg-amber-400/10" : m.role === "member" ? "text-sky-400 bg-sky-400/10" : "text-slate-400 bg-slate-400/10"
+                        }`}>
+                          {m.role}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 border-t border-slate-200/50 dark:border-white/5 pt-1.5">
+                    Ou Simular Papel (Role Override):
                   </div>
                   <div className="grid grid-cols-2 gap-1 text-[10px] font-mono">
                     {(["owner", "admin", "member", "guest"] as const).map((r) => (
