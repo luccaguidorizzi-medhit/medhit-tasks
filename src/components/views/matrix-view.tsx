@@ -154,7 +154,7 @@ export function MatrixView({
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden p-6 space-y-4 select-none">
-      {/* Top Banner de Diagnóstico Estratégico (Metodologia MedHit Integrações & Automações) */}
+      {/* Top Banner de Diagnóstico Estratégico (Metodologia MedHit Tasks) */}
       <div className="p-4 rounded-2xl border border-slate-200 dark:border-sky-500/20 bg-white/80 dark:bg-[#0c1830]/80 backdrop-blur-xl shadow-lg space-y-3 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">

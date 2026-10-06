@@ -99,6 +99,7 @@ interface TaskContextType {
   areas: Area[];
   currentArea: Area | null;
   currentProject: Project | null;
+  setCurrentProject: (project: Project | null) => void;
   selectedTask: Task | null;
   isNewTaskModalOpen: boolean;
   isNewBoardModalOpen: boolean;
@@ -348,11 +349,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
 
-  // Inicializa com primeiro projeto/área seguro ou null
-  const [currentArea, setCurrentArea] = useState<Area | null>(store.workspace.areas[0] || null);
-  const [currentProject, setCurrentProject] = useState<Project | null>(
-    store.workspace.areas[0]?.projects[0] || null
-  );
+  // Inicializa com null para que a tela inicial /medhit carregue limpa
+  const [currentArea, setCurrentArea] = useState<Area | null>(null);
+  const [currentProject, setCurrentProject] = useState<Project | null>(null);
 
   /**
    * Resolução à prova de falhas: busca projeto por slug da área e do projeto.
@@ -540,6 +539,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     // Se o projeto deletado for o projeto ativo atual, limpa a seleção para retornar à home limpa
     if (currentProject?.id === projectId) {
       setCurrentProject(null);
+      setCurrentArea(null);
     }
 
     setIsDeleteBoardModalOpen(false);
@@ -1137,6 +1137,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         areas,
         currentArea,
         currentProject,
+        setCurrentProject,
         selectedTask,
         isNewTaskModalOpen,
         isNewBoardModalOpen,

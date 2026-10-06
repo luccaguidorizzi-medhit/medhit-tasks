@@ -145,7 +145,12 @@ export function Topbar({
           ) : isSquads ? (
             <>
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
-              <span className="text-slate-900 dark:text-white font-bold">Equipes & Squads</span>
+              <span className="text-slate-900 dark:text-white font-bold">Equipes & Áreas</span>
+            </>
+          ) : pathname.startsWith("/medhit/") && pathname.split("/").filter(Boolean).length === 2 && !isToday && !isMembers && !isSettings ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold">{areaName}</span>
             </>
           ) : null}
         </div>

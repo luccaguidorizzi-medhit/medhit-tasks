@@ -497,7 +497,7 @@ export function ListView({
 
       {/* Assinatura MedHit */}
       <div className="text-right text-[10px] font-mono text-slate-400 dark:text-slate-600">
-        ListView Grouping Engine mantido por MedHit Integrações & Automações
+        MedHit Tasks by Integrações & Automações
       </div>
     </div>
   );

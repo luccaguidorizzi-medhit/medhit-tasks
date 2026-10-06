@@ -29,9 +29,12 @@ import {
   Minus,
   Check,
   ChevronDown,
+  ChevronRight,
   UserPlus,
   Trash2,
+  Edit2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -76,6 +79,16 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
   const [activeStatusMenu, setActiveStatusMenu] = useState<string | null>(null);
   const [activePriorityMenu, setActivePriorityMenu] = useState<string | null>(null);
   const [activeAssigneeMenu, setActiveAssigneeMenu] = useState<string | null>(null);
+
+  // Estados de grupos colapsados
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
+  // Edição inline de título
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>("");
+
+  // Edição inline de data limite
+  const [editingDateTaskId, setEditingDateTaskId] = useState<string | null>(null);
 
   // Inputs inline de nova tarefa por grupo
   const [newTitleByStatus, setNewTitleByStatus] = useState<Record<string, string>>({});
@@ -169,6 +182,23 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
               style={{ borderLeftColor: status.color, borderLeftWidth: "4px" }}
             >
               <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCollapsedGroups((prev) => ({
+                      ...prev,
+                      [status.id]: !prev[status.id],
+                    }))
+                  }
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title={collapsedGroups[status.id] ? "Expandir grupo" : "Recolher grupo"}
+                >
+                  {collapsedGroups[status.id] ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
                 <span
                   className="px-2.5 py-0.5 rounded-full text-xs font-bold text-slate-900 dark:text-white"
                   style={{ backgroundColor: `${status.color}25`, border: `1px solid ${status.color}50` }}
@@ -181,57 +211,124 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
               </div>
             </div>
 
-            {/* Tabela de Tarefas do Grupo */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-white/5 text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px] font-semibold select-none">
-                    <th className="py-2 px-3 w-10 text-center"></th>
-                    <th className="py-2 px-3">Tarefa</th>
-                    <th className="py-2 px-3 w-40 text-center">Status</th>
-                    <th className="py-2 px-3 w-36 text-center">Responsável</th>
-                    <th className="py-2 px-3 w-32 text-center">Prioridade</th>
-                    <th className="py-2 px-3 w-28 text-center">Data Limite</th>
-                    <th className="py-2 px-3 w-12 text-center"></th>
-                  </tr>
-                </thead>
+            {/* Conteúdo do Grupo (Recolhido ou Tabela) */}
+            {collapsedGroups[status.id] ? (
+              <div className="px-5 py-3 text-xs text-slate-400 dark:text-slate-500 italic bg-slate-50/30 dark:bg-slate-950/20">
+                Grupo recolhido ({groupTasks.length} {groupTasks.length === 1 ? "tarefa" : "tarefas"})
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200/80 dark:border-white/5 text-slate-400 dark:text-slate-500 uppercase tracking-wider text-[10px] font-semibold select-none">
+                      <th className="py-2 px-3 w-10 text-center"></th>
+                      <th className="py-2 px-3">Tarefa</th>
+                      <th className="py-2 px-3 w-40 text-center">Status</th>
+                      <th className="py-2 px-3 w-36 text-center">Responsável</th>
+                      <th className="py-2 px-3 w-32 text-center">Prioridade</th>
+                      <th className="py-2 px-3 w-28 text-center">Data Limite</th>
+                      <th className="py-2 px-3 w-12 text-center"></th>
+                    </tr>
+                  </thead>
 
-                <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
-                  {groupTasks.map((task) => {
-                    const taskStatus = statuses.find((s) => s.id === task.statusId) || status;
-                    const priorityCfg = PRIORITY_OPTIONS.find((p) => p.id === task.priority) || PRIORITY_OPTIONS[4];
-                    const dueInfo = formatDueDate(task.dueDate);
-                    const isDone = taskStatus.category === "done";
+                  <tbody className="divide-y divide-slate-100 dark:divide-white/[0.04]">
+                    {groupTasks.map((task) => {
+                      const taskStatus = statuses.find((s) => s.id === task.statusId) || status;
+                      const priorityCfg = PRIORITY_OPTIONS.find((p) => p.id === task.priority) || PRIORITY_OPTIONS[4];
+                      const dueInfo = formatDueDate(task.dueDate);
+                      const isDone = taskStatus.category === "done";
 
-                    return (
-                      <tr
-                        key={task.id}
-                        onClick={() => onTaskClick(task)}
-                        className="h-11 hover:bg-sky-500/5 transition-colors cursor-pointer group"
-                      >
-                        {/* Checkbox de conclusão rápida */}
-                        <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={(e) => handleToggleDone(e, task)}
-                            className={cn(
-                              "h-4 w-4 rounded border transition-colors flex items-center justify-center cursor-pointer",
-                              isDone
-                                ? "bg-emerald-500 border-emerald-500 text-slate-950"
-                                : "border-slate-300 dark:border-white/20 hover:border-sky-500"
-                            )}
-                            title={isDone ? "Reabrir tarefa" : "Marcar como concluída"}
+                      return (
+                        <tr
+                          key={task.id}
+                          onClick={() => onTaskClick(task)}
+                          className="h-11 hover:bg-sky-500/5 transition-colors cursor-pointer group"
+                        >
+                          {/* Checkbox de conclusão rápida */}
+                          <td className="py-2 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleDone(e, task)}
+                              className={cn(
+                                "h-4 w-4 rounded border transition-colors flex items-center justify-center cursor-pointer",
+                                isDone
+                                  ? "bg-emerald-500 border-emerald-500 text-slate-950"
+                                  : "border-slate-300 dark:border-white/20 hover:border-sky-500"
+                              )}
+                              title={isDone ? "Reabrir tarefa" : "Marcar como concluída"}
+                            >
+                              {isDone && <Check className="h-3 w-3 stroke-[3]" />}
+                            </button>
+                          </td>
+
+                          {/* Título da Demanda com Edição Inline */}
+                          <td
+                            className="py-2 px-3 font-medium text-slate-800 dark:text-slate-200 group-hover:text-sky-500 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            {isDone && <Check className="h-3 w-3 stroke-[3]" />}
-                          </button>
-                        </td>
-
-                        {/* Título da Demanda */}
-                        <td className="py-2 px-3 font-medium text-slate-800 dark:text-slate-200 group-hover:text-sky-500 transition-colors">
-                          <span className={cn(isDone && "line-through text-slate-400 dark:text-slate-500")}>
-                            {task.title}
-                          </span>
-                        </td>
+                            {editingTaskId === task.id ? (
+                              <form
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (editingTitle.trim()) {
+                                    updateTask(task.id, { title: editingTitle.trim() });
+                                    toast.success("Título atualizado");
+                                  }
+                                  setEditingTaskId(null);
+                                }}
+                                className="flex items-center gap-1.5"
+                              >
+                                <input
+                                  autoFocus
+                                  type="text"
+                                  value={editingTitle}
+                                  onChange={(e) => setEditingTitle(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Escape") setEditingTaskId(null);
+                                  }}
+                                  onBlur={() => {
+                                    if (editingTitle.trim() && editingTitle !== task.title) {
+                                      updateTask(task.id, { title: editingTitle.trim() });
+                                      toast.success("Título atualizado");
+                                    }
+                                    setEditingTaskId(null);
+                                  }}
+                                  className="w-full bg-white dark:bg-slate-900 border border-sky-500 rounded px-2 py-0.5 text-xs text-slate-900 dark:text-white outline-none"
+                                />
+                              </form>
+                            ) : (
+                              <div className="flex items-center justify-between gap-2">
+                                <span
+                                  onDoubleClick={() => {
+                                    if (!canEdit) return;
+                                    setEditingTaskId(task.id);
+                                    setEditingTitle(task.title);
+                                  }}
+                                  onClick={() => onTaskClick(task)}
+                                  className={cn(
+                                    "cursor-pointer",
+                                    isDone && "line-through text-slate-400 dark:text-slate-500"
+                                  )}
+                                  title="Clique para abrir detalhes, clique duas vezes para editar título"
+                                >
+                                  {task.title}
+                                </span>
+                                {canEdit && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingTaskId(task.id);
+                                      setEditingTitle(task.title);
+                                    }}
+                                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-sky-500 transition-opacity cursor-pointer shrink-0"
+                                    title="Editar título inline"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </td>
 
                         {/* Badge de Status Interativo (Monday Style) */}
                         <td className="py-2 px-3 text-center relative" onClick={(e) => e.stopPropagation()}>
@@ -379,20 +476,52 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
                           )}
                         </td>
 
-                        {/* Data Limite */}
-                        <td className="py-2 px-3 text-center">
-                          {dueInfo ? (
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border",
-                                dueInfo.color
-                              )}
-                            >
-                              <Clock className="h-2.5 w-2.5" />
-                              {dueInfo.text}
-                            </span>
+                        {/* Data Limite com Edição Inline */}
+                        <td
+                          className="py-2 px-3 text-center"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {editingDateTaskId === task.id ? (
+                            <input
+                              type="date"
+                              autoFocus
+                              value={task.dueDate?.split("T")[0] || ""}
+                              onChange={(e) => {
+                                updateTask(task.id, { dueDate: e.target.value || undefined });
+                                setEditingDateTaskId(null);
+                                toast.success("Data atualizada");
+                              }}
+                              onBlur={() => setEditingDateTaskId(null)}
+                              className="bg-white dark:bg-slate-900 border border-sky-500 rounded px-1.5 py-0.5 text-[11px] text-slate-900 dark:text-white outline-none"
+                            />
                           ) : (
-                            <span className="text-slate-400 font-mono text-[10px]">-</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (canEdit) setEditingDateTaskId(task.id);
+                              }}
+                              className={cn(
+                                "cursor-pointer transition-transform hover:scale-105",
+                                !canEdit && "cursor-default"
+                              )}
+                              title={canEdit ? "Clique para alterar o prazo diretamente" : undefined}
+                            >
+                              {dueInfo ? (
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border",
+                                    dueInfo.color
+                                  )}
+                                >
+                                  <Clock className="h-2.5 w-2.5" />
+                                  {dueInfo.text}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 hover:text-sky-500 font-mono text-[10px]">
+                                  + Data
+                                </span>
+                              )}
+                            </button>
                           )}
                         </td>
 
@@ -404,6 +533,7 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
                               onClick={() => {
                                 if (confirm(`Deseja excluir a tarefa "${task.title}"?`)) {
                                   deleteTask(task.id);
+                                  toast.success("Tarefa excluída");
                                 }
                               }}
                               className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-opacity cursor-pointer"
@@ -424,30 +554,43 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
                         <Plus className="h-3.5 w-3.5 mx-auto" />
                       </td>
                       <td colSpan={6} className="py-2 px-3">
-                        <input
-                          type="text"
-                          placeholder={`+ Adicionar tarefa em "${status.name}" (pressione Enter)...`}
-                          value={newTitleByStatus[status.id] || ""}
-                          onChange={(e) =>
-                            setNewTitleByStatus((prev) => ({
-                              ...prev,
-                              [status.id]: e.target.value,
-                            }))
-                          }
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              handleQuickAdd(status.id);
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder={`+ Adicionar tarefa em "${status.name}" (pressione Enter)...`}
+                            value={newTitleByStatus[status.id] || ""}
+                            onChange={(e) =>
+                              setNewTitleByStatus((prev) => ({
+                                ...prev,
+                                [status.id]: e.target.value,
+                              }))
                             }
-                          }}
-                          className="w-full bg-transparent border-none outline-none text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 placeholder:italic py-0.5"
-                        />
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleQuickAdd(status.id);
+                              }
+                            }}
+                            className="flex-1 bg-transparent border-none outline-none text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 placeholder:italic py-0.5"
+                          />
+                          {newTitleByStatus[status.id]?.trim() && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleQuickAdd(status.id)}
+                              className="h-6 px-2.5 text-[11px] font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-lg cursor-pointer shrink-0"
+                            >
+                              Adicionar
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         );
       })}
@@ -464,7 +607,7 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
           </span>
         </div>
         <div className="text-[11px] font-mono text-slate-400">
-          MedHit Tasks
+          MedHit Tasks by Integrações & Automações
         </div>
       </div>
     </div>

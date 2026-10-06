@@ -26,8 +26,11 @@ import {
   Minus,
   Clock,
   MoreHorizontal,
+  Trash2,
 } from "lucide-react";
 import { Task, Status } from "@/server/services/data-store";
+import { useTasks } from "@/context/task-context";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface KanbanCardProps {
@@ -69,6 +72,8 @@ const PRIORITY_CONFIG: Record<
 };
 
 export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardProps) {
+  const { deleteTask, hasPermission } = useTasks();
+  const canDelete = hasPermission("delete_task");
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   const {
@@ -180,13 +185,13 @@ export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardPr
             <button
               type="button"
               onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-opacity cursor-pointer"
-              title="Mover para outro status"
+              className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+              title="Ações da tarefa"
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </button>
             {isStatusMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-40 rounded-xl bg-white dark:bg-[#0c1830] border border-slate-200 dark:border-sky-500/30 p-1 shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute right-0 top-full mt-1 w-44 rounded-xl bg-white dark:bg-[#0c1830] border border-slate-200 dark:border-sky-500/30 p-1 shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100">
                 <div className="text-[9px] font-mono text-slate-400 px-2 py-1 uppercase font-semibold">
                   Mover para:
                 </div>
@@ -207,6 +212,25 @@ export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardPr
                     <span className="truncate">{s.name}</span>
                   </button>
                 ))}
+
+                {canDelete && (
+                  <div className="pt-1 mt-1 border-t border-slate-200 dark:border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsStatusMenuOpen(false);
+                        if (confirm(`Excluir tarefa "${task.title}"?`)) {
+                          deleteTask(task.id);
+                          toast.success("Tarefa excluída");
+                        }
+                      }}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Excluir Tarefa</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

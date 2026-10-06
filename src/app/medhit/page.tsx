@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useTasks } from "@/context/task-context";
 import {
@@ -29,12 +29,17 @@ export default function WorkspaceHomePage() {
     statuses,
     currentUser,
     hasPermission,
+    setCurrentProject,
     setIsNewBoardModalOpen,
     setIsNewTaskModalOpen,
     setBoardToDelete,
     setIsDeleteBoardModalOpen,
     isTaskVisibleForCurrentUser,
   } = useTasks();
+
+  useEffect(() => {
+    setCurrentProject(null);
+  }, [setCurrentProject]);
 
   const [selectedAreaId, setSelectedAreaId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -348,6 +353,11 @@ export default function WorkspaceHomePage() {
           </div>
         )}
       </div>
+
+      {/* Rodapé com Assinatura */}
+      <footer className="pt-8 pb-4 text-center border-t border-slate-200/60 dark:border-white/5 text-[11px] font-mono text-slate-400 dark:text-slate-500">
+        MedHit Tasks by Integrações & Automações
+      </footer>
     </div>
   );
 }

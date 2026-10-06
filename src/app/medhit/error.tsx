@@ -173,7 +173,7 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
         {/* Assinatura MedHit */}
         <div className="text-center pt-2">
           <span className="text-[10px] font-mono text-slate-500">
-            Arquitetado por <strong className="text-sky-400">MedHit Integrações & Automações</strong> • Resiliência & UX
+            MedHit Tasks by Integrações & Automações
           </span>
         </div>
       </div>

@@ -173,7 +173,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">Configurações do Workspace</h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20">
-                  MedHit Integrações & Automações
+                  MedHit Tasks
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">

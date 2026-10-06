@@ -46,6 +46,7 @@ export default function SettingsPage() {
   const canManageMcp = hasPermission("manage_mcp");
 
   const isTabAllowed = (tab: "appearance" | "members" | "permissions" | "ai" | "mcp") => {
+    if (tab === "members") return currentUser.role !== "guest";
     if (tab === "permissions") return canManageSettings;
     if (tab === "ai") return canManageAiTokens;
     if (tab === "mcp") return canManageMcp;
@@ -111,17 +112,19 @@ export default function SettingsPage() {
           <span>Aparência</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("members")}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-            activeTab === "members"
-              ? "bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30"
-              : "text-slate-400 hover:text-white hover:bg-white/5"
-          }`}
-        >
-          <Users className="h-3.5 w-3.5" />
-          <span>Membros & Equipe</span>
-        </button>
+        {currentUser.role !== "guest" && (
+          <button
+            onClick={() => setActiveTab("members")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              activeTab === "members"
+                ? "bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            <span>Membros & Equipe</span>
+          </button>
+        )}
 
         {canManageSettings && (
           <button

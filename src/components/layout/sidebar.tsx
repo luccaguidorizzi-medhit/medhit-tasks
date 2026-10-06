@@ -178,7 +178,7 @@ export function Sidebar({
       ...proj,
       areaSlug: area.slug,
       areaName: area.name,
-      active: currentProjectSlug === proj.slug,
+      active: Boolean(currentProjectSlug && currentProjectSlug === proj.slug && pathname.includes(proj.slug)),
     }))
   );
 

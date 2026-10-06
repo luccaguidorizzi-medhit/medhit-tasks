@@ -734,7 +734,7 @@ export default function TodayTasksPage() {
       {/* Assinatura MedHit */}
       <div className="pt-4 text-center">
         <span className="text-[10px] font-mono text-slate-400 dark:text-slate-600">
-          MedHit Tasks • Today Engine mantido por MedHit Integrações & Automações
+          MedHit Tasks by Integrações & Automações
         </span>
       </div>
     </div>

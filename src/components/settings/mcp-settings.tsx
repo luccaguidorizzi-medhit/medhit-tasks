@@ -121,7 +121,7 @@ export function McpSettings() {
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]" />
-              CONECTADO AO ANTIGRAVITY
+              SERVIDOR MCP ATIVO & CONECTADO
             </span>
           </div>
         </div>

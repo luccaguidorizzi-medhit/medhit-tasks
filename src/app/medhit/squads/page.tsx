@@ -36,6 +36,7 @@ export default function SquadsManagementPage() {
     areas,
     tasks,
     members,
+    currentUser,
     hasPermission,
     setIsNewTeamModalOpen,
     setIsNewBoardModalOpen,
@@ -49,8 +50,15 @@ export default function SquadsManagementPage() {
   const canDeleteTeam = hasPermission("delete_team");
   const canManageMembers = hasPermission("manage_members");
   const canChangeRole = hasPermission("change_member_role");
+  const canViewMembers = currentUser.role !== "guest";
 
   const [activeTab, setActiveTab] = useState<"squads" | "members">("squads");
+
+  React.useEffect(() => {
+    if (!canViewMembers && activeTab === "members") {
+      setActiveTab("squads");
+    }
+  }, [canViewMembers, activeTab]);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
@@ -162,7 +170,7 @@ export default function SquadsManagementPage() {
             </EducationalTooltip>
           )}
 
-          {canManageMembers && (
+          {canManageMembers && canViewMembers && (
             <EducationalTooltip
               title="Convidar Colaborador"
               description="Adicione um novo especialista ou gestor para colaborar no workspace."
@@ -250,18 +258,20 @@ export default function SquadsManagementPage() {
           <span>Equipes & Áreas ({areas.length})</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("members")}
-          className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
-            activeTab === "members"
-              ? "bg-sky-500/15 text-sky-500 dark:text-sky-300 border border-sky-500/30 shadow-xs"
-              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-          )}
-        >
-          <Users className="h-4 w-4" />
-          <span>Membros & Permissões ({members.length})</span>
-        </button>
+        {canViewMembers && (
+          <button
+            onClick={() => setActiveTab("members")}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+              activeTab === "members"
+                ? "bg-sky-500/15 text-sky-500 dark:text-sky-300 border border-sky-500/30 shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+            )}
+          >
+            <Users className="h-4 w-4" />
+            <span>Membros & Permissões ({members.length})</span>
+          </button>
+        )}
       </div>
 
       {/* Conteúdo da Aba 1: Squads & Times */}

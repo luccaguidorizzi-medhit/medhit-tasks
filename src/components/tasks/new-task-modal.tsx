@@ -94,11 +94,18 @@ export function NewTaskModal({
 
   useEffect(() => {
     if (isOpen) {
+      setTitle("");
+      setDescription("");
+      setDueDate("");
+      setTags([]);
+      setTagInput("");
+      setPriority("none");
       const initialProjId = currentProjectId || allProjects[0]?.id || "";
       setSelectedProjectId(initialProjId);
       const proj = allProjects.find((p) => p.id === initialProjId);
       const projStatuses = proj?.statuses?.length ? proj.statuses : statuses;
       setStatusId(projStatuses[0]?.id || "");
+      setSelectedAssigneeId(currentUser?.id || "");
     }
   }, [isOpen, currentProjectId]);
 
@@ -247,41 +254,80 @@ export function NewTaskModal({
                 </select>
               </div>
 
-              {/* Status */}
-              <div className="space-y-1">
+              {/* Status Inicial em Pílulas */}
+              <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   Status Inicial
                 </label>
-                <select
-                  value={statusId}
-                  onChange={(e) => setStatusId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
-                >
-                  {activeStatuses.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {activeStatuses.map((s) => {
+                    const isSelected = statusId === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setStatusId(s.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
+                          isSelected
+                            ? "bg-sky-500 text-slate-950 border-sky-400 font-bold shadow-xs"
+                            : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-white/[0.02]"
+                        )}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: s.color || "#38bdf8" }}
+                        />
+                        <span>{s.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              {/* Responsável */}
-              <div className="space-y-1 sm:col-span-2">
+              {/* Responsável em Avatares */}
+              <div className="space-y-1.5 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   Responsável
                 </label>
-                <select
-                  value={selectedAssigneeId}
-                  onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
-                >
-                  <option value="">Não Atribuído</option>
-                  {members.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name} ({m.role})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAssigneeId("")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer",
+                      !selectedAssigneeId
+                        ? "bg-sky-500/15 border-sky-500/40 text-sky-600 dark:text-sky-300 font-semibold"
+                        : "border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300"
+                    )}
+                  >
+                    <User className="h-3 w-3" />
+                    <span>Não Atribuído</span>
+                  </button>
+                  {members.map((m) => {
+                    const isSelected = selectedAssigneeId === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setSelectedAssigneeId(m.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer",
+                          isSelected
+                            ? "bg-sky-500/15 border-sky-500/50 text-sky-600 dark:text-sky-300 font-semibold shadow-xs"
+                            : "border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                        )}
+                      >
+                        <img
+                          src={m.avatarUrl}
+                          alt={m.name}
+                          className="h-4 w-4 rounded-full object-cover"
+                        />
+                        <span className="truncate max-w-[100px]">{m.name.split(" ")[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Prioridade em Pílulas Visuais */}
