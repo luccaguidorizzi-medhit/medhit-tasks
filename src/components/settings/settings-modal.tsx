@@ -13,6 +13,7 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { McpSettings } from "@/components/settings/mcp-settings";
+import { MembersManagement } from "@/components/settings/members-management";
 import {
   Sun,
   Moon,
@@ -22,6 +23,7 @@ import {
   Bot,
   Terminal,
   ExternalLink,
+  Users,
   Check,
   Copy,
   Sliders,
@@ -42,12 +44,12 @@ import { telemetry, TelemetryLog, TelemetryLevel } from "@/lib/telemetry";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: "appearance" | "ai" | "mcp" | "telemetry";
+  defaultTab?: "appearance" | "members" | "ai" | "mcp" | "telemetry";
 }
 
 export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: SettingsModalProps) {
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState<"appearance" | "ai" | "mcp" | "telemetry">(defaultTab);
+  const [activeTab, setActiveTab] = useState<"appearance" | "members" | "ai" | "mcp" | "telemetry">(defaultTab);
   const [copiedKey, setCopiedKey] = useState(false);
 
   // Estados da Telemetria
@@ -150,6 +152,18 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
             </button>
 
             <button
+              onClick={() => setActiveTab("members")}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "members"
+                  ? "bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30 font-semibold"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              <span>Membros & Equipe</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("ai")}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                 activeTab === "ai"
@@ -241,6 +255,12 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                     <span className="text-xs font-medium">Sistema</span>
                   </button>
                 </div>
+              </div>
+            )}
+
+            {activeTab === "members" && (
+              <div className="space-y-4">
+                <MembersManagement />
               </div>
             )}
 

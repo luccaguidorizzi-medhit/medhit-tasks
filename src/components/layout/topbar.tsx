@@ -153,24 +153,7 @@ export function Topbar({
             </Link>
           </EducationalTooltip>
 
-          {/* Botão Telemetria & Logs */}
-          <EducationalTooltip
-            title="Telemetria & Auditoria (Lagana Flow)"
-            description="Visualize em tempo real o histórico de eventos, criação e exclusão de quadros, tarefas e diagnósticos de integridade."
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSettingsDefaultTab("telemetry");
-                setIsSettingsOpen(true);
-              }}
-              className="h-8 px-2.5 gap-1.5 text-xs text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-slate-200 dark:border-sky-500/20"
-            >
-              <Activity className="h-3.5 w-3.5 text-sky-400 animate-pulse" />
-              <span className="hidden lg:inline font-mono text-[11px]">Telemetria</span>
-            </Button>
-          </EducationalTooltip>
+
 
           {/* Botão Configurações */}
           <EducationalTooltip

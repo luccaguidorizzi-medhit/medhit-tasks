@@ -215,12 +215,6 @@ export function Sidebar({
       href: `/medhit/${currentAreaSlug}/${currentProjectSlug}/dashboard`,
       isActive: pathname.endsWith("/dashboard"),
     },
-    {
-      title: "Membros & Equipes",
-      icon: Users,
-      href: "/medhit/members",
-      isActive: pathname === "/medhit/members",
-    },
   ];
 
   // Coleta todos os projetos das áreas dinamicamente
