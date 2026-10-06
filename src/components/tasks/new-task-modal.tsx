@@ -22,12 +22,30 @@ import {
   User,
   FolderKanban,
   CheckCircle2,
+  Minus,
+  SignalLow,
+  SignalMedium,
+  SignalHigh,
 } from "lucide-react";
 import { Status, Member } from "@/server/services/data-store";
 import { Button } from "@/components/ui/button";
 import { useTasks } from "@/context/task-context";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const PRIORITY_BUTTONS: {
+  id: "urgent" | "high" | "medium" | "low" | "none";
+  label: string;
+  icon: React.ElementType;
+  activeClass: string;
+  iconClass: string;
+}[] = [
+  { id: "none", label: "Normal", icon: Minus, activeClass: "bg-slate-500/15 border-slate-500/40 text-slate-700 dark:text-slate-300 font-bold", iconClass: "text-slate-400" },
+  { id: "low", label: "Baixa", icon: SignalLow, activeClass: "bg-sky-500/15 border-sky-500/40 text-sky-600 dark:text-sky-300 font-bold", iconClass: "text-sky-500" },
+  { id: "medium", label: "Média", icon: SignalMedium, activeClass: "bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-300 font-bold", iconClass: "text-amber-500" },
+  { id: "high", label: "Alta", icon: SignalHigh, activeClass: "bg-orange-500/15 border-orange-500/40 text-orange-600 dark:text-orange-300 font-bold", iconClass: "text-orange-500" },
+  { id: "urgent", label: "Urgente", icon: AlertCircle, activeClass: "bg-rose-500/15 border-rose-500/40 text-rose-600 dark:text-rose-300 font-bold", iconClass: "text-rose-500" },
+];
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -71,12 +89,25 @@ export function NewTaskModal({
     a.projects.map((p) => ({ ...p, areaSlug: a.slug, areaName: a.name }))
   );
 
+  const currentProjectObj = allProjects.find((p) => p.id === selectedProjectId);
+  const activeStatuses = currentProjectObj?.statuses?.length ? currentProjectObj.statuses : statuses;
+
   useEffect(() => {
     if (isOpen) {
-      setStatusId(statuses[0]?.id || "");
-      setSelectedProjectId(currentProjectId || allProjects[0]?.id || "");
+      const initialProjId = currentProjectId || allProjects[0]?.id || "";
+      setSelectedProjectId(initialProjId);
+      const proj = allProjects.find((p) => p.id === initialProjId);
+      const projStatuses = proj?.statuses?.length ? proj.statuses : statuses;
+      setStatusId(projStatuses[0]?.id || "");
     }
-  }, [isOpen, statuses, currentProjectId, allProjects]);
+  }, [isOpen, currentProjectId]);
+
+  const handleProjectChange = (newProjId: string) => {
+    setSelectedProjectId(newProjId);
+    const proj = allProjects.find((p) => p.id === newProjId);
+    const projStatuses = proj?.statuses?.length ? proj.statuses : statuses;
+    setStatusId(projStatuses[0]?.id || "");
+  };
 
   if (!isOpen) return null;
 
@@ -205,12 +236,12 @@ export function NewTaskModal({
                 </label>
                 <select
                   value={selectedProjectId}
-                  onChange={(e) => setSelectedProjectId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  onChange={(e) => handleProjectChange(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
                 >
                   {allProjects.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name}
+                      {p.name} ({p.areaName})
                     </option>
                   ))}
                 </select>
@@ -224,9 +255,9 @@ export function NewTaskModal({
                 <select
                   value={statusId}
                   onChange={(e) => setStatusId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
                 >
-                  {statuses.map((s) => (
+                  {activeStatuses.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
                     </option>
@@ -235,14 +266,14 @@ export function NewTaskModal({
               </div>
 
               {/* Responsável */}
-              <div className="space-y-1">
+              <div className="space-y-1 sm:col-span-2">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   Responsável
                 </label>
                 <select
                   value={selectedAssigneeId}
                   onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
                 >
                   <option value="">Não Atribuído</option>
                   {members.map((m) => (
@@ -253,22 +284,33 @@ export function NewTaskModal({
                 </select>
               </div>
 
-              {/* Prioridade */}
-              <div className="space-y-1">
+              {/* Prioridade em Pílulas Visuais */}
+              <div className="space-y-1.5 sm:col-span-2 pt-1">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   Prioridade
                 </label>
-                <select
-                  value={priority}
-                  onChange={(e) => setPriority(e.target.value as any)}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-                >
-                  <option value="none">Normal</option>
-                  <option value="low">Baixa</option>
-                  <option value="medium">Média</option>
-                  <option value="high">Alta</option>
-                  <option value="urgent">Urgente</option>
-                </select>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {PRIORITY_BUTTONS.map((p) => {
+                    const isSelected = priority === p.id;
+                    const Icon = p.icon;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setPriority(p.id)}
+                        className={cn(
+                          "flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer",
+                          isSelected
+                            ? p.activeClass
+                            : "border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 text-slate-600 dark:text-slate-400"
+                        )}
+                      >
+                        <Icon className={cn("h-3 w-3", isSelected ? p.iconClass : "text-slate-400")} />
+                        <span className="text-[11px] truncate">{p.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

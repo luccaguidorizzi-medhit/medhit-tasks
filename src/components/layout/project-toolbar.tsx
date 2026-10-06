@@ -68,7 +68,7 @@ export function ProjectToolbar({
     },
     {
       id: "table",
-      label: "Tabela",
+      label: "Lista & Tabela",
       icon: TableIcon,
       href: `/medhit/${areaSlug}/${projectSlug}/table`,
       tooltip: {

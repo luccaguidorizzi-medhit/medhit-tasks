@@ -537,14 +537,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    // Se o projeto deletado for o projeto ativo atual, seleciona o próximo projeto disponível de forma segura
+    // Se o projeto deletado for o projeto ativo atual, limpa a seleção para retornar à home limpa
     if (currentProject?.id === projectId) {
-      if (nextProjectToSelect && nextAreaToSelect) {
-        setCurrentArea(nextAreaToSelect);
-        setCurrentProject(nextProjectToSelect);
-      } else {
-        setCurrentProject(null);
-      }
+      setCurrentProject(null);
     }
 
     setIsDeleteBoardModalOpen(false);

@@ -97,8 +97,10 @@ export function KanbanBoard({
               key={status.id}
               status={status}
               tasks={columnTasks}
+              statuses={statuses}
               onTaskClick={onTaskClick}
               onQuickAddTask={onQuickAddTask}
+              onMoveTask={onMoveTask}
             />
           );
         })}

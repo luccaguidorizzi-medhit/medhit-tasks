@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy, Check, Terminal, Key, UserCheck, ShieldCheck, Sparkles, RefreshCw } from "lucide-react";
+import { Copy, Check, Terminal, Key, UserCheck, ShieldCheck, ShieldAlert, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTasks } from "@/context/task-context";
 import { toast } from "sonner";
@@ -9,6 +9,18 @@ import { toast } from "sonner";
 export function McpSettings() {
   const { currentUser, regenerateMemberMcpToken } = useTasks();
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  if (currentUser.role === "guest") {
+    return (
+      <div className="p-8 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-center space-y-3 select-none">
+        <ShieldAlert className="h-10 w-10 text-rose-500 mx-auto" />
+        <h3 className="text-base font-bold text-slate-900 dark:text-white">Acesso Restrito</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Convidados não têm permissão para acessar chaves de MCP ou integrações de IA.
+        </p>
+      </div>
+    );
+  }
 
   const endpointUrl = typeof window !== "undefined"
     ? `${window.location.origin}/api/mcp`

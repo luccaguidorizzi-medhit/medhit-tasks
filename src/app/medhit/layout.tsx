@@ -51,10 +51,10 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         {/* Topbar Global */}
         <Topbar
-          areaSlug={currentArea?.slug || "marketing"}
-          areaName={currentArea?.name || "Workspace"}
+          areaSlug={currentArea?.slug || ""}
+          areaName={currentArea?.name || ""}
           projectSlug={currentProject?.slug || ""}
-          projectName={currentProject?.name || "MedHit Tasks"}
+          projectName={currentProject?.name || ""}
           onOpenNewTask={() => setIsNewTaskModalOpen(true)}
         />
 

@@ -58,6 +58,18 @@ export function MembersManagement() {
   const canCreateTeam = hasPermission("create_team");
   const canChangeRole = hasPermission("change_member_role");
 
+  if (currentUser.role === "guest") {
+    return (
+      <div className="p-8 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-center space-y-3 select-none">
+        <ShieldAlert className="h-10 w-10 text-rose-500 mx-auto" />
+        <h3 className="text-base font-bold text-slate-900 dark:text-white">Acesso Restrito</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Convidados não têm permissão para visualizar nem gerenciar membros da equipe.
+        </p>
+      </div>
+    );
+  }
+
   const togglePasswordVisibility = (id: string) => {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };

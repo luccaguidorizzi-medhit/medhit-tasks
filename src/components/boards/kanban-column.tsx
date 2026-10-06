@@ -23,15 +23,19 @@ import { cn } from "@/lib/utils";
 interface KanbanColumnProps {
   status: Status;
   tasks: Task[];
+  statuses?: Status[];
   onTaskClick: (task: Task) => void;
   onQuickAddTask: (statusId: string, title: string) => void;
+  onMoveTask?: (taskId: string, targetStatusId: string) => void;
 }
 
 export function KanbanColumn({
   status,
   tasks,
+  statuses,
   onTaskClick,
   onQuickAddTask,
+  onMoveTask,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: status.id,
@@ -125,7 +129,13 @@ export function KanbanColumn({
 
         <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} onClick={onTaskClick} />
+            <KanbanCard
+              key={task.id}
+              task={task}
+              onClick={onTaskClick}
+              statuses={statuses}
+              onMoveTask={onMoveTask}
+            />
           ))}
         </SortableContext>
 

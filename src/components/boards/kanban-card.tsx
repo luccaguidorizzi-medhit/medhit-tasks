@@ -13,7 +13,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -25,13 +25,16 @@ import {
   SignalLow,
   Minus,
   Clock,
+  MoreHorizontal,
 } from "lucide-react";
-import { Task } from "@/server/services/data-store";
+import { Task, Status } from "@/server/services/data-store";
 import { cn } from "@/lib/utils";
 
 interface KanbanCardProps {
   task: Task;
   onClick: (task: Task) => void;
+  statuses?: Status[];
+  onMoveTask?: (taskId: string, targetStatusId: string) => void;
 }
 
 const PRIORITY_CONFIG: Record<
@@ -65,7 +68,9 @@ const PRIORITY_CONFIG: Record<
   },
 };
 
-export function KanbanCard({ task, onClick }: KanbanCardProps) {
+export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardProps) {
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -146,7 +151,7 @@ export function KanbanCard({ task, onClick }: KanbanCardProps) {
         isDragging && "opacity-40 scale-102 ring-2 ring-sky-400"
       )}
     >
-      {/* Linha Superior: Prioridade & Tags */}
+      {/* Linha Superior: Prioridade, Tags & Ação de Mover */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
@@ -169,6 +174,43 @@ export function KanbanCard({ task, onClick }: KanbanCardProps) {
               </span>
             ))}
         </div>
+
+        {statuses && statuses.length > 0 && onMoveTask && (
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setIsStatusMenuOpen(!isStatusMenuOpen)}
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-opacity cursor-pointer"
+              title="Mover para outro status"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </button>
+            {isStatusMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-40 rounded-xl bg-white dark:bg-[#0c1830] border border-slate-200 dark:border-sky-500/30 p-1 shadow-2xl z-30 animate-in fade-in zoom-in-95 duration-100">
+                <div className="text-[9px] font-mono text-slate-400 px-2 py-1 uppercase font-semibold">
+                  Mover para:
+                </div>
+                {statuses.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      onMoveTask(task.id, s.id);
+                      setIsStatusMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-left transition-colors cursor-pointer ${
+                      s.id === task.statusId
+                        ? "bg-sky-500/15 text-sky-400 font-bold"
+                        : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    <span className="truncate">{s.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Título da Demanda */}

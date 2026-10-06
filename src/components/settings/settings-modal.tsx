@@ -71,6 +71,8 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
   const canManageMcp = hasPermission("manage_mcp");
 
   const isTabAllowed = (tab: "appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry") => {
+    if (currentUser.role === "guest" && tab !== "appearance") return false;
+    if (tab === "members") return currentUser.role !== "guest";
     if (tab === "telemetry") return canViewTelemetry;
     if (tab === "permissions") return canManageSettings;
     if (tab === "ai") return canManageAiTokens;
@@ -203,17 +205,19 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
               <span>Aparência & Tema</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab("members")}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
-                activeTab === "members"
-                  ? "bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30 font-semibold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
-              }`}
-            >
-              <Users className="h-4 w-4" />
-              <span>Membros & Equipe</span>
-            </button>
+            {currentUser.role !== "guest" && (
+              <button
+                onClick={() => setActiveTab("members")}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                  activeTab === "members"
+                    ? "bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30 font-semibold"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
+                }`}
+              >
+                <Users className="h-4 w-4" />
+                <span>Membros & Equipe</span>
+              </button>
+            )}
 
             {canManageSettings && (
               <button

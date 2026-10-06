@@ -61,6 +61,7 @@ export function Sidebar({
   const router = useRouter();
   const {
     areas,
+    currentUser,
     hasPermission,
     setIsNewBoardModalOpen,
     setBoardToDelete,
@@ -198,9 +199,6 @@ export function Sidebar({
               <div className="font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
                 <span>MedHit Tasks</span>
               </div>
-              <p className="text-[9px] text-sky-500 dark:text-sky-400 font-mono tracking-wider font-semibold truncate">
-                INTEGRAÇÕES & AUTOMAÇÕES
-              </p>
             </div>
           </Link>
         </div>
@@ -328,18 +326,20 @@ export function Sidebar({
 
         {/* Seção 3: Rodapé com Configurações e Membros */}
         <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
-          <Link
-            href="/medhit/members"
-            className={cn(
-              "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-              pathname === "/medhit/members"
-                ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-            )}
-          >
-            <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <span>Membros & Equipe</span>
-          </Link>
+          {currentUser.role !== "guest" && (
+            <Link
+              href="/medhit/members"
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                pathname === "/medhit/members"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+              )}
+            >
+              <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span>Membros & Equipe</span>
+            </Link>
+          )}
 
           <Link
             href="/medhit/settings"
@@ -355,9 +355,14 @@ export function Sidebar({
           </Link>
 
           {/* Assinatura no Rodapé */}
-          <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex items-center justify-between font-mono">
-            <span>MedHit Tasks</span>
-            <span className="text-sky-500 font-semibold">v1.0</span>
+          <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex flex-col gap-0.5 font-mono">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">MedHit Tasks</span>
+              <span className="text-sky-500 font-bold text-[9px]">v1.0</span>
+            </div>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate">
+              by Integrações & Automações
+            </span>
           </div>
         </div>
       </aside>

@@ -464,7 +464,7 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
           </span>
         </div>
         <div className="text-[11px] font-mono text-slate-400">
-          MedHit Integrações & Automações
+          MedHit Tasks
         </div>
       </div>
     </div>

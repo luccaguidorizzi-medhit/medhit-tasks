@@ -206,4 +206,31 @@ describe("RBAC Permissions Matrix", () => {
     expect(canTriggerAgent("   ")).toBe(false);
     expect(canTriggerAgent("sk-openai-test-key-12345")).toBe(true);
   });
+
+  it("enforces strict prohibition of guest role accessing member list and MCP tokens", () => {
+    const isTabAllowedForRole = (
+      role: UserRole,
+      tab: "appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry"
+    ) => {
+      if (role === "guest" && tab !== "appearance") return false;
+      if (tab === "members") return role !== "guest";
+      const allowedPerms = ROLE_PERMISSIONS[role];
+      if (tab === "telemetry") return allowedPerms.includes("view_telemetry");
+      if (tab === "permissions") return allowedPerms.includes("manage_settings");
+      if (tab === "ai") return allowedPerms.includes("manage_ai_tokens");
+      if (tab === "mcp") return allowedPerms.includes("manage_mcp");
+      return true;
+    };
+
+    expect(isTabAllowedForRole("guest", "members")).toBe(false);
+    expect(isTabAllowedForRole("guest", "mcp")).toBe(false);
+    expect(isTabAllowedForRole("guest", "permissions")).toBe(false);
+    expect(isTabAllowedForRole("guest", "telemetry")).toBe(false);
+    expect(isTabAllowedForRole("guest", "appearance")).toBe(true);
+
+    expect(isTabAllowedForRole("owner", "members")).toBe(true);
+    expect(isTabAllowedForRole("admin", "members")).toBe(true);
+    expect(isTabAllowedForRole("member", "members")).toBe(true);
+  });
 });
+

@@ -91,25 +91,19 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     setCurrentProjectBySlug(area, project);
   }, [area, project, setCurrentProjectBySlug]);
 
-  // Efeito de auto-redirect seguro caso o projeto não exista
+  // Efeito de auto-redirect seguro para o início caso o projeto não exista
   useEffect(() => {
     if (!activeProject) {
       setIsRedirecting(true);
       const timer = setTimeout(() => {
-        if (firstAvailableBoard) {
-          router.replace(
-            `/medhit/${firstAvailableBoard.area.slug}/${firstAvailableBoard.project.slug}/board`
-          );
-        } else {
-          router.replace("/medhit");
-        }
-      }, 1800);
+        router.replace("/medhit");
+      }, 1500);
 
       return () => clearTimeout(timer);
     } else {
       setIsRedirecting(false);
     }
-  }, [activeProject, firstAvailableBoard, router]);
+  }, [activeProject, router]);
 
   // Se o projeto foi excluído ou o slug não existe, exibe fallback elegante MedHit
   if (!activeProject) {

@@ -120,9 +120,6 @@ export default function SquadsManagementPage() {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/15 text-sky-500 border border-sky-500/30">
               WORKSPACE MEDHIT
             </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
-              INTEGRAÇÕES & AUTOMAÇÕES
-            </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
             <Layers className="h-6 w-6 text-sky-400" />

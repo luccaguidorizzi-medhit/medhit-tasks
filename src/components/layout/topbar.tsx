@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Search,
@@ -41,11 +42,12 @@ interface TopbarProps {
 export function Topbar({
   areaSlug = "marketing",
   areaName = "Marketing & Growth",
-  projectSlug = "workshop-medicina-integrativa",
-  projectName = "Lançamento Workshop Medicina Integrativa",
+  projectSlug = "",
+  projectName = "",
   onOpenNewTask,
   onOpenSearch,
 }: TopbarProps) {
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { currentUser, hasPermission, switchActiveRole, switchActiveUser, members } = useTasks();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -57,6 +59,18 @@ export function Topbar({
 
   const canViewTelemetry = hasPermission("view_telemetry");
   const canCreateTask = hasPermission("create_task");
+
+  const isInsideProject = Boolean(
+    projectSlug &&
+    projectName &&
+    projectName !== "MedHit Tasks" &&
+    pathname.includes(projectSlug)
+  );
+
+  const isToday = pathname.startsWith("/medhit/today");
+  const isMembers = pathname.startsWith("/medhit/members");
+  const isSettings = pathname.startsWith("/medhit/settings");
+  const isSquads = pathname.startsWith("/medhit/squads");
 
   // Atalho global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -85,55 +99,55 @@ export function Topbar({
   return (
     <>
       <header className="h-14 border-b border-slate-200 dark:border-sky-500/15 bg-white/80 dark:bg-[#070e1e]/85 backdrop-blur-xl px-6 flex items-center justify-between gap-4 select-none shrink-0 z-20">
-        {/* Breadcrumbs 100% Clicáveis e Interativos */}
+        {/* Breadcrumbs Dinâmicos & Contextuais */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
-          {/* Nível 1: Workspace Global */}
-          <EducationalTooltip
-            title="Workspace MedHit (Início)"
-            description="Clique para ir para a tela de Visão Geral com todos os projetos e métricas consolidadas."
+          <Link
+            href="/medhit"
+            className="text-slate-800 dark:text-slate-200 font-bold flex items-center gap-2 hover:text-sky-500 transition-colors"
           >
-            <Link
-              href="/medhit"
-              className="text-slate-800 dark:text-slate-200 font-bold flex items-center gap-2 hover:text-sky-500 transition-colors"
-            >
-              <img
-                src="/logo.svg"
-                alt="MedHit"
-                className="h-4 w-4 object-contain"
-              />
-              <span>MedHit</span>
-            </Link>
-          </EducationalTooltip>
+            <img
+              src="/logo.svg"
+              alt="MedHit"
+              className="h-4 w-4 object-contain"
+            />
+            <span>MedHit Tasks</span>
+          </Link>
 
-          <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
-
-          {/* Nível 2: Área de Trabalho / Equipe (Agora Clicável!) */}
-          <EducationalTooltip
-            title={`Equipe / Área: ${areaName}`}
-            description="Clique para abrir o painel executivo desta área de trabalho e ver todos os projetos pertencentes a ela."
-          >
-            <Link
-              href={`/medhit/${areaSlug}`}
-              className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium text-slate-600 dark:text-slate-400"
-            >
-              {areaName}
-            </Link>
-          </EducationalTooltip>
-
-          <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
-
-          {/* Nível 3: Projeto / Board Ativo */}
-          <EducationalTooltip
-            title={`Projeto: ${projectName}`}
-            description="Projeto ativo atual. Alterne entre Quadro, Lista, Tabela e Dashboard na barra de ferramentas."
-          >
-            <Link
-              href={`/medhit/${areaSlug}/${projectSlug}/board`}
-              className="text-slate-900 dark:text-white font-bold hover:text-sky-500 dark:hover:text-sky-400 transition-colors truncate max-w-xs"
-            >
-              {projectName}
-            </Link>
-          </EducationalTooltip>
+          {isInsideProject ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <Link
+                href={`/medhit/${areaSlug}`}
+                className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium text-slate-600 dark:text-slate-400 max-w-[130px] truncate"
+              >
+                {areaName}
+              </Link>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold truncate max-w-xs">
+                {projectName}
+              </span>
+            </>
+          ) : isToday ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold">Minhas Tarefas</span>
+            </>
+          ) : isMembers ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold">Membros & Equipe</span>
+            </>
+          ) : isSettings ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold">Configurações</span>
+            </>
+          ) : isSquads ? (
+            <>
+              <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
+              <span className="text-slate-900 dark:text-white font-bold">Equipes & Squads</span>
+            </>
+          ) : null}
         </div>
 
         {/* Search Bar estilo Referência com Tooltip */}
@@ -253,39 +267,43 @@ export function Topbar({
 
                 {/* Simulador de Papéis RBAC */}
                 <div className="p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl mb-2 border border-slate-200/50 dark:border-white/5">
-                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center justify-between">
-                    <span>Alternar Usuário Ativo:</span>
-                    <span className="text-[9px] text-sky-400 font-normal">({members.length} usuários)</span>
-                  </div>
-                  <div className="space-y-1 mb-2 max-h-36 overflow-y-auto pr-1">
-                    {members.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => {
-                          switchActiveUser(m.id);
-                          setIsProfileMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all ${
-                          currentUser.id === m.id
-                            ? "bg-sky-500/15 border border-sky-500/30 text-sky-400"
-                            : "hover:bg-slate-200/60 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={m.avatarUrl} alt={m.name} className="h-4 w-4 rounded-full object-cover shrink-0" />
-                          <span className="text-xs truncate">{m.name}</span>
-                        </div>
-                        <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase shrink-0 ${
-                          m.role === "admin" || m.role === "owner" ? "text-amber-400 bg-amber-400/10" : m.role === "member" ? "text-sky-400 bg-sky-400/10" : "text-slate-400 bg-slate-400/10"
-                        }`}>
-                          {m.role}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                  {currentUser.role !== "guest" && (
+                    <>
+                      <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 flex items-center justify-between">
+                        <span>Alternar Usuário Ativo:</span>
+                        <span className="text-[9px] text-sky-400 font-normal">({members.length} usuários)</span>
+                      </div>
+                      <div className="space-y-1 mb-2 max-h-36 overflow-y-auto pr-1">
+                        {members.map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => {
+                              switchActiveUser(m.id);
+                              setIsProfileMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-all ${
+                              currentUser.id === m.id
+                                ? "bg-sky-500/15 border border-sky-500/30 text-sky-400"
+                                : "hover:bg-slate-200/60 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <img src={m.avatarUrl} alt={m.name} className="h-4 w-4 rounded-full object-cover shrink-0" />
+                              <span className="text-xs truncate">{m.name}</span>
+                            </div>
+                            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded font-bold uppercase shrink-0 ${
+                              m.role === "admin" || m.role === "owner" ? "text-amber-400 bg-amber-400/10" : m.role === "member" ? "text-sky-400 bg-sky-400/10" : "text-slate-400 bg-slate-400/10"
+                            }`}>
+                              {m.role}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
 
-                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 border-t border-slate-200/50 dark:border-white/5 pt-1.5">
-                    Ou Simular Papel (Role Override):
+                  <div className={`text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5 ${currentUser.role !== "guest" ? "border-t border-slate-200/50 dark:border-white/5 pt-1.5" : ""}`}>
+                    Simular Papel (Role Override):
                   </div>
                   <div className="grid grid-cols-2 gap-1 text-[10px] font-mono">
                     {(["owner", "admin", "member", "guest"] as const).map((r) => (
@@ -307,45 +325,47 @@ export function Topbar({
                   </div>
                 </div>
 
-                {/* Ações do Menu */}
-                <div className="space-y-0.5">
-                  <button
-                    onClick={() => {
-                      setSettingsDefaultTab("permissions");
-                      setIsSettingsOpen(true);
-                      setIsProfileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-                    <span>Matriz de Permissões RBAC</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setSettingsDefaultTab("members");
-                      setIsSettingsOpen(true);
-                      setIsProfileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
-                  >
-                    <Users className="h-3.5 w-3.5 text-sky-400" />
-                    <span>Membros & Senhas</span>
-                  </button>
-
-                  {canViewTelemetry && (
+                {/* Ações do Menu - Protegidas para Guest */}
+                {currentUser.role !== "guest" && (
+                  <div className="space-y-0.5">
                     <button
                       onClick={() => {
-                        setIsTelemetryOpen(true);
+                        setSettingsDefaultTab("permissions");
+                        setIsSettingsOpen(true);
                         setIsProfileMenuOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left cursor-pointer"
                     >
-                      <Activity className="h-3.5 w-3.5 text-sky-400" />
-                      <span>Auditoria & Telemetria</span>
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                      <span>Matriz de Permissões RBAC</span>
                     </button>
-                  )}
-                </div>
+
+                    <button
+                      onClick={() => {
+                        setSettingsDefaultTab("members");
+                        setIsSettingsOpen(true);
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left cursor-pointer"
+                    >
+                      <Users className="h-3.5 w-3.5 text-sky-400" />
+                      <span>Membros & Senhas</span>
+                    </button>
+
+                    {canViewTelemetry && (
+                      <button
+                        onClick={() => {
+                          setIsTelemetryOpen(true);
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left cursor-pointer"
+                      >
+                        <Activity className="h-3.5 w-3.5 text-sky-400" />
+                        <span>Auditoria & Telemetria</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
