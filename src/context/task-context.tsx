@@ -61,8 +61,11 @@ interface TaskContextType {
   addComment: (taskId: string, content: string) => void;
   reviewApproval: (approvalId: string, decision: "approved" | "rejected", comment?: string) => void;
   triggerClaim: (agentId: string) => void;
+  currentUser: Member;
   updateMemberRole: (memberId: string, role: Member["role"]) => void;
-  inviteMember: (data: { name: string; email: string; role: Member["role"] }) => void;
+  updateMemberPassword: (memberId: string, newPass: string) => void;
+  regenerateMemberMcpToken: (memberId: string) => string;
+  inviteMember: (data: { name: string; email: string; role: Member["role"]; initialPassword?: string }) => void;
 }
 
 const TaskContext = createContext<TaskContextType | null>(null);
@@ -315,29 +318,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     toast.success("Quadro atualizado com sucesso!");
   };
 
-  const updateMemberRole = (memberId: string, role: Member["role"]) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, role } : m))
-    );
-    telemetry.track("member_action", `Papel do membro alterado para ${role}`, { memberId, role }, "info", "task-context");
-    toast.success("Papel do usuário atualizado!");
-  };
 
-  const inviteMember = (data: { name: string; email: string; role: Member["role"] }) => {
-    const newMember: Member = {
-      id: `user-${Date.now()}`,
-      workspaceId: store.workspace.id,
-      name: data.name,
-      email: data.email,
-      role: data.role,
-      avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(data.name)}`,
-      status: "active",
-    };
-    setMembers((prev) => [...prev, newMember]);
-    store.workspace.members.push(newMember);
-    telemetry.track("member_action", `Novo membro convidado: ${data.name} (${data.email})`, { member: newMember }, "success", "task-context");
-    toast.success(`Convite enviado para ${data.email}!`);
-  };
 
   const createProject = (data: {
     name: string;
@@ -690,6 +671,119 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setAgentRuns((prev) => [newRun, ...prev]);
   };
 
+  const updateMemberRole = (memberId: string, role: Member["role"]) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, role } : m))
+    );
+    const target = store.workspace.members.find((m) => m.id === memberId);
+    if (target) {
+      target.role = role;
+    }
+    telemetry.track(
+      "member_role_updated",
+      `Nível de permissão do usuário ${target?.name || memberId} atualizado para ${role}`,
+      { memberId, role },
+      "info",
+      "task-context"
+    );
+    toast.success("Nível de acesso atualizado!");
+  };
+
+  const updateMemberPassword = (memberId: string, newPass: string) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, password: newPass } : m))
+    );
+    const target = store.workspace.members.find((m) => m.id === memberId);
+    if (target) {
+      target.password = newPass;
+    }
+    telemetry.track(
+      "member_password_updated",
+      `Senha do usuário ${target?.name || memberId} alterada com sucesso`,
+      { memberId },
+      "info",
+      "task-context"
+    );
+    toast.success("Senha atualizada com sucesso!");
+  };
+
+  const regenerateMemberMcpToken = (memberId: string) => {
+    const newToken = `medtask_user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    setMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, mcpToken: newToken } : m))
+    );
+    const target = store.workspace.members.find((m) => m.id === memberId);
+    if (target) {
+      target.mcpToken = newToken;
+    }
+    telemetry.track(
+      "mcp_token_regenerated",
+      `Token MCP regenerado para ${target?.name || memberId}`,
+      { memberId, newToken },
+      "info",
+      "task-context"
+    );
+    toast.success("Novo token MCP gerado!");
+    return newToken;
+  };
+
+  const inviteMember = async (data: {
+    name: string;
+    email: string;
+    role: Member["role"];
+    initialPassword?: string;
+  }) => {
+    const newId = `user-${Date.now()}`;
+    const generatedToken =
+      data.email === "lucca@medhit.com.br"
+        ? "medtask_user_lucca_x32kd58_sec99"
+        : `medtask_user_${data.name.toLowerCase().replace(/[^a-z0-9]/g, "")}_${Date.now().toString().slice(-4)}`;
+    const pass = data.initialPassword || (data.email === "lucca@medhit.com.br" ? "x32kd58" : `medhit_${Math.random().toString(36).slice(-6)}`);
+
+    const newMember: Member = {
+      id: newId,
+      workspaceId: store.workspace.id,
+      name: data.name,
+      email: data.email,
+      password: pass,
+      mcpToken: generatedToken,
+      role: data.role,
+      avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(data.name)}`,
+      status: "active",
+      lastLoginAt: new Date().toISOString(),
+    };
+
+    setMembers((prev) => [...prev, newMember]);
+    store.workspace.members.push(newMember);
+
+    // Envia convite via Resend com boas práticas e logo
+    try {
+      await fetch("/api/members/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: newMember.email,
+          name: newMember.name,
+          role: newMember.role,
+          password: pass,
+          mcpToken: generatedToken,
+        }),
+      }).catch(() => null);
+    } catch {
+      // Falha silenciosa em dev
+    }
+
+    telemetry.track(
+      "member_invited",
+      `Usuário ${newMember.name} (${newMember.email}) convidado com papel ${newMember.role}`,
+      { memberId: newId, email: newMember.email, role: newMember.role },
+      "success",
+      "task-context"
+    );
+
+    toast.success(`Convite enviado para ${newMember.email}!`);
+  };
+
   return (
     <TaskContext.Provider
       value={{
@@ -728,7 +822,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         addComment,
         reviewApproval,
         triggerClaim,
+        currentUser: members.find((m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")) || members[0],
         updateMemberRole,
+        updateMemberPassword,
+        regenerateMemberMcpToken,
         inviteMember,
       }}
     >

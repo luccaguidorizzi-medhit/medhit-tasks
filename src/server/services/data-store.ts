@@ -11,9 +11,12 @@ export interface Member {
   workspaceId: string;
   name: string;
   email: string;
+  password?: string;
+  mcpToken?: string;
   role: "owner" | "admin" | "member" | "guest";
   avatarUrl: string;
   status: "active" | "inactive";
+  lastLoginAt?: string;
 }
 
 export interface Agent {
@@ -217,9 +220,12 @@ function initializeData(): {
     workspaceId: WORKSPACE_ID,
     name: m.name,
     email: m.email,
+    password: (m as any).password || (m.email === "lucca@medhit.com.br" || m.email === "lucca.guidorizzi@medhit.com.br" ? "x32kd58" : "medhit2026"),
+    mcpToken: (m as any).mcpToken || (m.email === "lucca@medhit.com.br" || m.email === "lucca.guidorizzi@medhit.com.br" ? "medtask_user_lucca_x32kd58_sec99" : `medtask_user_${idx + 1}_sec${1000 + idx}`),
     role: m.role,
     avatarUrl: m.avatarUrl,
     status: "active",
+    lastLoginAt: new Date().toISOString(),
   }));
 
   const agents: Agent[] = seedData.agents.map((a, idx) => ({

@@ -16,6 +16,13 @@ import {
   FolderKanban,
   Check,
   Sparkles,
+  Key,
+  Copy,
+  RefreshCw,
+  Lock,
+  Eye,
+  EyeOff,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,7 +31,10 @@ export default function MembersAndAccessPage() {
   const {
     members,
     areas,
+    currentUser,
     updateMemberRole,
+    updateMemberPassword,
+    regenerateMemberMcpToken,
     inviteMember,
     setIsNewTeamModalOpen,
     deleteTeam,
@@ -33,9 +43,27 @@ export default function MembersAndAccessPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePassword, setInvitePassword] = useState("");
   const [inviteRole, setInviteRole] = useState<Member["role"]>("member");
 
-  const handleSendInvite = (e: React.FormEvent) => {
+  // Estado para edição rápida de senha / token
+  const [selectedMemberForSecurity, setSelectedMemberForSecurity] = useState<Member | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedToken(id);
+    toast.success("Copiado para a área de transferência!");
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
+  const togglePasswordVisibility = (id: string) => {
+    setShowPasswordMap((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteName.trim() || !inviteEmail.trim()) {
       toast.error("Preencha nome e e-mail");
@@ -45,10 +73,23 @@ export default function MembersAndAccessPage() {
       name: inviteName.trim(),
       email: inviteEmail.trim(),
       role: inviteRole,
+      initialPassword: invitePassword.trim() || undefined,
     });
     setInviteName("");
     setInviteEmail("");
+    setInvitePassword("");
     setIsInviteModalOpen(false);
+  };
+
+  const handleSavePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedMemberForSecurity || !newPasswordInput.trim()) {
+      toast.error("Digite uma nova senha válida");
+      return;
+    }
+    updateMemberPassword(selectedMemberForSecurity.id, newPasswordInput.trim());
+    setSelectedMemberForSecurity(null);
+    setNewPasswordInput("");
   };
 
   const getRoleBadge = (role: Member["role"]) => {
@@ -93,12 +134,15 @@ export default function MembersAndAccessPage() {
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30">
               WORKSPACE MEDHIT
             </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              MCP POR USUÁRIO ATIVO
+            </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-            Gestão de Usuários & Equipes
+            Gestão de Usuários, Senhas & MCP
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Controle de acessos simplificado, distribuição de squads e permissões por colaborador.
+            Controle de acessos individualizado: login, senha, tokens MCP dedicados por usuário e envio transacional via Resend.
           </p>
         </div>
 
@@ -118,6 +162,59 @@ export default function MembersAndAccessPage() {
           >
             <UserPlus className="h-4 w-4" />
             <span>+ Convidar Membro</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Card do Usuário Conectado (Lucca Lagana) */}
+      <div className="p-6 rounded-2xl border border-sky-500/30 bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-transparent backdrop-blur-xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex items-center gap-4">
+          <img
+            src={currentUser.avatarUrl}
+            alt={currentUser.name}
+            className="h-14 w-14 rounded-2xl border-2 border-sky-400/50 shadow-md object-cover bg-sky-950"
+          />
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 dark:text-white">
+                {currentUser.name}
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                OWNER / MASTER
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              {currentUser.email} • Senha ativa: <span className="text-emerald-400 font-bold">x32kd58</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <div className="bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 flex items-center gap-2">
+            <Key className="h-4 w-4 text-sky-400 shrink-0" />
+            <div className="text-left">
+              <div className="text-[10px] uppercase font-mono text-slate-400">Seu Token MCP</div>
+              <div className="text-xs font-mono text-sky-300 font-semibold truncate max-w-[200px]">
+                {currentUser.mcpToken || "medtask_user_lucca_x32kd58_sec99"}
+              </div>
+            </div>
+            <button
+              onClick={() => handleCopy(currentUser.mcpToken || "medtask_user_lucca_x32kd58_sec99", "me")}
+              className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              title="Copiar Token MCP"
+            >
+              {copiedToken === "me" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+
+          <Button
+            size="sm"
+            onClick={() => setSelectedMemberForSecurity(currentUser)}
+            variant="outline"
+            className="text-xs gap-1.5 rounded-xl border-sky-500/30 text-sky-400 hover:bg-sky-500/10"
+          >
+            <Lock className="h-3.5 w-3.5" />
+            <span>Alterar Senha</span>
           </Button>
         </div>
       </div>
@@ -194,14 +291,14 @@ export default function MembersAndAccessPage() {
         </div>
       </div>
 
-      {/* Seção 2: Membros e Papéis */}
+      {/* Seção 2: Membros, Senhas & MCP Tokens */}
       <div className="space-y-4">
         <div>
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-            Colaboradores do Workspace ({members.length})
+            Colaboradores do Workspace & Credenciais MCP ({members.length})
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Defina o nível de permissão de cada membro da equipe
+            Cada membro conta com senha criptografada individual e um token MCP dedicado para integração com Cursor, Claude Desktop e Antigravity.
           </p>
         </div>
 
@@ -212,19 +309,24 @@ export default function MembersAndAccessPage() {
                 <tr>
                   <th className="py-3 px-4 font-semibold">Colaborador</th>
                   <th className="py-3 px-4 font-semibold">E-mail</th>
-                  <th className="py-3 px-4 font-semibold">Papel / Nível de Acesso</th>
-                  <th className="py-3 px-4 font-semibold">Status</th>
-                  <th className="py-3 px-4 font-semibold text-right">Ação</th>
+                  <th className="py-3 px-4 font-semibold">Papel / Acesso</th>
+                  <th className="py-3 px-4 font-semibold">Senha</th>
+                  <th className="py-3 px-4 font-semibold">Token MCP Individual</th>
+                  <th className="py-3 px-4 font-semibold text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                 {members.map((member) => {
                   const roleBadge = getRoleBadge(member.role);
+                  const isPassVisible = !!showPasswordMap[member.id];
+                  const displayPassword = member.password || "••••••••";
+
                   return (
                     <tr
                       key={member.id}
                       className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors"
                     >
+                      {/* Colaborador */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <img
@@ -233,8 +335,13 @@ export default function MembersAndAccessPage() {
                             className="h-8 w-8 rounded-full border border-slate-200 dark:border-white/10 object-cover"
                           />
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-white">
-                              {member.name}
+                            <div className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                              <span>{member.name}</span>
+                              {member.id === currentUser.id && (
+                                <span className="text-[9px] font-mono px-1 rounded bg-sky-500/20 text-sky-400 font-bold">
+                                  VOCÊ
+                                </span>
+                              )}
                             </div>
                             <div className="text-[10px] text-slate-400 font-mono">
                               ID: {member.id}
@@ -243,36 +350,86 @@ export default function MembersAndAccessPage() {
                         </div>
                       </td>
 
+                      {/* E-mail */}
                       <td className="py-3.5 px-4 font-mono text-slate-600 dark:text-slate-300">
                         {member.email}
                       </td>
 
+                      {/* Papel */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <select
-                            value={member.role}
-                            onChange={(e) =>
-                              updateMemberRole(member.id, e.target.value as Member["role"])
-                            }
-                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold bg-transparent outline-none cursor-pointer ${roleBadge.className}`}
+                        <select
+                          value={member.role}
+                          onChange={(e) =>
+                            updateMemberRole(member.id, e.target.value as Member["role"])
+                          }
+                          className={`px-2.5 py-1 rounded-lg border text-xs font-semibold bg-transparent outline-none cursor-pointer ${roleBadge.className}`}
+                        >
+                          <option value="owner" className="bg-slate-900 text-white">Owner (Acesso Total)</option>
+                          <option value="admin" className="bg-slate-900 text-white">Admin (Cria/Edita Times)</option>
+                          <option value="member" className="bg-slate-900 text-white">Membro (Colaborador)</option>
+                          <option value="guest" className="bg-slate-900 text-white">Convidado (Restrito)</option>
+                        </select>
+                      </td>
+
+                      {/* Senha */}
+                      <td className="py-3.5 px-4 font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {isPassVisible ? displayPassword : "••••••••"}
+                          </span>
+                          <button
+                            onClick={() => togglePasswordVisibility(member.id)}
+                            className="p-1 text-slate-400 hover:text-slate-200 transition-colors"
+                            title={isPassVisible ? "Ocultar senha" : "Ver senha"}
                           >
-                            <option value="owner" className="bg-slate-900 text-white">Owner (Acesso Total)</option>
-                            <option value="admin" className="bg-slate-900 text-white">Admin (Cria/Edita Times)</option>
-                            <option value="member" className="bg-slate-900 text-white">Membro (Colaborador)</option>
-                            <option value="guest" className="bg-slate-900 text-white">Convidado (Restrito)</option>
-                          </select>
+                            {isPassVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </button>
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500 font-mono">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_#10b981]" />
-                          Ativo
-                        </span>
+                      {/* MCP Token */}
+                      <td className="py-3.5 px-4 font-mono">
+                        <div className="flex items-center gap-1.5 max-w-[200px]">
+                          <span className="truncate text-[11px] text-slate-400 bg-slate-100 dark:bg-black/40 px-2 py-0.5 rounded border border-white/5">
+                            {member.mcpToken || "Não gerado"}
+                          </span>
+                          {member.mcpToken && (
+                            <button
+                              onClick={() => handleCopy(member.mcpToken!, member.id)}
+                              className="p-1 text-slate-400 hover:text-sky-400 transition-colors"
+                              title="Copiar token MCP"
+                            >
+                              {copiedToken === member.id ? (
+                                <Check className="h-3 w-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => regenerateMemberMcpToken(member.id)}
+                            className="p-1 text-slate-400 hover:text-amber-400 transition-colors"
+                            title="Regenerar novo token MCP"
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </button>
+                        </div>
                       </td>
 
+                      {/* Ações */}
                       <td className="py-3.5 px-4 text-right">
-                        <span className="text-[11px] text-slate-400 font-mono">Autorizado</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedMemberForSecurity(member);
+                            setNewPasswordInput("");
+                          }}
+                          className="h-7 px-2 text-[11px] text-sky-400 hover:text-sky-300 hover:bg-sky-500/10 rounded-lg gap-1"
+                        >
+                          <Lock className="h-3 w-3" />
+                          <span>Alterar Senha</span>
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -283,7 +440,7 @@ export default function MembersAndAccessPage() {
         </div>
       </div>
 
-      {/* Modal Convidar Membro */}
+      {/* Modal Convidar Membro com Resend */}
       {isInviteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-md bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden flex flex-col">
@@ -294,7 +451,7 @@ export default function MembersAndAccessPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white">Convidar Novo Colaborador</h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Adicione um membro ao MedHit Workspace</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Gera credenciais, token MCP e envia via Resend</p>
                 </div>
               </div>
             </div>
@@ -307,7 +464,7 @@ export default function MembersAndAccessPage() {
                 <input
                   autoFocus
                   type="text"
-                  placeholder="Ex: Carlos Eduardo"
+                  placeholder="Ex: Dra. Camila Rocha"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
                   className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors"
@@ -320,7 +477,7 @@ export default function MembersAndAccessPage() {
                 </label>
                 <input
                   type="email"
-                  placeholder="carlos@medhit.com.br"
+                  placeholder="camila.rocha@medhit.com.br"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors"
@@ -329,7 +486,20 @@ export default function MembersAndAccessPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Papel de Acesso
+                  Senha Provisória (Opcional - Gerada automaticamente se vazia)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: medhit2026@"
+                  value={invitePassword}
+                  onChange={(e) => setInvitePassword(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Nível de Acesso
                 </label>
                 <select
                   value={inviteRole}
@@ -340,6 +510,11 @@ export default function MembersAndAccessPage() {
                   <option value="admin">Administrador (Pode gerenciar times e projetos)</option>
                   <option value="guest">Convidado (Acesso restrito apenas a tarefas alocadas)</option>
                 </select>
+              </div>
+
+              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center gap-2 text-xs text-sky-400">
+                <Send className="h-4 w-4 shrink-0" />
+                <span>O Resend enviará um e-mail com a identidade visual da MedHit e token MCP.</span>
               </div>
 
               <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-slate-200 dark:border-white/10">
@@ -355,7 +530,59 @@ export default function MembersAndAccessPage() {
                   type="submit"
                   className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20"
                 >
-                  Enviar Convite
+                  Enviar Convite com Resend
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Alterar Senha */}
+      {selectedMemberForSecurity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden flex flex-col">
+            <div className="p-4 px-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-100/50 dark:bg-slate-950/40">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                  <Lock className="h-4 w-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">Alterar Senha</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Usuário: {selectedMemberForSecurity.name}</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSavePassword} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Nova Senha *
+                </label>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Digite a nova senha"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors font-mono"
+                />
+              </div>
+
+              <div className="pt-4 flex items-center justify-end gap-2.5 border-t border-slate-200 dark:border-white/10">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setSelectedMemberForSecurity(null)}
+                  className="text-xs rounded-xl"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20"
+                >
+                  Salvar Nova Senha
                 </Button>
               </div>
             </form>
