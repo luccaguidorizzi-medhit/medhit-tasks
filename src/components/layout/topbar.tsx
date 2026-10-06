@@ -25,6 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/settings-modal";
 import { TelemetryModal } from "@/components/telemetry/telemetry-modal";
+import { SearchModal } from "@/components/search/search-modal";
 import { EducationalTooltip } from "@/components/ui/tooltip";
 import { useTasks, UserRole } from "@/context/task-context";
 
@@ -49,12 +50,25 @@ export function Topbar({
   const { currentUser, hasPermission, switchActiveRole, switchActiveUser, members } = useTasks();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry">("appearance");
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const canViewTelemetry = hasPermission("view_telemetry");
   const canCreateTask = hasPermission("create_task");
+
+  // Atalho global Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -130,7 +144,10 @@ export function Topbar({
             shortcut="⌘K"
           >
             <div
-              onClick={onOpenSearch}
+              onClick={() => {
+                if (onOpenSearch) onOpenSearch();
+                else setIsSearchOpen(true);
+              }}
               className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-sky-500/20 bg-slate-100/80 dark:bg-[#0c1830]/70 hover:border-sky-500/40 text-slate-400 dark:text-slate-400 text-xs transition-all cursor-pointer shadow-inner"
             >
               <Search className="h-3.5 w-3.5 text-sky-400 shrink-0" />
@@ -367,6 +384,12 @@ export function Topbar({
       <TelemetryModal
         isOpen={isTelemetryOpen}
         onClose={() => setIsTelemetryOpen(false)}
+      />
+
+      {/* Modal de Busca Global Rápida */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </>
   );

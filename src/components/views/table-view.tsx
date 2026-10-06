@@ -39,6 +39,8 @@ interface TableViewProps {
   statuses: Status[];
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  projectId?: string;
+  areaId?: string;
 }
 
 const PRIORITY_OPTIONS: {
@@ -54,7 +56,7 @@ const PRIORITY_OPTIONS: {
   { id: "none", label: "Normal", color: "#94a3b8", icon: Minus },
 ];
 
-export function TableView({ statuses, tasks, onTaskClick }: TableViewProps) {
+export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: TableViewProps) {
   const {
     moveTask,
     updateTask,
@@ -113,8 +115,8 @@ export function TableView({ statuses, tasks, onTaskClick }: TableViewProps) {
     createTask({
       title,
       statusId,
-      projectId: currentProject?.id,
-      areaId: currentArea?.id,
+      projectId: projectId || currentProject?.id,
+      areaId: areaId || currentArea?.id,
       priority: "medium",
       taskType: "task",
     });

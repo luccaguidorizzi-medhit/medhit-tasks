@@ -15,13 +15,8 @@ import Link from "next/link";
 import { useTasks } from "@/context/task-context";
 import { ProjectToolbar } from "@/components/layout/project-toolbar";
 import { KanbanBoard } from "@/components/boards/kanban-board";
-import { ListView } from "@/components/views/list-view";
 import { TableView } from "@/components/views/table-view";
 import { CalendarView } from "@/components/views/calendar-view";
-import { MatrixView } from "@/components/views/matrix-view";
-import { AgileView } from "@/components/views/agile-view";
-import { RoadmapView } from "@/components/views/roadmap-view";
-import { BacklogView } from "@/components/views/backlog-view";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
@@ -241,6 +236,8 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
               statuses={statuses}
               tasks={projectTasks}
               onTaskClick={setSelectedTask}
+              projectId={activeProject.id}
+              areaId={activeProject.areaId}
             />
           </div>
         );

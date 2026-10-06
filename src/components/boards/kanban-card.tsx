@@ -1,3 +1,16 @@
+/**
+ * MedHit Integrações & Automações
+ * Cartão Kanban Simplificado e Pragmático (Estilo Monday.com / Linear).
+ * 
+ * Sem overengineering ou mockups artificiais:
+ * - Prioridade visual clara em português
+ * - Título legível da demanda
+ * - Prazo real apenas se definido (com alerta de atraso)
+ * - Progresso do checklist (se houver critérios)
+ * - Avatares reais dos responsáveis
+ * Assinado por: MedHit Integrações & Automações
+ */
+
 "use client";
 
 import React from "react";
@@ -5,10 +18,13 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   Calendar,
-  Paperclip,
-  MoreVertical,
-  CheckCircle2,
-  Share2,
+  CheckSquare,
+  AlertCircle,
+  SignalHigh,
+  SignalMedium,
+  SignalLow,
+  Minus,
+  Clock,
 } from "lucide-react";
 import { Task } from "@/server/services/data-store";
 import { cn } from "@/lib/utils";
@@ -17,6 +33,37 @@ interface KanbanCardProps {
   task: Task;
   onClick: (task: Task) => void;
 }
+
+const PRIORITY_CONFIG: Record<
+  Task["priority"],
+  { label: string; badgeClass: string; icon: React.ElementType }
+> = {
+  urgent: {
+    label: "Urgente",
+    badgeClass: "bg-rose-500/15 text-rose-500 border-rose-500/30",
+    icon: AlertCircle,
+  },
+  high: {
+    label: "Alta",
+    badgeClass: "bg-orange-500/15 text-orange-500 border-orange-500/30",
+    icon: SignalHigh,
+  },
+  medium: {
+    label: "Média",
+    badgeClass: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+    icon: SignalMedium,
+  },
+  low: {
+    label: "Baixa",
+    badgeClass: "bg-sky-500/15 text-sky-500 border-sky-500/30",
+    icon: SignalLow,
+  },
+  none: {
+    label: "Normal",
+    badgeClass: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+    icon: Minus,
+  },
+};
 
 export function KanbanCard({ task, onClick }: KanbanCardProps) {
   const {
@@ -39,41 +86,53 @@ export function KanbanCard({ task, onClick }: KanbanCardProps) {
     transform: CSS.Transform.toString(transform),
   };
 
-  // Mock cover image selection for visual match with reference UI
-  // Reference cards feature modern tech / digital illustrations on the first cards
-  const hasCoverImage =
-    task.title.toLowerCase().includes("copy") ||
-    task.title.toLowerCase().includes("webhook") ||
-    task.title.toLowerCase().includes("criativos");
+  const priority = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.none;
 
-  const coverImageUrl = task.title.toLowerCase().includes("copy")
-    ? "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"
-    : "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=600&q=80";
+  // Cálculo de Progresso de Checklist
+  const allChecklistItems = task.checklists?.flatMap((c) => c.items) || [];
+  const completedCount = allChecklistItems.filter((i) => i.isCompleted).length;
+  const totalCount = allChecklistItems.length;
 
-  // Category tags with pill badges exactly matching the reference
-  const getCategoryTag = () => {
-    if (task.taskType === "agent_task") {
-      return { label: "Development", color: "bg-purple-500/20 text-purple-300 border-purple-500/30" };
+  // Formatação de Prazo
+  const getDueDateInfo = () => {
+    if (!task.dueDate) return null;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const due = new Date(task.dueDate);
+    const dueDateOnly = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const diffDays = Math.ceil((dueDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return {
+        label: `${Math.abs(diffDays)}d atrasada`,
+        className: "text-rose-500 bg-rose-500/10 border-rose-500/25 font-bold",
+        isOverdue: true,
+      };
     }
-    return { label: "Design", color: "bg-blue-500/20 text-blue-300 border-blue-500/30" };
+    if (diffDays === 0) {
+      return {
+        label: "Hoje",
+        className: "text-amber-500 bg-amber-500/10 border-amber-500/25 font-bold",
+        isOverdue: false,
+      };
+    }
+    if (diffDays === 1) {
+      return {
+        label: "Amanhã",
+        className: "text-sky-500 bg-sky-500/10 border-sky-500/25 font-medium",
+        isOverdue: false,
+      };
+    }
+    return {
+      label: due.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }),
+      className: "text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10",
+      isOverdue: false,
+    };
   };
 
-  const getPriorityPill = () => {
-    switch (task.priority) {
-      case "urgent":
-        return { label: "High", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" };
-      case "high":
-        return { label: "High", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" };
-      case "medium":
-        return { label: "Medium", color: "bg-amber-500/20 text-amber-300 border-amber-500/30" };
-      case "low":
-      default:
-        return { label: "Low", color: "bg-slate-500/20 text-slate-300 border-slate-500/30" };
-    }
-  };
-
-  const category = getCategoryTag();
-  const priorityPill = getPriorityPill();
+  const dueDateInfo = getDueDateInfo();
+  const visibleAssignees = task.assigneeIds.slice(0, 3);
+  const remainingAssigneesCount = Math.max(0, task.assigneeIds.length - 3);
 
   return (
     <div
@@ -83,104 +142,94 @@ export function KanbanCard({ task, onClick }: KanbanCardProps) {
       {...listeners}
       onClick={() => onClick(task)}
       className={cn(
-        "group relative rounded-2xl border border-white/[0.08] dark:border-sky-500/15 bg-white/80 dark:bg-[#0c1830]/75 backdrop-blur-md p-3.5 shadow-md shadow-black/20 hover:border-sky-500/40 hover:shadow-sky-500/10 hover:shadow-xl transition-all cursor-grab active:cursor-grabbing select-none overflow-hidden",
-        isDragging && "opacity-30 scale-102 ring-2 ring-sky-400"
+        "group relative rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#0c1830] p-3 shadow-xs hover:border-sky-500/50 hover:shadow-md transition-all cursor-grab active:cursor-grabbing select-none",
+        isDragging && "opacity-40 scale-102 ring-2 ring-sky-400"
       )}
     >
-      {/* Cover Image se aplicável (como nos cards do topo da imagem de referência) */}
-      {hasCoverImage && (
-        <div className="relative -mx-3.5 -mt-3.5 mb-3 h-28 overflow-hidden rounded-t-2xl">
-          <img
-            src={coverImageUrl}
-            alt={task.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0c1830] via-transparent to-transparent opacity-80" />
-        </div>
-      )}
-
-      {/* Tags de Categoria & Prioridade & Tags Customizadas + Ações Rápidas */}
+      {/* Linha Superior: Prioridade & Tags */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span
             className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
-              category.color
+              "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border",
+              priority.badgeClass
             )}
           >
-            {category.label}
+            <priority.icon className="h-3 w-3" />
+            <span>{priority.label}</span>
           </span>
-          <span
-            className={cn(
-              "px-2 py-0.5 rounded-full text-[10px] font-semibold border",
-              priorityPill.color
-            )}
-          >
-            {priorityPill.label}
-          </span>
-          {task.tags && task.tags.map((tg) => (
-            <span
-              key={tg}
-              className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-500 dark:text-sky-300 border border-sky-500/20"
-            >
-              #{tg}
-            </span>
-          ))}
-        </div>
 
-        <button
-          className="text-slate-400 hover:text-slate-200 transition-colors p-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClick(task);
-          }}
-        >
-          <MoreVertical className="h-3.5 w-3.5" />
-        </button>
+          {task.tags &&
+            task.tags.slice(0, 2).map((tg) => (
+              <span
+                key={tg}
+                className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-white/5"
+              >
+                #{tg}
+              </span>
+            ))}
+        </div>
       </div>
 
-      {/* Título da Tarefa / Card name */}
-      <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug mb-3 group-hover:text-sky-400 transition-colors">
+      {/* Título da Demanda */}
+      <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-3 group-hover:text-sky-500 transition-colors">
         {task.title}
       </h3>
 
-      {/* Rodapé: Data (12 JUN), Anexos (0 files), Avatares */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/[0.06] text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-        <div className="flex items-center gap-3">
-          {/* Data */}
-          <div className="flex items-center gap-1 text-[10px] font-mono">
-            <Calendar className="h-3 w-3 text-slate-400" />
-            <span>
-              {task.dueDate
-                ? new Date(task.dueDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).toUpperCase()
-                : "12 JUN"}
+      {/* Rodapé: Prazo, Checklist & Responsáveis */}
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+        <div className="flex items-center gap-2">
+          {/* Prazo Real (se houver) */}
+          {dueDateInfo && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] border font-mono",
+                dueDateInfo.className
+              )}
+            >
+              <Clock className="h-2.5 w-2.5" />
+              <span>{dueDateInfo.label}</span>
             </span>
-          </div>
+          )}
 
-          {/* Contador de Anexos */}
-          <div className="flex items-center gap-1 text-[10px] font-mono">
-            <Paperclip className="h-3 w-3 text-slate-400" />
-            <span>0 files</span>
-          </div>
-        </div>
-
-        {/* Avatares dos Membros */}
-        <div className="flex items-center -space-x-1.5">
-          {task.assigneeIds.map((ass) => (
-            <img
-              key={ass.id}
-              src={ass.avatarUrl}
-              alt={ass.name}
-              title={ass.name}
-              className="h-5 w-5 rounded-full border border-slate-900 bg-slate-800 object-cover shadow-xs"
-            />
-          ))}
-          {task.assigneeIds.length > 1 && (
-            <span className="h-5 w-5 rounded-full bg-slate-800 border border-slate-900 text-[9px] font-mono text-slate-300 flex items-center justify-center font-bold">
-              +{task.assigneeIds.length}
+          {/* Progresso do Checklist */}
+          {totalCount > 0 && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-mono",
+                completedCount === totalCount
+                  ? "text-emerald-500 font-bold"
+                  : "text-slate-400"
+              )}
+              title={`${completedCount} de ${totalCount} itens concluídos`}
+            >
+              <CheckSquare className="h-3 w-3" />
+              <span>
+                {completedCount}/{totalCount}
+              </span>
             </span>
           )}
         </div>
+
+        {/* Avatares dos Responsáveis */}
+        {visibleAssignees.length > 0 && (
+          <div className="flex items-center -space-x-1.5">
+            {visibleAssignees.map((ass) => (
+              <img
+                key={ass.id}
+                src={ass.avatarUrl}
+                alt={ass.name}
+                title={ass.name}
+                className="h-5 w-5 rounded-full border-2 border-white dark:border-[#0c1830] bg-slate-200 dark:bg-slate-800 object-cover shadow-xs"
+              />
+            ))}
+            {remainingAssigneesCount > 0 && (
+              <span className="h-5 w-5 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-white dark:border-[#0c1830] text-[9px] font-mono text-slate-500 flex items-center justify-center font-bold">
+                +{remainingAssigneesCount}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

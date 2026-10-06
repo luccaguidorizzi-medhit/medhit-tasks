@@ -113,7 +113,6 @@ export function TaskDrawer({
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false);
-  const [showAiGuidance, setShowAiGuidance] = useState(false);
 
   const { hasPermission, areas, currentUser, isTaskVisibleForCurrentUser, isAiConfigured } = useTasks();
   const isGuest = currentUser.role === "guest";
@@ -205,13 +204,6 @@ export function TaskDrawer({
     if (e.target.value !== task.description) {
       onUpdateTask(task.id, { description: e.target.value });
       toast.success("Descrição salva!");
-    }
-  };
-
-  const handleAiContextBlur = (e: React.FocusEvent<HTMLTextAreaElement>) => {
-    if (e.target.value !== task.aiContext) {
-      onUpdateTask(task.id, { aiContext: e.target.value });
-      toast.success("Orientações para IA salvas!");
     }
   };
 
@@ -496,46 +488,6 @@ export function TaskDrawer({
                   </form>
                 )}
               </div>
-            </div>
-
-            {/* Instruções para o Assistente IA (Opcional & Amigável) */}
-            <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-2.5">
-              <div
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setShowAiGuidance(!showAiGuidance)}
-              >
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white">
-                    Instruções para o Assistente Inteligente (Opcional)
-                  </span>
-                </div>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 text-slate-400 transition-transform",
-                    showAiGuidance && "rotate-180"
-                  )}
-                />
-              </div>
-
-              {showAiGuidance && (
-                <div className="pt-2 space-y-2 animate-in fade-in duration-150">
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Você pode adicionar orientações específicas (ex: "Resumir em 3 tópicos claros para a diretoria", "Usar tom cordial de atendimento médico").
-                  </p>
-                  <textarea
-                    defaultValue={task.aiContext || ""}
-                    onBlur={handleAiContextBlur}
-                    disabled={!canEditTask}
-                    rows={2}
-                    placeholder="Ex: Instruções de formato, tom de voz ou diretrizes específicas..."
-                    className={cn(
-                      "w-full bg-white dark:bg-slate-950/60 border border-indigo-500/20 rounded-lg p-2.5 text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 outline-none focus:border-indigo-500 resize-none transition-colors",
-                      !canEditTask && "cursor-default opacity-85"
-                    )}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Conversas & Histórico da Tarefa */}

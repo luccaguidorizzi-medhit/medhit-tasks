@@ -121,7 +121,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
 
           {/* Explicação de Visualizações Universais */}
           <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Flexíveis:</strong> Qualquer quadro criado no MedHit Tasks pode ser visualizado como <strong className="text-sky-500">Quadro Kanban</strong>, <strong className="text-sky-500">Lista</strong>, <strong className="text-sky-500">Tabela</strong>, <strong className="text-sky-500">Calendário</strong>, <strong className="text-sky-500">Matriz Eisenhower</strong>, <strong className="text-sky-500">Sprints</strong> e <strong className="text-sky-500">Marcos</strong>.
+            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Essenciais:</strong> Qualquer quadro criado no MedHit Tasks inclui as visões de <strong className="text-sky-500">Quadro (Kanban)</strong>, <strong className="text-sky-500">Tabela Interativa</strong>, <strong className="text-sky-500">Calendário de Entregas</strong> e <strong className="text-sky-500">Visão Geral (Dashboard)</strong>.
           </div>
 
           {/* Cor do Projeto */}

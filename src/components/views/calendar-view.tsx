@@ -32,6 +32,8 @@ export function CalendarView({
   onQuickAddTask,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(() => new Date());
+  const [addingDate, setAddingDate] = useState<string | null>(null);
+  const [quickTitle, setQuickTitle] = useState("");
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-indexed
@@ -245,14 +247,12 @@ export function CalendarView({
                 <div className="flex items-center justify-between">
                   {onQuickAddTask && (
                     <button
-                      onClick={() =>
-                        onQuickAddTask(
-                          statuses[0]?.id || "",
-                          "Nova tarefa rápida",
-                          cell.dateKey
-                        )
-                      }
-                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAddingDate(cell.dateKey);
+                        setQuickTitle("");
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-sky-500 hover:bg-sky-500/10 transition-all cursor-pointer"
                       title="Adicionar tarefa neste dia"
                     >
                       <Plus className="h-3 w-3" />
@@ -270,6 +270,37 @@ export function CalendarView({
                     {cell.day}
                   </span>
                 </div>
+
+                {/* Formulário Inline de Nova Tarefa no Dia */}
+                {addingDate === cell.dateKey && (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (quickTitle.trim() && onQuickAddTask) {
+                        onQuickAddTask(statuses[0]?.id || "", quickTitle.trim(), cell.dateKey);
+                        setQuickTitle("");
+                        setAddingDate(null);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="my-1.5"
+                  >
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Nome da tarefa..."
+                      value={quickTitle}
+                      onChange={(e) => setQuickTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setAddingDate(null);
+                      }}
+                      onBlur={() => {
+                        if (!quickTitle.trim()) setAddingDate(null);
+                      }}
+                      className="w-full text-[11px] p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-sky-500 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none shadow-md"
+                    />
+                  </form>
+                )}
 
                 {/* Lista de Tarefas do Dia com Badges de Prioridade & Status */}
                 <div className="space-y-1 my-1 overflow-y-auto max-h-[75px] scrollbar-thin">

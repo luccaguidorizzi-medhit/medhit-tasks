@@ -25,7 +25,7 @@ interface AreaPageProps {
 
 export default function AreaPage({ params }: AreaPageProps) {
   const { area: areaSlug } = use(params);
-  const { areas, tasks, setIsNewBoardModalOpen } = useTasks();
+  const { areas, tasks, statuses, setIsNewBoardModalOpen } = useTasks();
 
   const currentArea = areas.find((a) => a.slug === areaSlug);
   if (!currentArea) {
@@ -34,7 +34,10 @@ export default function AreaPage({ params }: AreaPageProps) {
 
   const areaProjects = currentArea.projects;
   const areaTasks = tasks.filter((t) => t.areaId === currentArea.id);
-  const doneTasks = areaTasks.filter((t) => t.statusId.includes("done") || t.statusId.includes("4"));
+  const doneTasks = areaTasks.filter((t) => {
+    const s = statuses.find((st) => st.id === t.statusId);
+    return s?.category === "done";
+  });
   const completionRate = areaTasks.length > 0 ? Math.round((doneTasks.length / areaTasks.length) * 100) : 0;
 
   return (

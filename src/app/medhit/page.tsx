@@ -21,6 +21,7 @@ export default function WorkspaceHomePage() {
   const {
     areas,
     tasks,
+    statuses,
     setIsNewBoardModalOpen,
     setIsNewTaskModalOpen,
     setBoardToDelete,
@@ -30,7 +31,10 @@ export default function WorkspaceHomePage() {
 
   const visibleTasks = tasks.filter(isTaskVisibleForCurrentUser);
   const totalTasks = visibleTasks.length;
-  const inProgressCount = visibleTasks.filter((t) => t.statusId.includes("2") || t.statusId.includes("in_progress")).length;
+  const inProgressCount = visibleTasks.filter((t) => {
+    const s = statuses.find((st) => st.id === t.statusId);
+    return s?.category === "in_progress";
+  }).length;
   const urgentCount = visibleTasks.filter((t) => t.priority === "urgent").length;
 
   return (
@@ -138,6 +142,12 @@ export default function WorkspaceHomePage() {
             area.projects.map((proj) => {
               const projTasks = tasks.filter((t) => t.projectId === proj.id && isTaskVisibleForCurrentUser(t));
 
+              const doneProjTasks = projTasks.filter((t) => {
+                const s = statuses.find((st) => st.id === t.statusId);
+                return s?.category === "done";
+              });
+              const projPct = projTasks.length > 0 ? Math.round((doneProjTasks.length / projTasks.length) * 100) : 0;
+
               return (
                 <div
                   key={proj.id}
@@ -154,8 +164,8 @@ export default function WorkspaceHomePage() {
                           {area.name}
                         </span>
                       </div>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-semibold">
-                        {proj.methodology?.toUpperCase()}
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                        {projPct}% concluído
                       </span>
                     </div>
 

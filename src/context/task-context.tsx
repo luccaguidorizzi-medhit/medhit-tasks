@@ -621,21 +621,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const targetArea = areas.find((a) => a.slug === data.areaSlug) || areas[0];
     const newProjId = `proj-${targetArea.id}-${Date.now()}`;
 
-    let defaultStatuses: Status[] = [
+    const defaultStatuses: Status[] = [
       { id: `st-${newProjId}-1`, workspaceId: store.workspace.id, projectId: newProjId, name: "A Fazer", color: "#64748b", position: 1000, category: "todo" },
-      { id: `st-${newProjId}-2`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Andamento", color: "#38bdf8", position: 2000, category: "in_progress", wipLimit: 4 },
-      { id: `st-${newProjId}-3`, workspaceId: store.workspace.id, projectId: newProjId, name: "Concluído", color: "#10b981", position: 3000, category: "done" },
+      { id: `st-${newProjId}-2`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Andamento", color: "#38bdf8", position: 2000, category: "in_progress" },
+      { id: `st-${newProjId}-3`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Revisão", color: "#f59e0b", position: 2500, category: "review" },
+      { id: `st-${newProjId}-4`, workspaceId: store.workspace.id, projectId: newProjId, name: "Concluído", color: "#10b981", position: 3000, category: "done" },
     ];
-
-    if (data.methodology === "scrum") {
-      defaultStatuses = [
-        { id: `st-${newProjId}-0`, workspaceId: store.workspace.id, projectId: newProjId, name: "Backlog do Produto", color: "#94a3b8", position: 500, category: "backlog" },
-        { id: `st-${newProjId}-1`, workspaceId: store.workspace.id, projectId: newProjId, name: "Sprint Backlog", color: "#64748b", position: 1000, category: "todo" },
-        { id: `st-${newProjId}-2`, workspaceId: store.workspace.id, projectId: newProjId, name: "Em Desenvolvimento", color: "#38bdf8", position: 2000, category: "in_progress", wipLimit: 3 },
-        { id: `st-${newProjId}-3`, workspaceId: store.workspace.id, projectId: newProjId, name: "Revisão / QA", color: "#a855f7", position: 2500, category: "review", wipLimit: 2 },
-        { id: `st-${newProjId}-4`, workspaceId: store.workspace.id, projectId: newProjId, name: "Concluído (Done)", color: "#10b981", position: 3000, category: "done" },
-      ];
-    }
 
     const newProject: Project = {
       id: newProjId,
@@ -646,7 +637,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       description: data.description || "",
       icon: "layout",
       color: data.color || "#38bdf8",
-      methodology: data.methodology || "kanban",
+      methodology: "kanban",
       statuses: defaultStatuses,
       sprints: [],
     };
@@ -763,21 +754,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       statusId: data.statusId,
       priority: data.priority || "none",
       position: (tasks.length + 1) * 1000,
-      assigneeIds: data.taskType === "agent_task"
+      assigneeIds: data.assigneeIds && data.assigneeIds.length > 0
+        ? data.assigneeIds
+        : data.taskType === "agent_task"
         ? [{ type: "agent", id: store.workspace.agents[0].id, name: store.workspace.agents[0].name, avatarUrl: store.workspace.agents[0].avatarUrl }]
-        : [{ type: "user", id: store.workspace.members[0].id, name: store.workspace.members[0].name, avatarUrl: store.workspace.members[0].avatarUrl }],
+        : [],
       storyPoints: data.storyPoints,
       aiContext: data.aiContext,
       dueDate: data.dueDate,
       tags: data.tags || [],
-      checklists: [
-        {
-          id: `chk-${Date.now()}`,
-          taskId: newId,
-          title: "Critérios de Aceite",
-          items: [{ id: `item-1`, checklistId: `chk-${Date.now()}`, title: "Especificação validada", isCompleted: false }],
-        },
-      ],
+      checklists: data.checklists || [],
       comments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
