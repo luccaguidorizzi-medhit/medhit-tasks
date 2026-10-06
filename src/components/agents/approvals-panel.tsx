@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useTasks } from "@/context/task-context";
 
 interface ApprovalsPanelProps {
   approvals: Approval[];
@@ -20,12 +21,18 @@ interface ApprovalsPanelProps {
 }
 
 export function ApprovalsPanel({ approvals, onReview }: ApprovalsPanelProps) {
+  const { hasPermission } = useTasks();
+  const canApprove = hasPermission("review_approvals");
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
 
   const pendingApprovals = approvals.filter((a) => a.status === "pending");
   const reviewedApprovals = approvals.filter((a) => a.status !== "pending");
 
   const handleDecision = (id: string, decision: "approved" | "rejected") => {
+    if (!canApprove) {
+      toast.error("Permissão insuficiente para homologar solicitações de IA.");
+      return;
+    }
     const comment = commentInputs[id];
     onReview(id, decision, comment);
     toast.success(decision === "approved" ? "Solicitação APROVADA" : "Solicitação REJEITADA");
@@ -114,23 +121,31 @@ export function ApprovalsPanel({ approvals, onReview }: ApprovalsPanelProps) {
                 />
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDecision(appr.id, "rejected")}
-                    className="gap-1 text-xs text-rose-400 hover:bg-rose-500/10 border-rose-500/20"
-                  >
-                    <X className="h-3 w-3" />
-                    Rejeitar
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleDecision(appr.id, "approved")}
-                    className="gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
-                  >
-                    <Check className="h-3 w-3" />
-                    Aprovar Execução
-                  </Button>
+                  {canApprove ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDecision(appr.id, "rejected")}
+                        className="gap-1 text-xs text-rose-400 hover:bg-rose-500/10 border-rose-500/20"
+                      >
+                        <X className="h-3 w-3" />
+                        Rejeitar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleDecision(appr.id, "approved")}
+                        className="gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      >
+                        <Check className="h-3 w-3" />
+                        Aprovar Execução
+                      </Button>
+                    </>
+                  ) : (
+                    <span className="text-[11px] font-mono text-zinc-500 bg-white/5 px-2.5 py-1 rounded border border-white/10">
+                      Homologação restrita a administradores
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

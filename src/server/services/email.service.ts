@@ -1,6 +1,6 @@
 /**
  * MedHit Task Manager - Email Service via Resend
- * Desenvolvido por: Lagana Flow
+ * Desenvolvido por: MedHit Integrações & Automações
  * 
  * Envio de e-mails transacionais com templates modernos, logo MedHit e boas práticas.
  */
@@ -262,7 +262,7 @@ export const emailService = {
 
     <div class="footer">
       <p style="margin: 0 0 6px;">MedHit Gestão de Alta Performance & Esteiras Ágeis</p>
-      <p class="footer-signature" style="margin: 0;">Desenvolvido e mantido por <strong>Lagana Flow</strong></p>
+      <p class="footer-signature" style="margin: 0;">Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
     </div>
   </div>
 </body>
@@ -328,7 +328,7 @@ export const emailService = {
             <p><strong>${assignedBy}</strong> atribuiu uma nova tarefa a você:</p>
             <p style="font-size: 16px; font-weight: bold; color: #38bdf8;">${taskTitle}</p>
             <a href="${taskUrl}" style="display: inline-block; background: #0284c7; color: #fff; padding: 10px 20px; border-radius: 6px; text-decoration: none;">Ver Tarefa no MedHit Tasks</a>
-            <p style="font-size: 11px; color: #64748b; margin-top: 20px;">Assinado por Lagana Flow</p>
+            <p style="font-size: 11px; color: #64748b; margin-top: 20px;">Assinado por MedHit Integrações &amp; Automações</p>
           </div>
         `,
       });
@@ -393,7 +393,7 @@ export const emailService = {
     </div>
     <div class="footer">
       <p style="margin: 0 0 6px;">MedHit • Gestão de Alta Performance & Esteiras Ágeis</p>
-      <p class="footer-signature" style="margin: 0;">Desenvolvido e mantido por <strong>Lagana Flow</strong></p>
+      <p class="footer-signature" style="margin: 0;">Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
     </div>
   </div>
 </body>

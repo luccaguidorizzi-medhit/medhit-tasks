@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import {
@@ -15,10 +15,18 @@ import {
   Layers,
   CalendarCheck2,
   Activity,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Lock,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/settings-modal";
+import { TelemetryModal } from "@/components/telemetry/telemetry-modal";
 import { EducationalTooltip } from "@/components/ui/tooltip";
+import { useTasks, UserRole } from "@/context/task-context";
 
 interface TopbarProps {
   areaSlug?: string;
@@ -38,8 +46,27 @@ export function Topbar({
   onOpenSearch,
 }: TopbarProps) {
   const { theme, setTheme } = useTheme();
+  const { currentUser, hasPermission, switchActiveRole } = useTasks();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "ai" | "mcp" | "telemetry">("appearance");
+  const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry">("appearance");
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const canViewTelemetry = hasPermission("view_telemetry");
+  const canCreateTask = hasPermission("create_task");
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    if (isProfileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isProfileMenuOpen]);
 
   return (
     <>
@@ -155,10 +182,28 @@ export function Topbar({
 
 
 
+          {/* Acesso Rápido: Auditoria & Telemetria (Apenas Admin / Owner) */}
+          {canViewTelemetry && (
+            <EducationalTooltip
+              title="Auditoria & Telemetria"
+              description="Acesso restrito de administrador aos registros em tempo real de integridade e ações."
+            >
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsTelemetryOpen(true)}
+                className="h-8 px-2.5 gap-1.5 text-xs text-sky-500 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg border border-sky-500/30"
+              >
+                <Activity className="h-4 w-4 text-sky-400 animate-pulse" />
+                <span className="hidden lg:inline font-semibold">Auditoria</span>
+              </Button>
+            </EducationalTooltip>
+          )}
+
           {/* Botão Configurações */}
           <EducationalTooltip
             title="Configurações do Workspace"
-            description="Alterne temas, gerencie credenciais de IA e visualize os endpoints do servidor MCP."
+            description="Alterne temas, gerencie credenciais de IA, regras RBAC e endpoints MCP."
           >
             <Button
               variant="ghost"
@@ -201,6 +246,10 @@ export function Topbar({
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => {
+                setSettingsDefaultTab("permissions");
+                setIsSettingsOpen(true);
+              }}
               className="h-8 w-8 text-slate-600 dark:text-slate-300 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg relative"
             >
               <Bell className="h-4 w-4" />
@@ -208,32 +257,141 @@ export function Topbar({
             </Button>
           </EducationalTooltip>
 
-          {/* Perfil */}
-          <EducationalTooltip
-            title="Perfil do Usuário"
-            description="Logado como Lucca Lagana (Owner / Admin do Workspace)."
-          >
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10 cursor-help">
+          {/* Perfil & Menu RBAC Interativo */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10 hover:opacity-85 transition-opacity cursor-pointer text-left"
+              title="Clique para gerenciar seu perfil e simular papéis RBAC"
+            >
               <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca"
-                alt="Lucca"
+                src={currentUser.avatarUrl}
+                alt={currentUser.name}
                 className="h-7 w-7 rounded-full border border-sky-400/40 bg-sky-950 object-cover shadow-sm"
               />
-            </div>
-          </EducationalTooltip>
+              <div className="hidden xl:flex flex-col">
+                <span className="text-xs font-semibold text-slate-900 dark:text-white leading-none">
+                  {currentUser.name}
+                </span>
+                <span className="text-[9px] font-mono text-sky-400 uppercase font-bold mt-0.5">
+                  {currentUser.role}
+                </span>
+              </div>
+            </button>
+
+            {/* Dropdown Menu do Perfil & Seletor de Papéis */}
+            {isProfileMenuOpen && (
+              <div className="absolute right-0 top-10 w-64 rounded-2xl bg-white/95 dark:bg-[#081226]/95 border border-slate-200 dark:border-sky-500/30 p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100 select-none z-50">
+                {/* Cabeçalho do Usuário */}
+                <div className="p-2 border-b border-slate-100 dark:border-white/10 mb-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={currentUser.avatarUrl}
+                      alt={currentUser.name}
+                      className="h-8 w-8 rounded-full border border-sky-400/40 object-cover"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {currentUser.name}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono truncate">
+                        {currentUser.email}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-[10px] text-slate-400">Papel Atual:</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-sky-500/15 text-sky-400 border border-sky-500/25">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Simulador de Papéis RBAC */}
+                <div className="p-2 bg-slate-50 dark:bg-slate-950/60 rounded-xl mb-2 border border-slate-200/50 dark:border-white/5">
+                  <div className="text-[10px] font-mono text-slate-400 uppercase font-semibold mb-1.5">
+                    Simular Perfil de Acesso:
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 text-[10px] font-mono">
+                    {(["owner", "admin", "member", "guest"] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => {
+                          switchActiveRole(r);
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className={`px-2 py-1 rounded text-center font-bold uppercase transition-all ${
+                          currentUser.role === r
+                            ? "bg-sky-500 text-slate-950 shadow-xs"
+                            : "bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ações do Menu */}
+                <div className="space-y-0.5">
+                  <button
+                    onClick={() => {
+                      setSettingsDefaultTab("permissions");
+                      setIsSettingsOpen(true);
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                    <span>Matriz de Permissões RBAC</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSettingsDefaultTab("members");
+                      setIsSettingsOpen(true);
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
+                  >
+                    <Users className="h-3.5 w-3.5 text-sky-400" />
+                    <span>Membros & Senhas</span>
+                  </button>
+
+                  {canViewTelemetry && (
+                    <button
+                      onClick={() => {
+                        setIsTelemetryOpen(true);
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left"
+                    >
+                      <Activity className="h-3.5 w-3.5 text-sky-400" />
+                      <span>Auditoria & Telemetria</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Botão Nova Tarefa */}
           <EducationalTooltip
             title="Criar Nova Demanda"
-            description="Abre o painel rápido para cadastrar tarefas, definir tags ou gerar novos projetos."
-            shortcut="C"
+            description={canCreateTask ? "Abre o painel rápido para cadastrar tarefas." : "Ação restrita a Membros e Administradores."}
+            shortcut={canCreateTask ? "C" : undefined}
           >
             <Button
-              onClick={onOpenNewTask}
+              onClick={canCreateTask ? onOpenNewTask : undefined}
+              disabled={!canCreateTask}
               size="sm"
-              className="h-8 px-3.5 text-xs font-semibold gap-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 dark:text-slate-950 shadow-md shadow-sky-500/20 rounded-lg ml-1"
+              className={`h-8 px-3.5 text-xs font-semibold gap-1.5 rounded-lg ml-1 ${
+                canCreateTask
+                  ? "bg-sky-500 hover:bg-sky-400 text-slate-950 dark:text-slate-950 shadow-md shadow-sky-500/20"
+                  : "opacity-50 cursor-not-allowed bg-slate-300 dark:bg-slate-800 text-slate-500"
+              }`}
             >
-              <Plus className="h-4 w-4" />
+              {canCreateTask ? <Plus className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5" />}
               <span>Criar Tarefa</span>
             </Button>
           </EducationalTooltip>
@@ -245,6 +403,12 @@ export function Topbar({
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         defaultTab={settingsDefaultTab}
+      />
+
+      {/* Modal de Telemetria */}
+      <TelemetryModal
+        isOpen={isTelemetryOpen}
+        onClose={() => setIsTelemetryOpen(false)}
       />
     </>
   );

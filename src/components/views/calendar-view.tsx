@@ -23,7 +23,7 @@ interface CalendarViewProps {
 
 /**
  * Visão em Calendário Avançada - MedHit Tasks
- * Desenvolvido pela squad Lagana Flow
+ * Desenvolvido pela equipe MedHit Integrações & Automações
  */
 export function CalendarView({
   statuses,
@@ -338,7 +338,7 @@ export function CalendarView({
         </div>
 
         <span className="font-mono text-[10px] text-slate-400">
-          Squad Lagana Flow • Calendário Dinâmico
+          MedHit Integrações & Automações • Calendário Dinâmico
         </span>
       </div>
     </div>

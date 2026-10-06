@@ -1,10 +1,10 @@
 /**
- * Lagana Flow - Core Reliability & UX Architect
+ * MedHit Integrações & Automações
  * Global Error Boundary para o MedHit Tasks.
  * 
  * Captura e recupera exceções não tratadas do cliente com telemetria
  * integrada, registro de pilha e botões de recuperação limpa.
- * Assinado por: Lagana Flow
+ * Assinado por: MedHit Integrações & Automações
  */
 
 "use client";
@@ -34,7 +34,7 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Registra automaticamente a exceção na telemetria Lagana Flow
+    // Registra automaticamente a exceção na telemetria MedHit
     telemetry.logError(error, {
       source: "medhit_global_error_boundary",
       payload: {
@@ -75,11 +75,11 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
       <div className="pointer-events-none absolute bottom-10 right-20 h-96 w-96 rounded-full bg-indigo-500/15 blur-3xl" />
 
       <div className="max-w-xl w-full bg-[#081226]/90 border border-rose-500/30 rounded-3xl p-8 backdrop-blur-2xl shadow-2xl space-y-6 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-        {/* Cabeçalho de Confiabilidade Lagana Flow */}
+        {/* Cabeçalho de Confiabilidade */}
         <div className="flex items-center justify-between border-b border-rose-500/20 pb-4">
           <div className="flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
             <ShieldAlert className="h-3.5 w-3.5" />
-            <span>Lagana Flow • Error Boundary Ativo</span>
+            <span>MedHit • Error Boundary Ativo</span>
           </div>
           <span className="text-[10px] font-mono text-slate-500">
             {error.digest ? `Digest: ${error.digest}` : "Client Intercept"}
@@ -96,7 +96,7 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
               Instabilidade de Renderização Contida
             </h2>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Ocorreu uma falha inesperada na visualização da página. O mecanismo de confiabilidade da Lagana Flow capturou o incidente para impedir o travamento da sessão.
+              Ocorreu uma falha inesperada na visualização da página. O mecanismo de confiabilidade da MedHit capturou o incidente para impedir o travamento da sessão.
             </p>
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
           <Button
             onClick={handleHardReset}
             variant="outline"
-            className="w-full sm:w-auto gap-2 text-xs rounded-xl border-slate-700 hover:bg-white/5 text-slate-300"
+            className="w-full sm:w-auto gap-2 text-xs rounded-xl border-slate-700 hover:bg-white/5 text-slate-300 cursor-pointer"
           >
             <Home className="h-4 w-4 text-slate-400" />
             <span>Retornar ao Início</span>
@@ -163,17 +163,17 @@ export default function MedhitGlobalError({ error, reset }: GlobalErrorProps) {
 
           <Button
             onClick={() => reset()}
-            className="w-full sm:w-auto gap-2 text-xs font-bold rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 shadow-lg shadow-sky-500/25"
+            className="w-full sm:w-auto gap-2 text-xs font-bold rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 shadow-lg shadow-sky-500/25 cursor-pointer"
           >
             <RefreshCw className="h-4 w-4" />
             <span>Tentar Novamente (Limpar Estado)</span>
           </Button>
         </div>
 
-        {/* Assinatura Lagana Flow */}
+        {/* Assinatura MedHit */}
         <div className="text-center pt-2">
           <span className="text-[10px] font-mono text-slate-500">
-            Arquitetado por <strong className="text-sky-400">Lagana Flow</strong> • Resiliência & UX
+            Arquitetado por <strong className="text-sky-400">MedHit Integrações & Automações</strong> • Resiliência & UX
           </span>
         </div>
       </div>

@@ -1,6 +1,6 @@
 # MedHit Task Manager - Agent Conventions & Guidelines
 
-> Autor e Mantenedor: **Lagana Flow**  
+> Autor e Mantenedor: **MedHit Integrações & Automações**  
 > Aplicação: **MedHit Task Manager (Plataforma de Gestão de Trabalho & Agentes de IA)**  
 > Ecossistema: MedHit (Instância independente com isolamento estrito de dados)
 
@@ -25,7 +25,7 @@ O **MedHit Task Manager** é uma plataforma full-stack moderna de gestão ágil 
 ## 2. Regras de Ouro de Desenvolvimento
 
 1. **Assinatura e Autoria:**  
-   Todo código, commit, documentação, metadados e logs do projeto devem ser atribuídos e assinados estritamente como **Lagana Flow**.
+   Todo código, commit, documentação, metadados e logs do projeto devem ser atribuídos e assinados estritamente como **MedHit Integrações & Automações**.
 2. **Camadas de Software (Separação Rígida):**  
    - Regras de negócio vivem exclusivamente em `src/server/services`.
    - Rotas de API (`/api/*`), Server Actions e Tools MCP são cascas finas (thin controllers) que invocam os services e validam entradas com Zod.

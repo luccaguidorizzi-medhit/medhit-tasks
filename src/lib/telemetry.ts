@@ -1,10 +1,10 @@
 /**
- * Lagana Flow - Core Reliability & UX Architect
+ * MedHit Integrações & Automações
  * Serviço de Telemetria e Auditoria de Eventos para MedHit Tasks.
  * 
  * Registra eventos em memória e sincroniza com localStorage.
  * Fornece API reativa para visualizadores de logs e auditoria.
- * Assinado por: Lagana Flow
+ * Assinado por: MedHit Integrações & Automações
  */
 
 export type TelemetryLevel = "info" | "warn" | "error" | "success";
@@ -26,6 +26,8 @@ export type TelemetryEventType =
   | "approval_decision"
   | "system_reset"
   | "member_action"
+  | "rbac_role_switched"
+  | "rbac_user_switched"
   | string;
 
 export interface TelemetryLog {
@@ -63,13 +65,13 @@ class TelemetryService {
         }
       }
     } catch (err) {
-      console.warn("[Lagana Flow] Falha ao recuperar logs do localStorage", err);
+      console.warn("[MedHit] Falha ao recuperar logs do localStorage", err);
     }
 
     // Registra inicialização de telemetria
     this.track(
       "system_init",
-      "Sessão de Telemetria Lagana Flow iniciada com sucesso",
+      "Sessão de Telemetria MedHit iniciada com sucesso",
       { userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "ssr" },
       "info",
       "system"
@@ -81,7 +83,7 @@ class TelemetryService {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.logs));
     } catch (err) {
-      console.warn("[Lagana Flow] Erro ao persistir logs de telemetria", err);
+      console.warn("[MedHit] Erro ao persistir logs de telemetria", err);
     }
   }
 
@@ -91,7 +93,7 @@ class TelemetryService {
       try {
         listener(snapshot);
       } catch (err) {
-        console.error("[Lagana Flow] Erro no listener de telemetria", err);
+        console.error("[MedHit] Erro no listener de telemetria", err);
       }
     });
   }
@@ -131,7 +133,7 @@ class TelemetryService {
 
     // Também emite para o console em desenvolvimento
     if (process.env.NODE_ENV !== "production") {
-      const prefix = `[Lagana Flow Telemetry][${level.toUpperCase()}][${type}]`;
+      const prefix = `[MedHit Telemetry][${level.toUpperCase()}][${type}]`;
       if (level === "error") {
         console.error(prefix, message, payload || "");
       } else if (level === "warn") {
@@ -191,7 +193,7 @@ class TelemetryService {
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (err) {
-        console.warn("[Lagana Flow] Falha ao limpar storage", err);
+        console.warn("[MedHit] Falha ao limpar storage", err);
       }
     }
     this.notify();
@@ -205,7 +207,7 @@ class TelemetryService {
     return JSON.stringify(
       {
         project: "MedHit Tasks",
-        architect: "Lagana Flow",
+        architect: "MedHit Integrações & Automações",
         exportedAt: new Date().toISOString(),
         totalLogs: this.logs.length,
         logs: this.logs,

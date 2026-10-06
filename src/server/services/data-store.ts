@@ -1,6 +1,6 @@
 /**
  * MedHit Task Manager - In-Memory & Database Data Store
- * Mantido por: Lagana Flow
+ * Mantido por: MedHit Integrações & Automações
  * Fornece persistência e estado reativo para desenvolvimento local e produção
  */
 

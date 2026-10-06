@@ -1,6 +1,6 @@
 # PLAN.md: MedHit Task Manager (Plataforma de Gestão de Trabalho & Agentes de IA)
 
-> Autor: **Lagana Flow**  
+> Autor: **MedHit Integrações & Automações**  
 > Data: 05/10/2026  
 > Versão do Plano: 1.0.0
 

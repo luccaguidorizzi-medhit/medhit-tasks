@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTasks } from "@/context/task-context";
 
 interface TaskDrawerProps {
   task: Task | null;
@@ -55,6 +56,10 @@ export function TaskDrawer({
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false);
+
+  const { hasPermission } = useTasks();
+  const canDeleteTask = hasPermission("delete_task");
+  const canEditTask = hasPermission("edit_task");
 
   if (!task) return null;
 
@@ -146,21 +151,22 @@ export function TaskDrawer({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                if (confirm("Deseja realmente excluir esta tarefa?")) {
-                  onDeleteTask(task.id);
-                  onClose();
-                  toast.success("Tarefa excluída");
-                }
-              }}
-              className="h-7 w-7 text-zinc-500 hover:text-rose-400"
-              title="Excluir tarefa"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+            {canDeleteTask && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (confirm("Deseja realmente excluir esta tarefa?")) {
+                    onDeleteTask(task.id);
+                    onClose();
+                  }
+                }}
+                className="h-7 w-7 text-zinc-500 hover:text-rose-400"
+                title="Excluir tarefa"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -183,7 +189,11 @@ export function TaskDrawer({
                 type="text"
                 defaultValue={task.title}
                 onBlur={handleTitleBlur}
-                className="w-full text-lg font-semibold bg-transparent border-none outline-none text-zinc-100 placeholder:text-zinc-600 focus:ring-0 px-0 transition-all leading-tight"
+                disabled={!canEditTask}
+                className={cn(
+                  "w-full text-lg font-semibold bg-transparent border-none outline-none text-zinc-100 placeholder:text-zinc-600 focus:ring-0 px-0 transition-all leading-tight",
+                  !canEditTask && "cursor-default opacity-85"
+                )}
                 placeholder="Título da demanda..."
               />
             </div>
@@ -196,9 +206,13 @@ export function TaskDrawer({
               <textarea
                 defaultValue={task.description}
                 onBlur={handleDescBlur}
+                disabled={!canEditTask}
                 rows={3}
                 placeholder="Adicione detalhes, escopo ou especificações..."
-                className="w-full bg-[#111215] border border-white/[0.06] rounded-lg p-3 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-white/20 resize-y leading-relaxed transition-colors"
+                className={cn(
+                  "w-full bg-[#111215] border border-white/[0.06] rounded-lg p-3 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-white/20 resize-y leading-relaxed transition-colors",
+                  !canEditTask && "cursor-default opacity-85"
+                )}
               />
             </div>
 
@@ -214,9 +228,13 @@ export function TaskDrawer({
               <textarea
                 defaultValue={task.aiContext || ""}
                 onBlur={handleAiContextBlur}
+                disabled={!canEditTask}
                 rows={2}
                 placeholder="Instruções de tom de voz, conformidade ética CFM ou validação técnica de webhook..."
-                className="w-full bg-[#0a0b0d] border border-white/[0.05] rounded-md p-2.5 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 outline-none focus:border-indigo-500/40 resize-none transition-colors"
+                className={cn(
+                  "w-full bg-[#0a0b0d] border border-white/[0.05] rounded-md p-2.5 text-xs font-mono text-zinc-300 placeholder:text-zinc-600 outline-none focus:border-indigo-500/40 resize-none transition-colors",
+                  !canEditTask && "cursor-default opacity-85"
+                )}
               />
             </div>
 
@@ -234,13 +252,17 @@ export function TaskDrawer({
                   c.items.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => onToggleChecklist(task.id, c.id, item.id)}
-                      className="flex items-center gap-2.5 p-2 rounded-md border border-white/[0.04] bg-[#111215]/80 hover:bg-[#15161a] cursor-pointer transition-colors select-none"
+                      onClick={() => canEditTask && onToggleChecklist(task.id, c.id, item.id)}
+                      className={cn(
+                        "flex items-center gap-2.5 p-2 rounded-md border border-white/[0.04] bg-[#111215]/80 transition-colors select-none",
+                        canEditTask ? "hover:bg-[#15161a] cursor-pointer" : "cursor-default opacity-80"
+                      )}
                     >
                       <input
                         type="checkbox"
                         checked={item.isCompleted}
                         readOnly
+                        disabled={!canEditTask}
                         className="rounded border-zinc-700 bg-zinc-900 text-white cursor-pointer h-3.5 w-3.5"
                       />
                       <span
@@ -256,18 +278,20 @@ export function TaskDrawer({
                 )}
 
                 {/* Input Adicionar Critério */}
-                <form onSubmit={handleAddChecklistItem} className="flex gap-2 pt-1">
-                  <input
-                    type="text"
-                    placeholder="Novo critério de aceite (Enter para adicionar)..."
-                    value={newChecklistText}
-                    onChange={(e) => setNewChecklistText(e.target.value)}
-                    className="flex-1 bg-[#111215] border border-white/[0.06] rounded-md px-2.5 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-white/20"
-                  />
-                  <Button type="submit" size="sm" variant="secondary" className="h-7 text-xs">
-                    Adicionar
-                  </Button>
-                </form>
+                {canEditTask && (
+                  <form onSubmit={handleAddChecklistItem} className="flex gap-2 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Novo critério de aceite (Enter para adicionar)..."
+                      value={newChecklistText}
+                      onChange={(e) => setNewChecklistText(e.target.value)}
+                      className="flex-1 bg-[#111215] border border-white/[0.06] rounded-md px-2.5 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-white/20"
+                    />
+                    <Button type="submit" size="sm" variant="secondary" className="h-7 text-xs">
+                      Adicionar
+                    </Button>
+                  </form>
+                )}
               </div>
             </div>
 
@@ -338,8 +362,12 @@ export function TaskDrawer({
               <label className="text-xs text-zinc-400">Status</label>
               <button
                 type="button"
-                onClick={() => setShowStatusMenu(!showStatusMenu)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md bg-[#111215] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 transition-colors"
+                disabled={!canEditTask}
+                onClick={() => canEditTask && setShowStatusMenu(!showStatusMenu)}
+                className={cn(
+                  "w-full flex items-center justify-between px-2.5 py-1.5 rounded-md bg-[#111215] border border-white/[0.08] text-xs text-zinc-200 transition-colors",
+                  canEditTask ? "hover:border-white/20 cursor-pointer" : "cursor-default opacity-85"
+                )}
               >
                 <div className="flex items-center gap-2">
                   <span
@@ -348,10 +376,10 @@ export function TaskDrawer({
                   />
                   <span>{currentStatus.name}</span>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+                {canEditTask && <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />}
               </button>
 
-              {showStatusMenu && (
+              {showStatusMenu && canEditTask && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#141518] border border-white/10 rounded-lg shadow-xl p-1 z-20 space-y-0.5">
                   {statuses.map((s) => (
                     <div
@@ -376,17 +404,21 @@ export function TaskDrawer({
               <label className="text-xs text-zinc-400">Prioridade</label>
               <button
                 type="button"
-                onClick={() => setShowPriorityMenu(!showPriorityMenu)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-md bg-[#111215] border border-white/[0.08] hover:border-white/20 text-xs text-zinc-200 transition-colors capitalize"
+                disabled={!canEditTask}
+                onClick={() => canEditTask && setShowPriorityMenu(!showPriorityMenu)}
+                className={cn(
+                  "w-full flex items-center justify-between px-2.5 py-1.5 rounded-md bg-[#111215] border border-white/[0.08] text-xs text-zinc-200 transition-colors capitalize",
+                  canEditTask ? "hover:border-white/20 cursor-pointer" : "cursor-default opacity-85"
+                )}
               >
                 <div className="flex items-center gap-2">
                   {renderPriorityIcon(task.priority)}
                   <span>{task.priority}</span>
                 </div>
-                <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />
+                {canEditTask && <ChevronDown className="h-3.5 w-3.5 text-zinc-500" />}
               </button>
 
-              {showPriorityMenu && (
+              {showPriorityMenu && canEditTask && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#141518] border border-white/10 rounded-lg shadow-xl p-1 z-20 space-y-0.5">
                   {(["urgent", "high", "medium", "low", "none"] as const).map((p) => (
                     <div
@@ -432,13 +464,18 @@ export function TaskDrawer({
               <label className="text-xs text-zinc-400">Story Points</label>
               <input
                 type="number"
+                disabled={!canEditTask}
                 defaultValue={task.storyPoints ?? ""}
                 onBlur={(e) => {
+                  if (!canEditTask) return;
                   const val = e.target.value ? Number(e.target.value) : undefined;
                   onUpdateTask(task.id, { storyPoints: val });
                 }}
                 placeholder="Ex: 5"
-                className="w-full bg-[#111215] border border-white/[0.08] rounded-md px-2.5 py-1 text-xs text-zinc-200 font-mono outline-none focus:border-white/20"
+                className={cn(
+                  "w-full bg-[#111215] border border-white/[0.08] rounded-md px-2.5 py-1 text-xs text-zinc-200 font-mono outline-none focus:border-white/20",
+                  !canEditTask && "cursor-default opacity-85"
+                )}
               />
             </div>
 

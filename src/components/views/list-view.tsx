@@ -50,7 +50,7 @@ interface GroupData {
 
 /**
  * Visão em Lista Avançada com Agrupamentos Dinâmicos e Totalizadores
- * Mantido com precisão cirúrgica pela squad Lagana Flow
+ * Mantido com precisão pela equipe MedHit Integrações & Automações
  */
 export function ListView({
   statuses,
@@ -495,9 +495,9 @@ export function ListView({
         })}
       </div>
 
-      {/* Assinatura Lagana Flow */}
+      {/* Assinatura MedHit */}
       <div className="text-right text-[10px] font-mono text-slate-400 dark:text-slate-600">
-        ListView Grouping Engine mantido pela squad Lagana Flow
+        ListView Grouping Engine mantido por MedHit Integrações & Automações
       </div>
     </div>
   );

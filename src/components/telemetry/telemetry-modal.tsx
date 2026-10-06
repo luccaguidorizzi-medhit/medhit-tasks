@@ -1,16 +1,17 @@
 /**
- * Lagana Flow - Core Reliability & UX Architect
+ * MedHit Integrações & Automações
  * Componente Visualizador de Telemetria e Auditoria de Ações do Usuário.
  * 
  * Permite filtrar logs em tempo real, inspecionar payloads, exportar JSON
- * e auditar o histórico de eventos da aplicação.
- * Assinado por: Lagana Flow
+ * e auditar o histórico de eventos da aplicação. Restrito a Administradores e Owners.
+ * Assinado por: MedHit Integrações & Automações
  */
 
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { telemetry, TelemetryLog, TelemetryLevel } from "@/lib/telemetry";
+import { useTasks } from "@/context/task-context";
 import { Button } from "@/components/ui/button";
 import {
   Activity,
@@ -28,6 +29,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Terminal,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,6 +39,9 @@ interface TelemetryModalProps {
 }
 
 export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
+  const { currentUser, hasPermission } = useTasks();
+  const canView = hasPermission("view_telemetry");
+
   const [logs, setLogs] = useState<TelemetryLog[]>([]);
   const [search, setSearch] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<"all" | TelemetryLevel>("all");
@@ -44,14 +49,35 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !canView) return;
     const unsubscribe = telemetry.subscribe((updatedLogs) => {
       setLogs(updatedLogs);
     });
     return () => unsubscribe();
-  }, [isOpen]);
+  }, [isOpen, canView]);
 
   if (!isOpen) return null;
+
+  if (!canView) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+        <div className="w-full max-w-md bg-white/95 dark:bg-[#081226]/95 border border-rose-500/30 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+          <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mx-auto flex items-center justify-center">
+            <Lock className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Acesso Restrito a Administradores</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Seu perfil atual ({currentUser.role.toUpperCase()}) não possui permissão para inspecionar registros de auditoria e telemetria de segurança.
+            </p>
+          </div>
+          <Button variant="secondary" onClick={onClose} className="w-full text-xs">
+            Fechar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredLogs = logs.filter((log) => {
     const matchesLevel = selectedLevel === "all" || log.level === selectedLevel;
@@ -137,7 +163,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
                   Telemetria & Auditoria de Ações
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30">
-                  Lagana Flow
+                  MedHit Integrações & Automações
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -340,7 +366,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
             Total: <strong>{logs.length}</strong> eventos registrados em memória/localStorage
           </span>
           <span className="font-mono text-[10px]">
-            Arquitetura de Confiabilidade: <strong className="text-sky-400">Lagana Flow</strong>
+            Arquitetura de Confiabilidade: <strong className="text-sky-400">MedHit Integrações & Automações</strong>
           </span>
         </div>
       </div>

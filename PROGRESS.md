@@ -1,6 +1,6 @@
 # PROGRESS.md: Acompanhamento de Execução
 
-> Autor: **Lagana Flow**  
+> Autor: **MedHit Integrações & Automações**  
 > Projeto: **MedHit Task Manager**  
 > Status Atual: **Marco 1 Iniciado (Fundação)**
 

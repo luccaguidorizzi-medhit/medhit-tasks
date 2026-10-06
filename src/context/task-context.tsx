@@ -1,10 +1,10 @@
 /**
- * Lagana Flow - Core Reliability & UX Architect
- * Contexto de Tarefas, Quadros e Equipes do MedHit Tasks.
+ * MedHit Integrações & Automações
+ * Contexto de Tarefas, Quadros, Equipes e Permissões do MedHit Tasks.
  * 
- * Atualizado com tratamento resiliente contra crashes de deleção de board,
- * auto-fallback seguro e telemetria transparente de ações e ciclo de vida.
- * Assinado por: Lagana Flow
+ * Atualizado com controle de permissões por perfil (RBAC),
+ * auditoria e proteção contra visualização não autorizada de telemetria.
+ * Assinado por: MedHit Integrações & Automações
  */
 
 "use client";
@@ -24,6 +24,70 @@ import {
 } from "@/server/services/data-store";
 import { toast } from "sonner";
 import { telemetry } from "@/lib/telemetry";
+
+export type UserRole = "owner" | "admin" | "member" | "guest";
+
+export type PermissionAction =
+  | "view_telemetry"
+  | "export_telemetry"
+  | "clear_telemetry"
+  | "manage_members"
+  | "change_member_role"
+  | "manage_settings"
+  | "manage_mcp"
+  | "manage_ai_tokens"
+  | "create_board"
+  | "delete_board"
+  | "create_team"
+  | "delete_team"
+  | "create_task"
+  | "edit_task"
+  | "delete_task"
+  | "review_approvals";
+
+export const ROLE_PERMISSIONS: Record<UserRole, PermissionAction[]> = {
+  owner: [
+    "view_telemetry",
+    "export_telemetry",
+    "clear_telemetry",
+    "manage_members",
+    "change_member_role",
+    "manage_settings",
+    "manage_mcp",
+    "manage_ai_tokens",
+    "create_board",
+    "delete_board",
+    "create_team",
+    "delete_team",
+    "create_task",
+    "edit_task",
+    "delete_task",
+    "review_approvals",
+  ],
+  admin: [
+    "view_telemetry",
+    "export_telemetry",
+    "clear_telemetry",
+    "manage_members",
+    "change_member_role",
+    "manage_settings",
+    "manage_mcp",
+    "create_board",
+    "delete_board",
+    "create_team",
+    "create_task",
+    "edit_task",
+    "delete_task",
+    "review_approvals",
+  ],
+  member: [
+    "create_board",
+    "create_task",
+    "edit_task",
+    "delete_task",
+  ],
+  guest: [],
+};
 
 interface TaskContextType {
   tasks: Task[];
@@ -62,6 +126,9 @@ interface TaskContextType {
   reviewApproval: (approvalId: string, decision: "approved" | "rejected", comment?: string) => void;
   triggerClaim: (agentId: string) => void;
   currentUser: Member;
+  hasPermission: (action: PermissionAction) => boolean;
+  switchActiveRole: (role: UserRole) => void;
+  switchActiveUser: (memberId: string) => void;
   updateMemberRole: (memberId: string, role: Member["role"]) => void;
   updateMemberPassword: (memberId: string, newPass: string) => void;
   regenerateMemberMcpToken: (memberId: string) => string;
@@ -83,6 +150,54 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [isNewTeamModalOpen, setIsNewTeamModalOpen] = useState(false);
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDelete, setBoardToDelete] = useState<Project | null>(null);
+
+  // Controle de Usuário Ativo e Simulação de Role (RBAC)
+  const [activeUserId, setActiveUserId] = useState<string>(() => {
+    const defaultUser = store.workspace.members.find(
+      (m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")
+    ) || store.workspace.members[0];
+    return defaultUser?.id || "user-1";
+  });
+  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
+
+  const rawUser = members.find((m) => m.id === activeUserId) || members[0];
+  const currentUser: Member = {
+    ...rawUser,
+    role: (simulatedRole || rawUser.role) as Member["role"],
+  };
+
+  const hasPermission = (action: PermissionAction): boolean => {
+    const allowed = ROLE_PERMISSIONS[currentUser.role] || [];
+    return allowed.includes(action);
+  };
+
+  const switchActiveRole = (newRole: UserRole) => {
+    setSimulatedRole(newRole);
+    telemetry.track(
+      "rbac_role_switched",
+      `Perfil de acesso ativo alternado para: ${newRole.toUpperCase()}`,
+      { previousRole: currentUser.role, newRole },
+      "info",
+      "task-context"
+    );
+    toast.success(`Perfil ativo simulado como: ${newRole.toUpperCase()}`);
+  };
+
+  const switchActiveUser = (memberId: string) => {
+    const found = members.find((m) => m.id === memberId);
+    if (found) {
+      setActiveUserId(memberId);
+      setSimulatedRole(null);
+      telemetry.track(
+        "rbac_user_switched",
+        `Usuário ativo alternado para: ${found.name} (${found.role})`,
+        { memberId, role: found.role },
+        "info",
+        "task-context"
+      );
+      toast.success(`Usuário ativo: ${found.name}`);
+    }
+  };
 
   // Inicializa com primeiro projeto/área seguro ou null
   const [currentArea, setCurrentArea] = useState<Area | null>(store.workspace.areas[0] || null);
@@ -140,6 +255,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createTeam = (data: { name: string; description?: string; color?: string; icon?: string }): Area => {
+    if (!hasPermission("create_team")) {
+      toast.error("Permissão insuficiente para criar equipes.");
+      return null as unknown as Area;
+    }
+
     const slug = data.name
       .toLowerCase()
       .normalize("NFD")
@@ -197,6 +317,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteTeam = (teamId: string) => {
+    if (!hasPermission("delete_team")) {
+      toast.error("Permissão insuficiente. Apenas Administradores e Owners podem excluir equipes.");
+      return;
+    }
+
     if (areas.length <= 1) {
       toast.error("O workspace precisa ter pelo menos uma equipe ativa.");
       return;
@@ -227,6 +352,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteProject = (projectId: string) => {
+    if (!hasPermission("delete_board")) {
+      toast.error("Permissão insuficiente para excluir quadros.");
+      return;
+    }
+
     let removedName = "";
     let nextProjectToSelect: Project | null = null;
     let nextAreaToSelect: Area | null = null;
@@ -327,6 +457,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     color?: string;
     methodology?: "kanban" | "scrum" | "simple";
   }): Project => {
+    if (!hasPermission("create_board")) {
+      toast.error("Permissão insuficiente para criar quadros.");
+      return null as unknown as Project;
+    }
+
     const slug = data.name
       .toLowerCase()
       .normalize("NFD")
@@ -394,6 +529,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const moveTask = (taskId: string, targetStatusId: string) => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para movimentar tarefas.");
+      return;
+    }
+
     let movedTaskTitle = "";
     setTasks((prev) =>
       prev.map((t) => {
@@ -425,6 +565,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateTask = (taskId: string, updates: Partial<Task>) => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para atualizar tarefas.");
+      return;
+    }
+
     let updatedTitle = "";
     setTasks((prev) =>
       prev.map((t) => {
@@ -449,6 +594,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createTask = (data: any) => {
+    if (!hasPermission("create_task")) {
+      toast.error("Permissão insuficiente para criar tarefas.");
+      return null as unknown as Task;
+    }
+
     const newId = `task-${Date.now()}`;
     const fallbackProjectId = currentProject?.id || areas[0]?.projects[0]?.id || "proj-default";
     const fallbackAreaId = currentArea?.id || areas[0]?.id || "area-default";
@@ -495,9 +645,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
 
     toast.success("Tarefa criada com sucesso!");
+    return newTask;
   };
 
   const deleteTask = (taskId: string) => {
+    if (!hasPermission("delete_task")) {
+      toast.error("Permissão insuficiente para excluir tarefas.");
+      return;
+    }
+
     const taskToDelete = tasks.find((t) => t.id === taskId);
     setTasks((prev) => prev.filter((t) => t.id !== taskId));
     if (selectedTask?.id === taskId) {
@@ -516,6 +672,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const toggleChecklist = (taskId: string, checklistId: string, itemId: string) => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para alterar critérios de aceite.");
+      return;
+    }
+
     setTasks((prev) =>
       prev.map((t) => {
         if (t.id === taskId) {
@@ -556,13 +717,18 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addComment = (taskId: string, content: string) => {
+    if (!hasPermission("create_task") && !hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para comentar em tarefas.");
+      return;
+    }
+
     const newComment: Comment = {
       id: `comm-${Date.now()}`,
       taskId,
       authorType: "user",
-      authorId: store.workspace.members[0].id,
-      authorName: store.workspace.members[0].name,
-      authorAvatar: store.workspace.members[0].avatarUrl,
+      authorId: currentUser.id,
+      authorName: currentUser.name,
+      authorAvatar: currentUser.avatarUrl,
       content,
       createdAt: new Date().toISOString(),
     };
@@ -591,6 +757,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const reviewApproval = (approvalId: string, decision: "approved" | "rejected", comment?: string) => {
+    if (!hasPermission("review_approvals")) {
+      toast.error("Permissão insuficiente para homologar solicitações de IA.");
+      return;
+    }
+
     setApprovals((prev) =>
       prev.map((app) =>
         app.id === approvalId
@@ -672,6 +843,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateMemberRole = (memberId: string, role: Member["role"]) => {
+    if (!hasPermission("change_member_role")) {
+      toast.error("Permissão insuficiente para alterar níveis de acesso.");
+      return;
+    }
+
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, role } : m))
     );
@@ -690,6 +866,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateMemberPassword = (memberId: string, newPass: string) => {
+    const isSelf = memberId === currentUser.id;
+    if (!isSelf && !hasPermission("manage_members")) {
+      toast.error("Permissão insuficiente para alterar senhas de outros membros.");
+      return;
+    }
+
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, password: newPass } : m))
     );
@@ -708,6 +890,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const regenerateMemberMcpToken = (memberId: string) => {
+    const isSelf = memberId === currentUser.id;
+    if (!isSelf && !hasPermission("manage_members")) {
+      toast.error("Permissão insuficiente para regenerar tokens de outros membros.");
+      return "";
+    }
+
     const newToken = `medtask_user_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
     setMembers((prev) =>
       prev.map((m) => (m.id === memberId ? { ...m, mcpToken: newToken } : m))
@@ -733,6 +921,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     role: Member["role"];
     initialPassword?: string;
   }) => {
+    if (!hasPermission("manage_members")) {
+      toast.error("Permissão insuficiente para convidar novos membros.");
+      return;
+    }
+
     const newId = `user-${Date.now()}`;
     const generatedToken =
       data.email === "lucca@medhit.com.br"
@@ -822,7 +1015,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         addComment,
         reviewApproval,
         triggerClaim,
-        currentUser: members.find((m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")) || members[0],
+        currentUser,
+        hasPermission,
+        switchActiveRole,
+        switchActiveUser,
         updateMemberRole,
         updateMemberPassword,
         regenerateMemberMcpToken,

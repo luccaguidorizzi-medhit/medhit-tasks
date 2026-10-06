@@ -29,19 +29,26 @@ import { cn } from "@/lib/utils";
 
 /**
  * Gestão de Squads e Times - MedHit Tasks
- * Desenvolvido pela squad Lagana Flow
+ * Desenvolvido pela equipe MedHit Integrações & Automações
  */
 export default function SquadsManagementPage() {
   const {
     areas,
     tasks,
     members,
+    hasPermission,
     setIsNewTeamModalOpen,
     setIsNewBoardModalOpen,
     deleteTeam,
     updateMemberRole,
     inviteMember,
   } = useTasks();
+
+  const canCreateTeam = hasPermission("create_team");
+  const canCreateBoard = hasPermission("create_board");
+  const canDeleteTeam = hasPermission("delete_team");
+  const canManageMembers = hasPermission("manage_members");
+  const canChangeRole = hasPermission("change_member_role");
 
   const [activeTab, setActiveTab] = useState<"squads" | "members">("squads");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -102,7 +109,7 @@ export default function SquadsManagementPage() {
 
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 overflow-y-auto p-6 md:p-8 space-y-6 relative select-none">
-      {/* Background Orbs Estilo Lagana Flow */}
+      {/* Background Orbs */}
       <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-sky-500/10 blur-3xl" />
       <div className="pointer-events-none absolute bottom-10 right-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
 
@@ -114,7 +121,7 @@ export default function SquadsManagementPage() {
               WORKSPACE MEDHIT
             </span>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
-              SQUAD LAGANA FLOW
+              INTEGRAÇÕES & AUTOMAÇÕES
             </span>
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
@@ -127,46 +134,52 @@ export default function SquadsManagementPage() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <EducationalTooltip
-            title="Cadastrar Nova Squad"
-            description="Crie uma nova esteira autônoma com seus próprios quadros kanban e metodologias."
-          >
-            <Button
-              onClick={() => setIsNewTeamModalOpen(true)}
-              className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 shadow-lg shadow-sky-500/25 rounded-xl cursor-pointer"
+          {canCreateTeam && (
+            <EducationalTooltip
+              title="Cadastrar Nova Squad"
+              description="Crie uma nova esteira autônoma com seus próprios quadros kanban e metodologias."
             >
-              <Plus className="h-4 w-4" />
-              <span>+ Nova Squad</span>
-            </Button>
-          </EducationalTooltip>
+              <Button
+                onClick={() => setIsNewTeamModalOpen(true)}
+                className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 shadow-lg shadow-sky-500/25 rounded-xl cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Nova Squad</span>
+              </Button>
+            </EducationalTooltip>
+          )}
 
-          <EducationalTooltip
-            title="Criar Novo Board"
-            description="Adicione um novo quadro de projeto vinculado à squad de sua escolha."
-          >
-            <Button
-              onClick={() => setIsNewBoardModalOpen(true)}
-              variant="outline"
-              className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200 dark:border-sky-500/20 cursor-pointer"
+          {canCreateBoard && (
+            <EducationalTooltip
+              title="Criar Novo Board"
+              description="Adicione um novo quadro de projeto vinculado à squad de sua escolha."
             >
-              <FolderKanban className="h-4 w-4 text-sky-400" />
-              <span>+ Novo Board</span>
-            </Button>
-          </EducationalTooltip>
+              <Button
+                onClick={() => setIsNewBoardModalOpen(true)}
+                variant="outline"
+                className="text-xs font-semibold gap-1.5 rounded-xl border-slate-200 dark:border-sky-500/20 cursor-pointer"
+              >
+                <FolderKanban className="h-4 w-4 text-sky-400" />
+                <span>+ Novo Board</span>
+              </Button>
+            </EducationalTooltip>
+          )}
 
-          <EducationalTooltip
-            title="Convidar Colaborador"
-            description="Adicione um novo especialista ou gestor para colaborar no workspace."
-          >
-            <Button
-              onClick={() => setIsInviteModalOpen(true)}
-              variant="secondary"
-              className="text-xs font-semibold gap-1.5 rounded-xl cursor-pointer"
+          {canManageMembers && (
+            <EducationalTooltip
+              title="Convidar Colaborador"
+              description="Adicione um novo especialista ou gestor para colaborar no workspace."
             >
-              <UserPlus className="h-4 w-4" />
-              <span>Convidar Membro</span>
-            </Button>
-          </EducationalTooltip>
+              <Button
+                onClick={() => setIsInviteModalOpen(true)}
+                variant="secondary"
+                className="text-xs font-semibold gap-1.5 rounded-xl cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>Convidar Membro</span>
+              </Button>
+            </EducationalTooltip>
+          )}
         </div>
       </div>
 
@@ -305,7 +318,7 @@ export default function SquadsManagementPage() {
                         </div>
                       </div>
 
-                      {areas.length > 1 && (
+                      {canDeleteTeam && areas.length > 1 && (
                         <button
                           onClick={() => {
                             if (confirm(`Deseja realmente remover a squad "${team.name}"?`)) {
@@ -343,13 +356,15 @@ export default function SquadsManagementPage() {
                   <div className="space-y-2">
                     <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold flex items-center justify-between">
                       <span>Boards & Projetos ({team.projects.length})</span>
-                      <button
-                        onClick={() => setIsNewBoardModalOpen(true)}
-                        className="text-sky-400 hover:text-sky-300 font-semibold normal-case flex items-center gap-1 text-[11px] cursor-pointer"
-                      >
-                        <Plus className="h-3 w-3" />
-                        <span>Novo Board</span>
-                      </button>
+                      {canCreateBoard && (
+                        <button
+                          onClick={() => setIsNewBoardModalOpen(true)}
+                          className="text-sky-400 hover:text-sky-300 font-semibold normal-case flex items-center gap-1 text-[11px] cursor-pointer"
+                        >
+                          <Plus className="h-3 w-3" />
+                          <span>Novo Board</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -421,13 +436,15 @@ export default function SquadsManagementPage() {
               </p>
             </div>
 
-            <Button
-              onClick={() => setIsInviteModalOpen(true)}
-              className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl cursor-pointer"
-            >
-              <UserPlus className="h-4 w-4" />
-              <span>+ Convidar Membro</span>
-            </Button>
+            {canManageMembers && (
+              <Button
+                onClick={() => setIsInviteModalOpen(true)}
+                className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl cursor-pointer"
+              >
+                <UserPlus className="h-4 w-4" />
+                <span>+ Convidar Membro</span>
+              </Button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 dark:border-sky-500/20 bg-white/80 dark:bg-[#0c1830]/80 backdrop-blur-xl shadow-lg overflow-hidden">
@@ -475,10 +492,13 @@ export default function SquadsManagementPage() {
                         <td className="py-3.5 px-4">
                           <select
                             value={member.role}
+                            disabled={!canChangeRole}
                             onChange={(e) =>
                               updateMemberRole(member.id, e.target.value as Member["role"])
                             }
-                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold bg-transparent outline-none cursor-pointer ${roleBadge.className}`}
+                            className={`px-2.5 py-1 rounded-lg border text-xs font-semibold bg-transparent outline-none ${
+                              canChangeRole ? "cursor-pointer" : "opacity-80 cursor-not-allowed"
+                            } ${roleBadge.className}`}
                           >
                             <option value="owner" className="bg-slate-900 text-white">Owner (Acesso Total)</option>
                             <option value="admin" className="bg-slate-900 text-white">Admin (Cria/Edita Squads)</option>

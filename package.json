@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Plataforma de Gestão de Trabalho e Agentes de IA do MedHit",
-  "author": "Lagana Flow",
+  "author": "MedHit Integrações & Automações",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

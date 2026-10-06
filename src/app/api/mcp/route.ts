@@ -1,6 +1,6 @@
 /**
  * MedHit Task Manager - MCP (Model Context Protocol) Server
- * Mantido por: Lagana Flow
+ * Mantido por: MedHit Integrações & Automações
  * 
  * Suporte completo a:
  * - Autenticação por token por usuário (Bearer token do membro)
@@ -328,6 +328,11 @@ function authenticateRequest(request: Request): Member | null {
   return member || store.workspace.members[0];
 }
 
+function sanitizeMember(m: Member) {
+  const { password, ...safe } = m;
+  return safe;
+}
+
 export async function POST(request: Request) {
   try {
     const activeUser = authenticateRequest(request);
@@ -344,7 +349,7 @@ export async function POST(request: Request) {
           serverInfo: {
             name: "medhit-tasks-mcp",
             version: "2.0.0",
-            author: "Lagana Flow",
+            author: "MedHit Integrações & Automações",
             authenticatedAs: activeUser ? { name: activeUser.name, email: activeUser.email, role: activeUser.role } : null,
           },
           capabilities: {
@@ -665,9 +670,9 @@ export async function POST(request: Request) {
                   type: "text",
                   text: JSON.stringify(
                     {
-                      user: activeUser,
+                      user: activeUser ? sanitizeMember(activeUser) : null,
                       connectedTool: "Google Antigravity MCP Client",
-                      signature: "Lagana Flow",
+                      signature: "MedHit Integrações & Automações",
                     },
                     null,
                     2
@@ -691,7 +696,7 @@ export async function POST(request: Request) {
           return NextResponse.json({
             jsonrpc: "2.0",
             id,
-            result: { content: [{ type: "text", text: JSON.stringify(member, null, 2) }] },
+            result: { content: [{ type: "text", text: JSON.stringify(sanitizeMember(member), null, 2) }] },
           });
         }
 
@@ -737,7 +742,7 @@ export async function POST(request: Request) {
                   type: "text",
                   text: JSON.stringify(
                     {
-                      member: newMember,
+                      member: sanitizeMember(newMember),
                       initialPassword,
                       mcpToken: generatedMcpToken,
                       emailResult: emailStatus,

@@ -1,6 +1,6 @@
 # Model Context Protocol (MCP) - Servidor MedHit Tasks
 
-> Autor: **Lagana Flow**  
+> Autor: **MedHit Integrações & Automações**  
 > Protocolo: Model Context Protocol (MCP)  
 > Transporte: Streamable HTTP (`POST /api/mcp`)  
 > Autenticação: `Authorization: Bearer <API_KEY>`

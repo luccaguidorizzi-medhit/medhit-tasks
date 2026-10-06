@@ -30,6 +30,7 @@ export function MembersManagement() {
     members,
     areas,
     currentUser,
+    hasPermission,
     updateMemberRole,
     updateMemberPassword,
     regenerateMemberMcpToken,
@@ -42,23 +43,30 @@ export function MembersManagement() {
   const [inviteName, setInviteName] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
+  const [showInvitePassword, setShowInvitePassword] = useState(false);
   const [inviteRole, setInviteRole] = useState<Member["role"]>("member");
 
   // Estado para edição rápida de senha / token
   const [selectedMemberForSecurity, setSelectedMemberForSecurity] = useState<Member | null>(null);
   const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showOwnPassword, setShowOwnPassword] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
-  const [showPasswordMap, setShowPasswordMap] = useState<Record<string, boolean>>({});
+
+  const canManage = hasPermission("manage_members");
+  const canCreateTeam = hasPermission("create_team");
+  const canChangeRole = hasPermission("change_member_role");
+
+  const togglePasswordVisibility = (id: string) => {
+    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopiedToken(id);
     toast.success("Copiado para a área de transferência!");
     setTimeout(() => setCopiedToken(null), 2000);
-  };
-
-  const togglePasswordVisibility = (id: string) => {
-    setShowPasswordMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const handleSendInvite = async (e: React.FormEvent) => {
@@ -76,6 +84,7 @@ export function MembersManagement() {
     setInviteName("");
     setInviteEmail("");
     setInvitePassword("");
+    setShowInvitePassword(false);
     setIsInviteModalOpen(false);
   };
 
@@ -88,6 +97,7 @@ export function MembersManagement() {
     updateMemberPassword(selectedMemberForSecurity.id, newPasswordInput.trim());
     setSelectedMemberForSecurity(null);
     setNewPasswordInput("");
+    setShowNewPassword(false);
   };
 
   const getRoleBadge = (role: Member["role"]) => {
@@ -134,28 +144,32 @@ export function MembersManagement() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setIsNewTeamModalOpen(true)}
-            variant="outline"
-            size="sm"
-            className="text-xs font-semibold gap-1.5 rounded-lg border-slate-300 dark:border-white/10"
-          >
-            <Users className="h-3.5 w-3.5" />
-            <span>+ Novo Time</span>
-          </Button>
+          {canCreateTeam && (
+            <Button
+              onClick={() => setIsNewTeamModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="text-xs font-semibold gap-1.5 rounded-lg border-slate-300 dark:border-white/10"
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span>+ Novo Time</span>
+            </Button>
+          )}
 
-          <Button
-            onClick={() => setIsInviteModalOpen(true)}
-            size="sm"
-            className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 shadow-md shadow-sky-500/20 rounded-lg"
-          >
-            <UserPlus className="h-3.5 w-3.5" />
-            <span>+ Convidar</span>
-          </Button>
+          {canManage && (
+            <Button
+              onClick={() => setIsInviteModalOpen(true)}
+              size="sm"
+              className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 shadow-md shadow-sky-500/20 rounded-lg"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>+ Convidar</span>
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Card do Usuário Master */}
+      {/* Card do Usuário Master / Ativo */}
       <div className="p-4 rounded-xl border border-sky-500/30 bg-gradient-to-r from-sky-500/10 via-indigo-500/5 to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <img
@@ -166,17 +180,45 @@ export function MembersManagement() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-slate-900 dark:text-white">{currentUser.name}</span>
-              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                MASTER OWNER
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30 uppercase">
+                {currentUser.role}
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 font-mono">
-              {currentUser.email} • Senha: <span className="text-emerald-400 font-semibold">{currentUser.password || "x32kd58"}</span>
-            </p>
+            <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2 mt-0.5">
+              <span>{currentUser.email}</span>
+              <span>•</span>
+              <div className="inline-flex items-center gap-1.5 text-slate-300">
+                <span className="text-[11px] font-mono">
+                  Senha: {showOwnPassword ? currentUser.password || "x32kd58" : "••••••••"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowOwnPassword(!showOwnPassword)}
+                  className="p-0.5 rounded text-slate-400 hover:text-sky-400 transition-colors"
+                  title={showOwnPassword ? "Ocultar senha" : "Exibir senha"}
+                >
+                  {showOwnPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedMemberForSecurity(currentUser);
+              setNewPasswordInput("");
+              setShowNewPassword(false);
+            }}
+            className="h-7 text-xs gap-1 border-slate-300 dark:border-white/10"
+          >
+            <Lock className="h-3 w-3 text-sky-400" />
+            <span>Alterar Senha</span>
+          </Button>
+
           <div className="bg-slate-950/70 border border-white/10 rounded-lg px-2.5 py-1 text-left">
             <div className="text-[9px] uppercase font-mono text-slate-400">Token MCP</div>
             <div className="text-xs font-mono text-sky-300 truncate max-w-[150px]">
@@ -185,7 +227,7 @@ export function MembersManagement() {
           </div>
           <button
             onClick={() => handleCopy(currentUser.mcpToken || "medtask_user_lucca_x32kd58_sec99", "me-modal")}
-            className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 transition-colors"
+            className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 transition-colors cursor-pointer"
             title="Copiar Token MCP"
           >
             {copiedToken === "me-modal" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
@@ -200,7 +242,7 @@ export function MembersManagement() {
             <tr>
               <th className="py-2.5 px-3 font-semibold">Membro</th>
               <th className="py-2.5 px-3 font-semibold">Papel</th>
-              <th className="py-2.5 px-3 font-semibold">Senha</th>
+              <th className="py-2.5 px-3 font-semibold">Segurança & Senha</th>
               <th className="py-2.5 px-3 font-semibold">Token MCP</th>
               <th className="py-2.5 px-3 font-semibold text-right">Ação</th>
             </tr>
@@ -208,7 +250,6 @@ export function MembersManagement() {
           <tbody className="divide-y divide-slate-100 dark:divide-white/5">
             {members.map((member) => {
               const roleBadge = getRoleBadge(member.role);
-              const isPassVisible = !!showPasswordMap[member.id];
               return (
                 <tr key={member.id} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
                   <td className="py-2.5 px-3">
@@ -235,8 +276,11 @@ export function MembersManagement() {
                   <td className="py-2.5 px-3">
                     <select
                       value={member.role}
+                      disabled={!canChangeRole}
                       onChange={(e) => updateMemberRole(member.id, e.target.value as Member["role"])}
-                      className={`px-2 py-0.5 rounded text-[11px] font-semibold bg-transparent border outline-none cursor-pointer ${roleBadge.className}`}
+                      className={`px-2 py-0.5 rounded text-[11px] font-semibold bg-transparent border outline-none ${
+                        canChangeRole ? "cursor-pointer" : "opacity-80 cursor-not-allowed"
+                      } ${roleBadge.className}`}
                     >
                       <option value="owner" className="bg-slate-900 text-white">Owner</option>
                       <option value="admin" className="bg-slate-900 text-white">Admin</option>
@@ -246,17 +290,29 @@ export function MembersManagement() {
                   </td>
 
                   <td className="py-2.5 px-3 font-mono">
-                    <div className="flex items-center gap-1">
-                      <span className="text-slate-700 dark:text-slate-300">
-                        {isPassVisible ? member.password || "x32kd58" : "••••••••"}
-                      </span>
-                      <button
-                        onClick={() => togglePasswordVisibility(member.id)}
-                        className="p-0.5 text-slate-400 hover:text-slate-200"
-                      >
-                        {isPassVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                      </button>
-                    </div>
+                    {canManage || member.id === currentUser.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300">
+                          {visiblePasswords[member.id] ? member.password || "x32kd58" : "••••••••"}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => togglePasswordVisibility(member.id)}
+                          className="p-0.5 rounded text-slate-400 hover:text-sky-400 transition-colors cursor-pointer"
+                          title={visiblePasswords[member.id] ? "Ocultar senha" : "Ver senha"}
+                        >
+                          {visiblePasswords[member.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20 inline-flex items-center gap-1">
+                          <Lock className="h-2.5 w-2.5" />
+                          <span>Protegida</span>
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono">••••••••</span>
+                      </div>
+                    )}
                   </td>
 
                   <td className="py-2.5 px-3 font-mono">
@@ -266,34 +322,41 @@ export function MembersManagement() {
                       </span>
                       <button
                         onClick={() => handleCopy(member.mcpToken || "", member.id)}
-                        className="p-0.5 text-slate-400 hover:text-sky-400"
+                        className="p-0.5 text-slate-400 hover:text-sky-400 cursor-pointer"
                         title="Copiar token"
                       >
                         {copiedToken === member.id ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
                       </button>
-                      <button
-                        onClick={() => regenerateMemberMcpToken(member.id)}
-                        className="p-0.5 text-slate-400 hover:text-amber-400"
-                        title="Regenerar token"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                      </button>
+                      {canManage && (
+                        <button
+                          onClick={() => regenerateMemberMcpToken(member.id)}
+                          className="p-0.5 text-slate-400 hover:text-amber-400 cursor-pointer"
+                          title="Regenerar token"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   </td>
 
                   <td className="py-2.5 px-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedMemberForSecurity(member);
-                        setNewPasswordInput("");
-                      }}
-                      className="h-6 px-1.5 text-[10px] text-sky-400 hover:bg-sky-500/10 gap-1 rounded"
-                    >
-                      <Lock className="h-3 w-3" />
-                      <span>Senha</span>
-                    </Button>
+                    {canManage || member.id === currentUser.id ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setSelectedMemberForSecurity(member);
+                          setNewPasswordInput("");
+                          setShowNewPassword(false);
+                        }}
+                        className="h-6 px-1.5 text-[10px] text-sky-400 hover:bg-sky-500/10 gap-1 rounded"
+                      >
+                        <Lock className="h-3 w-3" />
+                        <span>Redefinir Senha</span>
+                      </Button>
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-mono">Protegido</span>
+                    )}
                   </td>
                 </tr>
               );
@@ -335,14 +398,23 @@ export function MembersManagement() {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Senha Provisória</label>
-                <input
-                  type="text"
-                  placeholder="Ex: medhit2026@"
-                  value={invitePassword}
-                  onChange={(e) => setInvitePassword(e.target.value)}
-                  className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-lg p-2 text-xs font-mono outline-none"
-                />
+                <label className="text-[11px] font-semibold text-slate-400">Senha Provisória (Opcional)</label>
+                <div className="relative">
+                  <input
+                    type={showInvitePassword ? "text" : "password"}
+                    placeholder="Deixe em branco para auto-gerar senha forte"
+                    value={invitePassword}
+                    onChange={(e) => setInvitePassword(e.target.value)}
+                    className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-lg p-2 pr-8 text-xs font-mono outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowInvitePassword(!showInvitePassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                  >
+                    {showInvitePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -371,24 +443,37 @@ export function MembersManagement() {
         </div>
       )}
 
-      {/* Modal Alterar Senha */}
+      {/* Modal Alterar Senha com Campo Oculto Seguro */}
       {selectedMemberForSecurity && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
           <div className="w-full max-w-sm bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl text-slate-900 dark:text-slate-100 shadow-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Lock className="h-4 w-4 text-sky-400" />
-              <span>Alterar Senha de {selectedMemberForSecurity.name}</span>
+              <span>Redefinir Senha de {selectedMemberForSecurity.name}</span>
             </h3>
 
+            <p className="text-xs text-slate-400">
+              Digite a nova senha segura. A senha anterior permanecerá criptografada e não pode ser revelada.
+            </p>
+
             <form onSubmit={handleSavePassword} className="space-y-3">
-              <input
-                autoFocus
-                type="text"
-                placeholder="Nova senha"
-                value={newPasswordInput}
-                onChange={(e) => setNewPasswordInput(e.target.value)}
-                className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-lg p-2 text-xs font-mono outline-none"
-              />
+              <div className="relative">
+                <input
+                  autoFocus
+                  type={showNewPassword ? "text" : "password"}
+                  placeholder="Nova senha segura"
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-lg p-2 pr-8 text-xs font-mono outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                >
+                  {showNewPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedMemberForSecurity(null)} className="text-xs">

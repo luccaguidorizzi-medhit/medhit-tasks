@@ -1,6 +1,6 @@
 /**
  * MedHit Task Manager - Seed Script Realista
- * Autor: Lagana Flow
+ * Autor: MedHit Integrações & Automações
  * Gera dados completos para Marketing e Automação com humanos e agentes de IA
  */
 

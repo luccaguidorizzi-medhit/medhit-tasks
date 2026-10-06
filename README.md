@@ -1,6 +1,6 @@
 # MedHit Task Manager (Plataforma de Gestão de Trabalho & Agentes de IA)
 
-> Desenvolvido e Mantido por: **Lagana Flow**  
+> Desenvolvido e Mantido por: **MedHit Integrações & Automações**  
 > Ecossistema: **MedHit**
 
 ---

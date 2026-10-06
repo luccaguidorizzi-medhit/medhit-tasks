@@ -28,7 +28,7 @@ import { toast } from "sonner";
 
 /**
  * Tela de Produtividade Diária: Tarefas para Hoje (Today's Tasks)
- * Desenvolvido com foco cirúrgico pela squad Lagana Flow
+ * Desenvolvido pela equipe MedHit Integrações & Automações
  */
 export default function TodayTasksPage() {
   const {
@@ -624,10 +624,10 @@ export default function TodayTasksPage() {
         )}
       </div>
 
-      {/* Assinatura Lagana Flow */}
+      {/* Assinatura MedHit */}
       <div className="pt-4 text-center">
         <span className="text-[10px] font-mono text-slate-400 dark:text-slate-600">
-          MedHit Tasks • Today Engine mantido pela squad Lagana Flow
+          MedHit Tasks • Today Engine mantido por MedHit Integrações & Automações
         </span>
       </div>
     </div>

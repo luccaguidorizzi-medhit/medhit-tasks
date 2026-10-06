@@ -3,9 +3,9 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "MedHit Tasks | Gestão de Trabalho & Saúde",
-  description: "Plataforma avançada de gestão de projetos, tarefas e agendamento para equipes médicas",
-  authors: [{ name: "Lagana Flow" }],
+  title: "MedHit Tasks | Gestão de Projetos & Demandas",
+  description: "Plataforma avançada de gestão de projetos, tarefas e automações corporativas",
+  authors: [{ name: "MedHit Integrações & Automações" }],
   icons: {
     icon: [
       { url: "/favicon.ico" },

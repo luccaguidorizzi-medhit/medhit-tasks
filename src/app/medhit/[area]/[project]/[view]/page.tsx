@@ -1,10 +1,10 @@
 /**
- * Lagana Flow - Core Reliability & UX Architect
+ * MedHit Integrações & Automações
  * Página de visualização de quadro (Board, List, Table, Backlog).
  * 
  * Inclui proteção resiliente contra exclusão de projetos e slugs inexistentes,
  * fallback visual elegante e auto-redirecionamento para o primeiro projeto ativo.
- * Assinado por: Lagana Flow
+ * Assinado por: MedHit Integrações & Automações
  */
 
 "use client";
@@ -22,7 +22,6 @@ import { MatrixView } from "@/components/views/matrix-view";
 import { AgileView } from "@/components/views/agile-view";
 import { RoadmapView } from "@/components/views/roadmap-view";
 import { BacklogView } from "@/components/views/backlog-view";
-import { DeleteBoardModal } from "@/components/boards/delete-board-modal";
 import { Button } from "@/components/ui/button";
 import {
   AlertTriangle,
@@ -59,7 +58,6 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     moveTask,
     updateTask,
     createTask,
-    isDeleteBoardModalOpen,
     setIsDeleteBoardModalOpen,
     boardToDelete,
     setBoardToDelete,
@@ -114,7 +112,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     }
   }, [activeProject, firstAvailableBoard, router]);
 
-  // Se o projeto foi excluído ou o slug não existe, exibe fallback elegante Lagana Flow
+  // Se o projeto foi excluído ou o slug não existe, exibe fallback elegante MedHit
   if (!activeProject) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center min-h-[500px] h-full p-8 relative overflow-hidden select-none">
@@ -123,10 +121,10 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
         <div className="pointer-events-none absolute bottom-10 right-20 h-96 w-96 rounded-full bg-sky-500/10 blur-3xl" />
 
         <div className="max-w-lg w-full bg-white/80 dark:bg-[#081226]/90 border border-slate-200 dark:border-sky-500/20 backdrop-blur-2xl rounded-3xl p-8 shadow-2xl text-center space-y-6 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-          {/* Badge Lagana Flow */}
+          {/* Badge MedHit */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>Lagana Flow • Recuperação Resiliente de Rota</span>
+            <span>MedHit Integrações & Automações • Recuperação Resiliente de Rota</span>
           </div>
 
           {/* Ícone de Estado */}
@@ -369,13 +367,6 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
 
       {/* Conteúdo da Visão */}
       {renderView()}
-
-      {/* Modal de Exclusão do Board */}
-      <DeleteBoardModal
-        isOpen={isDeleteBoardModalOpen}
-        onClose={() => setIsDeleteBoardModalOpen(false)}
-        project={boardToDelete || activeProject}
-      />
     </div>
   );
 }
