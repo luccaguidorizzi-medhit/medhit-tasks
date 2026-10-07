@@ -43,6 +43,8 @@ import {
   Layers,
   ArrowUpDown,
   Filter,
+  Folder,
+  Tag,
   CheckSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -58,8 +60,8 @@ interface TableViewProps {
   areaId?: string;
 }
 
-type GroupByOption = "none" | "status" | "assignee" | "priority" | "dueDate";
-type SortField = "manual" | "title" | "status" | "assignee" | "priority" | "dueDate";
+type GroupByOption = "none" | "status" | "tag" | "assignee" | "priority" | "dueDate";
+type SortField = "manual" | "title" | "status" | "tag" | "assignee" | "priority" | "dueDate";
 type SortDirection = "asc" | "desc";
 
 const PRIORITY_CONFIG: Record<
@@ -115,6 +117,18 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
   const [filterStatusId, setFilterStatusId] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterAssigneeId, setFilterAssigneeId] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>("all");
+
+  // Lista de tags únicas disponíveis nas tarefas
+  const availableTags = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((t) => {
+      (t.tags || []).forEach((tag) => {
+        if (tag.trim()) set.add(tag.trim());
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
 
   // 3. Seleção em massa
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
@@ -204,6 +218,10 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
         const has = task.assigneeIds.some((a) => a.id === filterAssigneeId);
         if (!has) return false;
       }
+      if (filterTag !== "all") {
+        const hasTag = (task.tags || []).some((tg) => tg.toLowerCase() === filterTag.toLowerCase());
+        if (!hasTag) return false;
+      }
       return true;
     });
 
@@ -216,6 +234,10 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
           const sA = statuses.find((s) => s.id === a.statusId)?.name || "";
           const sB = statuses.find((s) => s.id === b.statusId)?.name || "";
           cmp = sA.localeCompare(sB);
+        } else if (sortField === "tag") {
+          const tagA = (a.tags && a.tags[0]) || "";
+          const tagB = (b.tags && b.tags[0]) || "";
+          cmp = tagA.localeCompare(tagB);
         } else if (sortField === "assignee") {
           const nameA = a.assigneeIds[0]?.name || "";
           const nameB = b.assigneeIds[0]?.name || "";
@@ -234,7 +256,7 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
     }
 
     return result;
-  }, [tasks, hideCompleted, searchQuery, filterStatusId, filterPriority, filterAssigneeId, sortField, sortDir, statuses]);
+  }, [tasks, hideCompleted, searchQuery, filterStatusId, filterPriority, filterAssigneeId, filterTag, sortField, sortDir, statuses]);
 
 interface SectionItem {
   key: string;
@@ -259,6 +281,45 @@ interface SectionItem {
           tasks: processedTasks.filter((t) => t.statusId === st.id),
         }))
         .filter((sec) => sec.tasks.length > 0); // Regra estrita: ocultar grupos vazios ao agrupar
+    }
+
+    if (groupBy === "tag") {
+      const tagMap = new Map<string, Task[]>();
+      const untagged: Task[] = [];
+
+      processedTasks.forEach((t) => {
+        if (!t.tags || t.tags.length === 0) {
+          untagged.push(t);
+        } else {
+          t.tags.forEach((tg) => {
+            const clean = tg.trim();
+            if (!tagMap.has(clean)) {
+              tagMap.set(clean, []);
+            }
+            tagMap.get(clean)!.push(t);
+          });
+        }
+      });
+
+      const sections: SectionItem[] = Array.from(tagMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([tagName, tasksList]) => ({
+          key: `tag-${tagName}`,
+          label: `#${tagName}`,
+          color: "#0ea5e9",
+          tasks: tasksList,
+        }));
+
+      if (untagged.length > 0) {
+        sections.push({
+          key: "tag-untagged",
+          label: "Sem pasta / tag",
+          color: "#94a3b8",
+          tasks: untagged,
+        });
+      }
+
+      return sections;
     }
 
     if (groupBy === "priority") {
@@ -386,6 +447,7 @@ interface SectionItem {
     }
 
     const targetStatusId = quickCreateContextStatusId || initialStatus.id;
+    const initialTags = filterTag !== "all" ? [filterTag] : [];
 
     createTask({
       title: clean,
@@ -394,6 +456,7 @@ interface SectionItem {
       areaId: areaId || currentProject?.areaId || "",
       priority: "medium",
       taskType: "task",
+      tags: initialTags,
       assigneeIds: [],
     });
 
@@ -436,6 +499,7 @@ interface SectionItem {
     filterStatusId !== "all" ||
     filterPriority !== "all" ||
     filterAssigneeId !== "all" ||
+    filterTag !== "all" ||
     hideCompleted;
 
   const clearAllFilters = () => {
@@ -443,6 +507,7 @@ interface SectionItem {
     setFilterStatusId("all");
     setFilterPriority("all");
     setFilterAssigneeId("all");
+    setFilterTag("all");
     setHideCompleted(false);
   };
 
@@ -476,10 +541,28 @@ interface SectionItem {
               className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-1"
             >
               <option value="none">Nenhum</option>
+              <option value="tag">Pasta / Tag</option>
               <option value="status">Status</option>
               <option value="priority">Prioridade</option>
               <option value="assignee">Responsável</option>
               <option value="dueDate">Data limite</option>
+            </select>
+          </div>
+
+          {/* Filtro por Pasta / Tag */}
+          <div className="flex items-center gap-1 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
+            <Folder className="h-3 w-3 text-sky-400 shrink-0" />
+            <select
+              value={filterTag}
+              onChange={(e) => setFilterTag(e.target.value)}
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-sky-500 cursor-pointer max-w-[150px] truncate"
+            >
+              <option value="all">Pasta: Todas</option>
+              {availableTags.map((t) => (
+                <option key={t} value={t}>
+                  #{t}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -938,6 +1021,26 @@ interface SectionItem {
                                     ✓ {task.checklists[0]?.items?.filter((i) => i.isCompleted).length || 0}/
                                     {task.checklists[0]?.items?.length || 0}
                                   </span>
+                                )}
+
+                                {/* Badges de Pasta / Tag */}
+                                {task.tags && task.tags.length > 0 && (
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {task.tags.map((tg) => (
+                                      <span
+                                        key={tg}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setFilterTag(tg);
+                                        }}
+                                        className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20 hover:bg-sky-500/20 transition-colors cursor-pointer"
+                                        title={`Filtrar por #${tg}`}
+                                      >
+                                        <Folder className="h-2.5 w-2.5 opacity-80" />
+                                        <span>#{tg}</span>
+                                      </span>
+                                    ))}
+                                  </div>
                                 )}
                               </div>
                             )}

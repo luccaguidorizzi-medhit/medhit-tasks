@@ -13,7 +13,7 @@ import {
 import { Status, Task } from "@/server/services/data-store";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
-import { Plus } from "lucide-react";
+import { Plus, Folder } from "lucide-react";
 import { toast } from "sonner";
 
 interface KanbanBoardProps {
@@ -34,6 +34,25 @@ export function KanbanBoard({
   onOpenNewTaskModal,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [filterTag, setFilterTag] = useState<string>("all");
+
+  // Lista de tags únicas
+  const availableTags = React.useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach((t) => {
+      (t.tags || []).forEach((tag) => {
+        if (tag.trim()) set.add(tag.trim());
+      });
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
+  const filteredTasks = React.useMemo(() => {
+    if (filterTag === "all") return tasks;
+    return tasks.filter((t) =>
+      (t.tags || []).some((tg) => tg.toLowerCase() === filterTag.toLowerCase())
+    );
+  }, [tasks, filterTag]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -84,26 +103,62 @@ export function KanbanBoard({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto pb-4 h-full items-stretch select-none pr-6">
-        {statuses.map((status) => {
-          const columnTasks = tasks.filter((t) => t.statusId === status.id);
-          return (
-            <KanbanColumn
-              key={status.id}
-              status={status}
-              tasks={columnTasks}
-              statuses={statuses}
-              onTaskClick={onTaskClick}
-              onQuickAddTask={onQuickAddTask}
-              onMoveTask={onMoveTask}
-            />
-          );
-        })}
+    <div className="flex flex-col h-full gap-3">
+      {/* Barra de Filtro de Pastas / Tags no Quadro */}
+      {availableTags.length > 0 && (
+        <div className="flex items-center gap-2 px-1 flex-wrap shrink-0">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <Folder className="h-3.5 w-3.5 text-sky-400" />
+            <span className="font-mono text-[11px]">Pastas:</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFilterTag("all")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
+              filterTag === "all"
+                ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
+                : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
+            }`}
+          >
+            Todas
+          </button>
+          {availableTags.map((tg) => (
+            <button
+              key={tg}
+              type="button"
+              onClick={() => setFilterTag(tg)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
+                filterTag === tg
+                  ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
+                  : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
+              }`}
+            >
+              #{tg}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 items-stretch select-none pr-6">
+          {statuses.map((status) => {
+            const columnTasks = filteredTasks.filter((t) => t.statusId === status.id);
+            return (
+              <KanbanColumn
+                key={status.id}
+                status={status}
+                tasks={columnTasks}
+                statuses={statuses}
+                onTaskClick={onTaskClick}
+                onQuickAddTask={onQuickAddTask}
+                onMoveTask={onMoveTask}
+              />
+            );
+          })}
 
         {/* Botão lateral "Add Task" pontilhado como na imagem de referência */}
         <div className="shrink-0 w-64 h-32 pt-1">
@@ -127,5 +182,6 @@ export function KanbanBoard({
         )}
       </DragOverlay>
     </DndContext>
+    </div>
   );
 }

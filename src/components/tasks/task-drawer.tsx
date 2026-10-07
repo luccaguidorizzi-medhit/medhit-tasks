@@ -39,6 +39,8 @@ import {
   MessageSquare,
   HelpCircle,
   FolderKanban,
+  Folder,
+  Tag,
   Lock,
   UserCheck,
 } from "lucide-react";
@@ -113,6 +115,8 @@ export function TaskDrawer({
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [showPriorityMenu, setShowPriorityMenu] = useState(false);
   const [showAssigneeMenu, setShowAssigneeMenu] = useState(false);
+  const [tagInput, setTagInput] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
 
   const { hasPermission, areas, currentUser, isTaskVisibleForCurrentUser, isAiConfigured } = useTasks();
   const isGuest = currentUser.role === "guest";
@@ -727,6 +731,121 @@ export function TaskDrawer({
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+
+            {/* Pastas & Tags (Categorização) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <Folder className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Pasta / Tags</span>
+                </label>
+                {canEditTask && !isAddingTag && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingTag(true)}
+                    className="text-[10px] font-mono font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="h-2.5 w-2.5" />
+                    <span>Adicionar</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Tags Atuais */}
+              <div className="flex flex-wrap gap-1.5 min-h-7 items-center p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 shadow-xs">
+                {(task.tags && task.tags.length > 0) ? (
+                  task.tags.map((tg) => (
+                    <div
+                      key={tg}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono font-medium bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30"
+                    >
+                      <Folder className="h-3 w-3 opacity-80" />
+                      <span>#{tg}</span>
+                      {canEditTask && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const filtered = (task.tags || []).filter((t) => t !== tg);
+                            onUpdateTask(task.id, { tags: filtered });
+                            toast.info(`Tag #${tg} removida`);
+                          }}
+                          className="hover:text-rose-500 text-slate-400 ml-0.5 cursor-pointer"
+                          title="Remover tag"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400 italic">Nenhuma pasta/tag vinculada</span>
+                )}
+              </div>
+
+              {/* Formulário de adicionar tag */}
+              {isAddingTag && canEditTask && (
+                <div className="flex items-center gap-1 pt-1 animate-in fade-in duration-100">
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Nome da pasta/tag..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const clean = tagInput.trim().replace(/^#/, "");
+                        if (clean) {
+                          const current = task.tags || [];
+                          if (!current.includes(clean)) {
+                            onUpdateTask(task.id, { tags: [...current, clean] });
+                            toast.success(`Pasta #${clean} adicionada!`);
+                          }
+                          setTagInput("");
+                          setIsAddingTag(false);
+                        }
+                      }
+                      if (e.key === "Escape") {
+                        setIsAddingTag(false);
+                        setTagInput("");
+                      }
+                    }}
+                    className="flex-1 bg-white dark:bg-slate-950/60 border border-sky-500 rounded-lg px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 outline-none"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      const clean = tagInput.trim().replace(/^#/, "");
+                      if (clean) {
+                        const current = task.tags || [];
+                        if (!current.includes(clean)) {
+                          onUpdateTask(task.id, { tags: [...current, clean] });
+                          toast.success(`Pasta #${clean} adicionada!`);
+                        }
+                        setTagInput("");
+                        setIsAddingTag(false);
+                      }
+                    }}
+                    className="h-7 px-2.5 bg-sky-500 text-slate-950 font-bold text-xs rounded-lg cursor-pointer"
+                  >
+                    Salvar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setIsAddingTag(false);
+                      setTagInput("");
+                    }}
+                    className="h-7 px-2 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               )}
             </div>
