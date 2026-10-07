@@ -49,7 +49,7 @@ export const emailService = {
     role,
     password,
     mcpToken,
-    loginUrl = "https://tasks.medhit.click/invite",
+    loginUrl = "https://work.medhit.click/invite",
   }: SendInviteEmailParams) {
     const roleLabels: Record<string, string> = {
       owner: "Proprietário (Owner)",
@@ -493,7 +493,7 @@ export const emailService = {
   async sendWelcomeEmail({
     to,
     name,
-    loginUrl = "https://tasks.medhit.click",
+    loginUrl = "https://work.medhit.click",
   }: SendWelcomeEmailParams) {
     const htmlContent = `
 <!DOCTYPE html>

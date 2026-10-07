@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const result = await emailService.sendWelcomeEmail({
       to,
       name,
-      loginUrl: "https://tasks.medhit.click",
+      loginUrl: "https://work.medhit.click",
     });
 
     return NextResponse.json({
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const result = await emailService.sendWelcomeEmail({
     to,
     name,
-    loginUrl: "https://tasks.medhit.click",
+    loginUrl: "https://work.medhit.click",
   });
 
   return NextResponse.json({

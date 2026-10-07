@@ -24,7 +24,7 @@ export function McpSettings() {
 
   const endpointUrl = typeof window !== "undefined"
     ? `${window.location.origin}/api/mcp`
-    : "https://medhit-tasks.vercel.app/api/mcp";
+    : "https://work.medhit.click/api/mcp";
 
   const userMcpToken = currentUser?.mcpToken || "medtask_user_lucca_x32kd58_sec99";
 
