@@ -151,6 +151,7 @@ export interface Area {
   description: string;
   icon: string;
   color: string;
+  folders?: string[];
   projects: Project[];
 }
 
@@ -254,6 +255,7 @@ function initializeData(): {
     description: areaSeed.description,
     icon: areaSeed.icon,
     color: areaSeed.color,
+    folders: (areaSeed as any).folders || [],
     projects: (areaSeed.projects || []).map((p: any) => ({
       ...p,
       areaId: `area-${areaIdx + 1}`,

@@ -29,11 +29,15 @@ import {
   MoreVertical,
   Lock,
   Layers,
+  HelpCircle,
+  BookOpen,
 } from "lucide-react";
 import { useTasks } from "@/context/task-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { telemetry } from "@/lib/telemetry";
+import { EducationalTooltip } from "@/components/ui/tooltip";
+import { HelpModal } from "@/components/help/help-modal";
 
 interface SidebarProps {
   currentProjectSlug?: string;
@@ -82,6 +86,7 @@ export function Sidebar({
     project: null,
   });
 
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
@@ -272,9 +277,17 @@ export function Sidebar({
                 const areaProject = area.projects[0];
                 const projectSlug = areaProject?.slug || area.slug;
 
-                // Extrai pastas (tags únicas) das tarefas desta área
+                // Extrai pastas definidas no espaço (ClickUp) combinadas com tags das tarefas
                 const areaTasks = tasks.filter((t) => t.areaId === area.slug || t.areaId === (area as any).id || t.projectId === areaProject?.id);
                 const folderTagsMap = new Map<string, number>();
+
+                // 1. Adiciona as pastas oficiais do espaço
+                (area.folders || []).forEach((f) => {
+                  const clean = f.trim();
+                  if (clean) folderTagsMap.set(clean, 0);
+                });
+
+                // 2. Conta as ocorrências pelas tarefas
                 areaTasks.forEach((t) => {
                   (t.tags || []).forEach((tag) => {
                     const clean = tag.trim();
@@ -381,33 +394,59 @@ export function Sidebar({
 
             {canCreateBoard && (
               <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsNewBoardModalOpen(true)}
-                  className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
+                <EducationalTooltip
+                  title="Criar Novo Espaço"
+                  description="Crie uma nova grande área ou esteira de projetos no workspace institucional."
                 >
-                  <Plus className="h-3 w-3" />
-                  <span>+ Novo Espaço</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsNewBoardModalOpen(true)}
+                    className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>+ Novo Espaço</span>
+                  </button>
+                </EducationalTooltip>
               </div>
             )}
           </div>
         </div>
 
-        {/* Seção 3: Rodapé com Configurações */}
+        {/* Seção 3: Rodapé com Central de Ajuda & Configurações */}
         <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
-          <Link
-            href="/settings"
-            className={cn(
-              "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-              pathname === "/settings"
-                ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-            )}
+          {/* Botão Central de Ajuda & Guia */}
+          <EducationalTooltip
+            title="Central de Ajuda & Guia"
+            description="Documentação e passo a passo explicativo para novos usuários e equipes."
           >
-            <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-            <span>Configurações</span>
-          </Link>
+            <button
+              type="button"
+              onClick={() => setIsHelpModalOpen(true)}
+              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 hover:bg-sky-500/10 transition-all cursor-pointer text-left"
+            >
+              <HelpCircle className="h-4 w-4 text-sky-500" />
+              <span>Ajuda & Documentação</span>
+            </button>
+          </EducationalTooltip>
+
+          {/* Configurações */}
+          <EducationalTooltip
+            title="Configurações do Workspace"
+            description="Gerenciamento de membros, permissões institucionais e preferências."
+          >
+            <Link
+              href="/settings"
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                pathname === "/settings"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+              )}
+            >
+              <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span>Configurações</span>
+            </Link>
+          </EducationalTooltip>
 
           {/* Assinatura no Rodapé */}
           <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex flex-col gap-0.5 font-mono">
@@ -421,6 +460,9 @@ export function Sidebar({
           </div>
         </div>
       </aside>
+
+      {/* Modal de Ajuda & Documentação */}
+      <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
 
       {/* Menu de Contexto do Botão Direito */}
       {contextMenu.isOpen && contextMenu.project && (

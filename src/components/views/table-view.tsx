@@ -52,6 +52,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import * as Popover from "@radix-ui/react-popover";
+import { EducationalTooltip } from "@/components/ui/tooltip";
 
 interface TableViewProps {
   statuses: Status[];
@@ -85,7 +86,10 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
     createTask,
     deleteTask,
     members,
+    areas,
+    createFolder,
     currentProject,
+    currentArea,
     hasPermission,
     setIsNewTaskModalOpen,
   } = useTasks();
@@ -130,16 +134,22 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
     }
   }, [searchParams]);
 
-  // Lista de tags únicas disponíveis nas tarefas
+  // Lista de pastas/tags únicas combinando as pastas oficiais do espaço com as tags das tarefas
   const availableTags = useMemo(() => {
     const set = new Set<string>();
+    const currentTargetArea = areas.find((a) => a.id === areaId || a.slug === areaId || a.projects.some((p) => p.id === projectId)) || currentArea;
+    if (currentTargetArea?.folders) {
+      currentTargetArea.folders.forEach((f) => {
+        if (f.trim()) set.add(f.trim());
+      });
+    }
     tasks.forEach((t) => {
       (t.tags || []).forEach((tag) => {
         if (tag.trim()) set.add(tag.trim());
       });
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [tasks]);
+  }, [tasks, areas, areaId, projectId, currentArea]);
 
   // Modal de Criação de Pasta / Tag
   const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
@@ -152,22 +162,13 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
       toast.error("Informe o nome da pasta / tag");
       return;
     }
-    // Cria uma primeira tarefa nesta nova pasta/tag para fixá-la de imediato
-    createTask({
-      title: `Primeira demanda da pasta #${clean}`,
-      statusId: initialStatus.id,
-      projectId: projectId || currentProject?.id || "",
-      areaId: areaId || currentProject?.areaId || "",
-      priority: "medium",
-      taskType: "task",
-      tags: [clean],
-      assigneeIds: [],
-    });
+    const targetAreaSlug = areaId || currentArea?.slug || areas[0]?.slug || "campanhas-marketing";
+    createFolder(targetAreaSlug, clean);
+
     setFilterTag(clean);
     setGroupBy("tag");
     setIsNewFolderModalOpen(false);
     setNewFolderName("");
-    toast.success(`Pasta #${clean} criada com sucesso!`);
   };
 
   // 3. Seleção em massa
@@ -572,51 +573,65 @@ interface SectionItem {
           </div>
 
           {/* Agrupar */}
-          <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
-            <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-            <span className="text-[11px] font-mono text-slate-400">Agrupar:</span>
-            <select
-              value={groupBy}
-              onChange={(e) => handleGroupByChange(e.target.value as GroupByOption)}
-              className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-1"
-            >
-              <option value="none">Nenhum</option>
-              <option value="tag">Pasta / Tag</option>
-              <option value="status">Status</option>
-              <option value="priority">Prioridade</option>
-              <option value="assignee">Responsável</option>
-              <option value="dueDate">Data limite</option>
-            </select>
-          </div>
+          <EducationalTooltip
+            title="Agrupar Tarefas"
+            description="Reorganize as linhas por Pasta, Status, Responsável ou Prioridade."
+          >
+            <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
+              <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <span className="text-[11px] font-mono text-slate-400">Agrupar:</span>
+              <select
+                value={groupBy}
+                onChange={(e) => handleGroupByChange(e.target.value as GroupByOption)}
+                className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-1"
+              >
+                <option value="none">Nenhum</option>
+                <option value="tag">Pasta / Tag</option>
+                <option value="status">Status</option>
+                <option value="priority">Prioridade</option>
+                <option value="assignee">Responsável</option>
+                <option value="dueDate">Data limite</option>
+              </select>
+            </div>
+          </EducationalTooltip>
 
           {/* Filtro por Pasta / Tag + Botão Criar Pasta */}
-          <div className="flex items-center gap-1 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
-            <Folder className="h-3 w-3 text-sky-400 shrink-0" />
-            <select
-              value={filterTag}
-              onChange={(e) => setFilterTag(e.target.value)}
-              className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-sky-500 cursor-pointer max-w-[150px] truncate"
-            >
-              <option value="all">Pasta: Todas</option>
-              {availableTags.map((t) => (
-                <option key={t} value={t}>
-                  #{t}
-                </option>
-              ))}
-            </select>
-          </div>
+          <EducationalTooltip
+            title="Filtrar por Pasta"
+            description="Exiba somente as tarefas pertencentes a uma pasta ou campanha específica."
+          >
+            <div className="flex items-center gap-1 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
+              <Folder className="h-3 w-3 text-sky-400 shrink-0" />
+              <select
+                value={filterTag}
+                onChange={(e) => setFilterTag(e.target.value)}
+                className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-sky-500 cursor-pointer max-w-[150px] truncate"
+              >
+                <option value="all">Pasta: Todas</option>
+                {availableTags.map((t) => (
+                  <option key={t} value={t}>
+                    #{t}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </EducationalTooltip>
 
           {/* Botão + Nova Pasta */}
           {canCreate && (
-            <button
-              type="button"
-              onClick={() => setIsNewFolderModalOpen(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/30 transition-colors cursor-pointer shrink-0"
-              title="Criar nova pasta / tag"
+            <EducationalTooltip
+              title="Nova Pasta / Tag"
+              description="Crie uma nova pasta ou campanha de entregas dentro do espaço ativo."
             >
-              <Plus className="h-3 w-3" />
-              <span>Nova Pasta</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => setIsNewFolderModalOpen(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/30 transition-colors cursor-pointer shrink-0"
+              >
+                <Plus className="h-3 w-3" />
+                <span>Nova Pasta</span>
+              </button>
+            </EducationalTooltip>
           )}
 
           {/* Filtro por Status (apenas se não estiver agrupado por status) */}

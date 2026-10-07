@@ -122,6 +122,8 @@ interface TaskContextType {
   createTeam: (data: { name: string; description?: string; color?: string; icon?: string }) => Area;
   updateTeam: (teamId: string, updates: Partial<Area>) => void;
   deleteTeam: (teamId: string) => void;
+  createFolder: (areaSlug: string, folderName: string) => void;
+  deleteFolder: (areaSlug: string, folderName: string) => void;
   deleteTask: (taskId: string) => void;
   toggleChecklist: (taskId: string, checklistId: string, itemId: string) => void;
   addComment: (taskId: string, content: string) => void;
@@ -170,18 +172,26 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Hidratação a partir de localStorage no carregamento inicial
+  // Hidratação a partir de localStorage no carregamento inicial (v2 limpo com pastas oficiais ClickUp)
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const storedAreas = localStorage.getItem("medhit_areas_data_v1");
+        // Limpeza de chaves legadas com tarefas antigas caso existam
+        if (localStorage.getItem("medhit_tasks_data_v1")) {
+          localStorage.removeItem("medhit_tasks_data_v1");
+        }
+        if (localStorage.getItem("medhit_areas_data_v1")) {
+          localStorage.removeItem("medhit_areas_data_v1");
+        }
+
+        const storedAreas = localStorage.getItem("medhit_areas_data_v2");
         if (storedAreas) {
           const parsed = JSON.parse(storedAreas);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Garante que os 2 projetos oficiais (Marketing e Integrações e Automações) estejam presentes
+            // Garante que todas as 4 áreas e suas pastas oficiais estejam mescladas
             const defaultAreas = store.workspace.areas;
             const mergedAreas = [...parsed];
-            
+
             defaultAreas.forEach((defArea) => {
               const existingAreaIdx = mergedAreas.findIndex(
                 (a) => a.slug === defArea.slug || a.name.toLowerCase() === defArea.name.toLowerCase()
@@ -189,6 +199,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               if (existingAreaIdx === -1) {
                 mergedAreas.push(defArea);
               } else {
+                // Mescla folders
+                const existingFolders = new Set(mergedAreas[existingAreaIdx].folders || []);
+                (defArea.folders || []).forEach((f) => existingFolders.add(f));
+                mergedAreas[existingAreaIdx].folders = Array.from(existingFolders);
+
                 defArea.projects.forEach((defProj) => {
                   const hasProj = mergedAreas[existingAreaIdx].projects?.some(
                     (p: any) => p.slug === defProj.slug || p.name.toLowerCase() === defProj.name.toLowerCase()
@@ -203,48 +218,47 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
             setAreas(mergedAreas);
             store.workspace.areas = mergedAreas;
-            localStorage.setItem("medhit_areas_data_v1", JSON.stringify(mergedAreas));
+            localStorage.setItem("medhit_areas_data_v2", JSON.stringify(mergedAreas));
           } else {
             setAreas(store.workspace.areas);
-            localStorage.setItem("medhit_areas_data_v1", JSON.stringify(store.workspace.areas));
+            localStorage.setItem("medhit_areas_data_v2", JSON.stringify(store.workspace.areas));
           }
         } else {
           setAreas(store.workspace.areas);
-          localStorage.setItem("medhit_areas_data_v1", JSON.stringify(store.workspace.areas));
+          localStorage.setItem("medhit_areas_data_v2", JSON.stringify(store.workspace.areas));
         }
-        const storedTasks = localStorage.getItem("medhit_tasks_data_v1");
+
+        const storedTasks = localStorage.getItem("medhit_tasks_data_v2");
         if (storedTasks) {
           const parsed = JSON.parse(storedTasks);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            // Garante que tarefas iniciais essenciais existam
-            const mergedTasks = [...parsed];
-            store.tasks.forEach((initTask) => {
-              if (!mergedTasks.some((t: any) => t.id === initTask.id)) {
-                mergedTasks.push(initTask);
-              }
-            });
-            setTasks(mergedTasks);
-            store.tasks = mergedTasks;
-            localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(mergedTasks));
-          } else if (store.tasks.length > 0) {
-            setTasks(store.tasks);
-            localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(store.tasks));
+          if (Array.isArray(parsed)) {
+            setTasks(parsed);
+            store.tasks = parsed;
+          } else {
+            setTasks([]);
+            store.tasks = [];
+            localStorage.setItem("medhit_tasks_data_v2", JSON.stringify([]));
           }
         } else {
-          setTasks(store.tasks);
-          localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(store.tasks));
+          // Inicia zerado sem tarefas falsas
+          setTasks([]);
+          store.tasks = [];
+          localStorage.setItem("medhit_tasks_data_v2", JSON.stringify([]));
         }
+
         const storedMembers = localStorage.getItem("medhit_members_data_v1");
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Remove antigos mocks testes, mantendo estritamente o owner (Lucca) e colaboradores convidados via invite
             const filtered = parsed
               .filter((m: any) => {
-                const name = (m.name || "").toLowerCase();
                 const email = (m.email || "").toLowerCase();
-                // Exclui mocks legados
-                if (email === "fillipe@medhit.com.br" || email === "mariana.marketing@medhit.com.br" || email === "rafael.automacao@medhit.com.br" || email === "carlos.convidado@medhit.com.br") {
+                if (
+                  email === "fillipe@medhit.com.br" ||
+                  email === "mariana.marketing@medhit.com.br" ||
+                  email === "rafael.automacao@medhit.com.br" ||
+                  email === "carlos.convidado@medhit.com.br"
+                ) {
                   return false;
                 }
                 return true;
@@ -291,7 +305,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(tasks));
+        localStorage.setItem("medhit_tasks_data_v2", JSON.stringify(tasks));
         store.tasks = tasks;
       } catch (e) {
         console.error("Erro ao salvar tarefas:", e);
@@ -303,7 +317,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_areas_data_v1", JSON.stringify(areas));
+        localStorage.setItem("medhit_areas_data_v2", JSON.stringify(areas));
         store.workspace.areas = areas;
       } catch (e) {
         console.error("Erro ao salvar áreas:", e);
@@ -748,6 +762,50 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
 
     toast.success("Área de trabalho atualizada!");
+  };
+
+  const createFolder = (areaSlug: string, folderName: string) => {
+    const clean = folderName.trim().replace(/^#/, "");
+    if (!clean) {
+      toast.error("Informe um nome válido para a pasta.");
+      return;
+    }
+
+    const updated = areas.map((a) => {
+      if (a.slug === areaSlug || a.id === areaSlug) {
+        const currentFolders = a.folders || [];
+        if (!currentFolders.includes(clean)) {
+          return {
+            ...a,
+            folders: [...currentFolders, clean],
+          };
+        }
+      }
+      return a;
+    });
+
+    setAreas(updated);
+    store.workspace.areas = updated;
+    telemetry.track("folder_created", `Pasta "${clean}" criada na área "${areaSlug}"`, { areaSlug, folder: clean }, "success", "task-context");
+    toast.success(`Pasta "${clean}" adicionada ao espaço!`);
+  };
+
+  const deleteFolder = (areaSlug: string, folderName: string) => {
+    const clean = folderName.trim().replace(/^#/, "");
+    const updated = areas.map((a) => {
+      if (a.slug === areaSlug || a.id === areaSlug) {
+        return {
+          ...a,
+          folders: (a.folders || []).filter((f) => f !== clean),
+        };
+      }
+      return a;
+    });
+
+    setAreas(updated);
+    store.workspace.areas = updated;
+    telemetry.track("folder_deleted", `Pasta "${clean}" removida da área "${areaSlug}"`, { areaSlug, folder: clean }, "warn", "task-context");
+    toast.success(`Pasta "${clean}" removida.`);
   };
 
   const deleteProject = (projectId: string) => {
@@ -1411,6 +1469,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         createTeam,
         updateTeam,
         deleteTeam,
+        createFolder,
+        deleteFolder,
         deleteTask,
         toggleChecklist,
         addComment,

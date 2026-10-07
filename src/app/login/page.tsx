@@ -80,10 +80,12 @@ export default function LoginPage() {
         <div className="rounded-2xl border border-white/10 bg-[#081226]/85 p-8 shadow-2xl backdrop-blur-2xl">
           {/* Header da Marca MedHit */}
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 p-0.5 shadow-lg shadow-sky-500/20 mb-3">
-              <div className="h-full w-full rounded-[10px] bg-slate-950 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-sky-400" />
-              </div>
+            <div className="h-14 w-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-2 flex items-center justify-center shadow-xl shadow-sky-500/20 mb-3.5 backdrop-blur-md">
+              <img
+                src="/logo.svg"
+                alt="Medhit WorkTrack Logo"
+                className="h-full w-full object-contain drop-shadow"
+              />
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
