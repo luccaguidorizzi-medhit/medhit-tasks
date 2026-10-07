@@ -126,8 +126,13 @@ export function TeamsManagement() {
       return;
     }
 
+    const removedSlug = deletingArea.slug;
     deleteTeam(deletingArea.id);
     setDeletingArea(null);
+
+    if (typeof window !== "undefined" && window.location.pathname.includes(removedSlug)) {
+      window.location.href = "/medhit";
+    }
   };
 
   return (

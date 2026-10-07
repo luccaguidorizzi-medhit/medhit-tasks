@@ -179,4 +179,46 @@ describe("Monday.com Style Workflow & Clean Primitives", () => {
     const isDone = statuses.find((s) => s.id === task.statusId)?.category === "done";
     expect(isDone).toBe(true);
   });
+
+  it("verifies Monday.com board groupings: active versus done separation and battery meter", () => {
+    const statuses: Status[] = [
+      { id: "st-todo", workspaceId: "ws-1", projectId: "p-1", name: "A Fazer", color: "#64748b", position: 1000, category: "todo" },
+      { id: "st-prog", workspaceId: "ws-1", projectId: "p-1", name: "Em Andamento", color: "#38bdf8", position: 2000, category: "in_progress" },
+      { id: "st-done", workspaceId: "ws-1", projectId: "p-1", name: "Concluído", color: "#10b981", position: 3000, category: "done" },
+    ];
+
+    const tasks: Task[] = [
+      { id: "t1", workspaceId: "ws-1", projectId: "p-1", areaId: "a-1", title: "Implementar API", description: "", taskType: "task", statusId: "st-todo", priority: "urgent", position: 1, assigneeIds: [], checklists: [], comments: [], createdAt: "", updatedAt: "" },
+      { id: "t2", workspaceId: "ws-1", projectId: "p-1", areaId: "a-1", title: "Validar UI Monday", description: "", taskType: "task", statusId: "st-prog", priority: "high", position: 2, assigneeIds: [], checklists: [], comments: [], createdAt: "", updatedAt: "" },
+      { id: "t3", workspaceId: "ws-1", projectId: "p-1", areaId: "a-1", title: "Seed de Testes", description: "", taskType: "task", statusId: "st-done", priority: "medium", position: 3, assigneeIds: [], checklists: [], comments: [], createdAt: "", updatedAt: "" },
+    ];
+
+    // Separation of active vs done
+    const activeTasks = tasks.filter((t) => {
+      const s = statuses.find((st) => st.id === t.statusId);
+      return s?.category !== "done";
+    });
+    const doneTasks = tasks.filter((t) => {
+      const s = statuses.find((st) => st.id === t.statusId);
+      return s?.category === "done";
+    });
+
+    expect(activeTasks).toHaveLength(2);
+    expect(doneTasks).toHaveLength(1);
+
+    // Battery meter distribution calculation
+    const batteryDistribution = statuses.map((s) => {
+      const count = tasks.filter((t) => t.statusId === s.id).length;
+      return {
+        status: s.name,
+        color: s.color,
+        percentage: Math.round((count / tasks.length) * 100),
+      };
+    });
+
+    expect(batteryDistribution.find((b) => b.status === "A Fazer")?.percentage).toBe(33);
+    expect(batteryDistribution.find((b) => b.status === "Em Andamento")?.percentage).toBe(33);
+    expect(batteryDistribution.find((b) => b.status === "Concluído")?.percentage).toBe(33);
+  });
 });
+
