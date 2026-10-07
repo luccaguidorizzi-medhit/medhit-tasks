@@ -451,11 +451,11 @@ interface SectionItem {
       className="w-full flex flex-col min-h-0 select-none pb-8"
       style={{ "--list-cols": listGridCols } as React.CSSProperties}
     >
-      {/* 1. BARRA SUPERIOR DA VIEW (48px) */}
-      <div className="h-12 border-b border-slate-200/80 dark:border-white/10 px-4 flex items-center justify-between gap-3 bg-white/40 dark:bg-[#070e1e]/60 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-2.5 flex-1 max-w-3xl overflow-x-auto no-scrollbar py-1">
+      {/* 1. BARRA SUPERIOR DA VIEW (COMPACTA E RESPONSIVA) */}
+      <div className="min-h-12 border-b border-slate-200/80 dark:border-white/10 px-4 py-2 flex flex-wrap items-center justify-between gap-3 bg-white/40 dark:bg-[#070e1e]/60 backdrop-blur-md shrink-0">
+        <div className="flex items-center gap-2 flex-wrap flex-1 min-w-0">
           {/* Busca Rápida */}
-          <div className="relative w-56 shrink-0">
+          <div className="relative w-48 sm:w-56 shrink-0">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
@@ -468,7 +468,7 @@ interface SectionItem {
 
           {/* Agrupar */}
           <div className="flex items-center gap-1.5 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
-            <Layers className="h-3.5 w-3.5 text-slate-400" />
+            <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
             <span className="text-[11px] font-mono text-slate-400">Agrupar:</span>
             <select
               value={groupBy}
@@ -503,7 +503,7 @@ interface SectionItem {
           <select
             value={filterAssigneeId}
             onChange={(e) => setFilterAssigneeId(e.target.value)}
-            className="px-2 py-1 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-sky-500 cursor-pointer shrink-0"
+            className="px-2 py-1 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg text-xs text-slate-700 dark:text-slate-300 outline-none focus:border-sky-500 cursor-pointer shrink-0 max-w-[170px] truncate"
           >
             <option value="all">Responsável: Todos</option>
             {members.map((m) => (
@@ -546,7 +546,7 @@ interface SectionItem {
             <button
               type="button"
               onClick={clearAllFilters}
-              className="flex items-center gap-1 text-[11px] font-mono text-rose-400 hover:text-rose-300 cursor-pointer shrink-0"
+              className="flex items-center gap-1 text-[11px] font-mono text-rose-400 hover:text-rose-300 cursor-pointer shrink-0 px-1 py-0.5"
               title="Limpar todos os filtros"
             >
               <X className="h-3 w-3" />
@@ -556,7 +556,7 @@ interface SectionItem {
         </div>
 
         {/* Lado Direito: Contador + Botão Primário Único */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 ml-auto">
           <span className="text-[11px] font-mono text-slate-400">
             {processedTasks.length} {processedTasks.length === 1 ? "tarefa" : "tarefas"}
           </span>
@@ -568,7 +568,7 @@ interface SectionItem {
               className="h-8 px-3.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl shadow-xs cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>+ Nova tarefa</span>
+              <span>Nova tarefa</span>
             </Button>
           )}
         </div>
@@ -631,7 +631,7 @@ interface SectionItem {
 
       {/* 3. TABELA PLANA (SCROLL VERTICAL & HORIZONTAL SEGURO) */}
       <div className="flex-1 overflow-x-auto overflow-y-auto mt-2">
-        <div className="min-w-[960px] flex flex-col border border-slate-200/80 dark:border-white/5 bg-white/50 dark:bg-[#081226]/50 rounded-xl mx-4 overflow-hidden shadow-2xs">
+        <div className="min-w-[960px] flex flex-col border border-slate-200/80 dark:border-white/5 bg-white/50 dark:bg-[#081226]/50 rounded-xl mx-2 sm:mx-4 overflow-hidden shadow-2xs">
           {/* CABEÇALHO GLOBAL ÚNICO (STICKY 36px) */}
           <div
             role="row"
