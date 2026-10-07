@@ -260,7 +260,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "Medhit WorkTrack <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <notifications@medhit.click>",
         to: [to],
         subject: `Bem-vindo ao Medhit WorkTrack: Acesso Liberado por ${invitedBy}`,
         html: htmlContent,
@@ -476,7 +476,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "Medhit WorkTrack <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <notifications@medhit.click>",
         to: [to],
         subject: `Nova Tarefa: ${taskTitle}`,
         html: htmlContent,
@@ -693,7 +693,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "Medhit WorkTrack <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <notifications@medhit.click>",
         to: [to],
         subject: "Bem-vindo ao Medhit WorkTrack: Plataforma Ativa!",
         html: htmlContent,
