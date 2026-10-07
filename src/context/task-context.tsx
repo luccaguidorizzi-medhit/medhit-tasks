@@ -128,6 +128,10 @@ interface TaskContextType {
   reviewApproval: (approvalId: string, decision: "approved" | "rejected", comment?: string) => void;
   triggerClaim: (agentId: string) => void;
   currentUser: Member;
+  isAuthenticated: boolean;
+  hasHydrated: boolean;
+  login: (email: string, password?: string, remember?: boolean) => { success: boolean; error?: string };
+  logout: () => void;
   hasPermission: (action: PermissionAction) => boolean;
   switchActiveRole: (role: UserRole) => void;
   switchActiveUser: (memberId: string) => void;
@@ -160,6 +164,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   // Flag para controle de hidratação e persistência em localStorage
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Hidratação a partir de localStorage no carregamento inicial
   useEffect(() => {
@@ -187,6 +192,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setMembers(parsed);
             store.workspace.members = parsed;
+          }
+        }
+
+        // Recupera sessão persistida
+        const sessionStr = localStorage.getItem("medhit_auth_session_v1") || sessionStorage.getItem("medhit_auth_session_v1");
+        if (sessionStr) {
+          const parsedSession = JSON.parse(sessionStr);
+          if (parsedSession?.userId) {
+            setActiveUserId(parsedSession.userId);
+            setIsAuthenticated(true);
           }
         }
       } catch (err) {
@@ -279,6 +294,73 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
       toast.success(`Usuário ativo: ${found.name}`);
     }
+  };
+
+  const login = (email: string, password?: string, remember: boolean = true): { success: boolean; error?: string } => {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = (password || "").trim();
+
+    const found = members.find((m) => m.email.toLowerCase() === cleanEmail);
+    if (!found) {
+      return { success: false, error: "E-mail não encontrado no sistema institucional." };
+    }
+
+    const expectedPass = found.password || "x32kd58";
+    if (cleanPass !== expectedPass) {
+      return { success: false, error: "Senha incorreta. Verifique suas credenciais." };
+    }
+
+    setActiveUserId(found.id);
+    setSimulatedRole(null);
+    setIsAuthenticated(true);
+
+    if (typeof window !== "undefined") {
+      try {
+        const sessionPayload = {
+          userId: found.id,
+          email: found.email,
+          loggedInAt: new Date().toISOString(),
+          remember,
+        };
+        if (remember) {
+          localStorage.setItem("medhit_auth_session_v1", JSON.stringify(sessionPayload));
+        } else {
+          sessionStorage.setItem("medhit_auth_session_v1", JSON.stringify(sessionPayload));
+        }
+      } catch (e) {
+        console.error("Erro ao gravar sessão no storage:", e);
+      }
+    }
+
+    telemetry.track(
+      "auth_login_success",
+      `Login autenticado para ${found.name} (${found.role})`,
+      { userId: found.id, role: found.role },
+      "success",
+      "task-context"
+    );
+
+    return { success: true };
+  };
+
+  const logout = () => {
+    setIsAuthenticated(false);
+    setSimulatedRole(null);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("medhit_auth_session_v1");
+        sessionStorage.removeItem("medhit_auth_session_v1");
+      } catch (e) {
+        console.error("Erro ao limpar sessão:", e);
+      }
+    }
+    telemetry.track(
+      "auth_logout",
+      `Sessão encerrada pelo usuário ${currentUser.name}`,
+      { userId: currentUser.id },
+      "info",
+      "task-context"
+    );
   };
 
   // Gestão de Chave de IA e Estado de Ativação dos Agentes
@@ -1198,6 +1280,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         reviewApproval,
         triggerClaim,
         currentUser,
+        isAuthenticated,
+        hasHydrated,
+        login,
+        logout,
         hasPermission,
         switchActiveRole,
         switchActiveUser,

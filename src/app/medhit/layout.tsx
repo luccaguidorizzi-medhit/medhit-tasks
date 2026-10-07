@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
-import { TaskProvider, useTasks } from "@/context/task-context";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useTasks } from "@/context/task-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { TaskDrawer } from "@/components/tasks/task-drawer";
@@ -11,6 +12,7 @@ import { NewTeamModal } from "@/components/teams/new-team-modal";
 import { DeleteBoardModal } from "@/components/boards/delete-board-modal";
 
 function MedhitShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const {
     currentArea,
     currentProject,
@@ -24,6 +26,8 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
     members,
     agents,
     approvals,
+    isAuthenticated,
+    hasHydrated,
     setSelectedTask,
     setIsNewTaskModalOpen,
     setIsNewBoardModalOpen,
@@ -35,6 +39,23 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
     toggleChecklist,
     createTask,
   } = useTasks();
+
+  useEffect(() => {
+    if (hasHydrated && !isAuthenticated) {
+      router.replace("/login");
+    }
+  }, [hasHydrated, isAuthenticated, router]);
+
+  if (!hasHydrated || !isAuthenticated) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-950 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+          <p className="text-xs text-slate-400 font-mono tracking-wider">Verificando credenciais corporativas...</p>
+        </div>
+      </div>
+    );
+  }
 
   const pendingApprovalsCount = approvals.filter((a) => a.status === "pending").length;
 
@@ -109,9 +130,5 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
 }
 
 export default function MedhitLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <TaskProvider>
-      <MedhitShell>{children}</MedhitShell>
-    </TaskProvider>
-  );
+  return <MedhitShell>{children}</MedhitShell>;
 }

@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { TaskProvider } from "@/context/task-context";
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
     () =>
@@ -28,7 +30,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     >
       <QueryClientProvider client={queryClient}>
         <TooltipProvider delayDuration={150}>
-          {children}
+          <TaskProvider>
+            {children}
+          </TaskProvider>
           <Toaster position="bottom-right" richColors />
         </TooltipProvider>
       </QueryClientProvider>
