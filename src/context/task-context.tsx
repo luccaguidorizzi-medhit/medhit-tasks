@@ -128,6 +128,10 @@ interface TaskContextType {
   reviewApproval: (approvalId: string, decision: "approved" | "rejected", comment?: string) => void;
   triggerClaim: (agentId: string) => void;
   currentUser: Member;
+  authenticatedUser: Member;
+  isOwnerSession: boolean;
+  isSimulating: boolean;
+  restoreOwnerUser: () => void;
   isAuthenticated: boolean;
   hasHydrated: boolean;
   login: (email: string, password?: string, remember?: boolean) => { success: boolean; error?: string };
@@ -200,6 +204,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (sessionStr) {
           const parsedSession = JSON.parse(sessionStr);
           if (parsedSession?.userId) {
+            setAuthenticatedUserId(parsedSession.userId);
             setActiveUserId(parsedSession.userId);
             setIsAuthenticated(true);
           }
@@ -248,7 +253,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [members, hasHydrated]);
 
-  // Controle de Usuário Ativo e Simulação de Role (RBAC)
+  // Usuário que realizou login institucional (Sessão real)
+  const [authenticatedUserId, setAuthenticatedUserId] = useState<string>(() => {
+    const defaultUser = store.workspace.members.find(
+      (m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")
+    ) || store.workspace.members[0];
+    return defaultUser?.id || "user-1";
+  });
+
+  // Usuário ativo para visualização / simulação (pode ser alternado exclusivamente pelo Owner)
   const [activeUserId, setActiveUserId] = useState<string>(() => {
     const defaultUser = store.workspace.members.find(
       (m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")
@@ -257,10 +270,36 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   });
   const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
 
+  const rawAuthUser = members.find((m) => m.id === authenticatedUserId) || members[0];
+  const authenticatedUser: Member = rawAuthUser;
+
+  // Verifica se a sessão autenticada pertence exclusivamente ao Proprietário (Lucca)
+  const isOwnerSession = Boolean(
+    authenticatedUser &&
+    (authenticatedUser.email.toLowerCase() === "lucca@medhit.com.br" ||
+     authenticatedUser.email.toLowerCase() === "lucca.guidorizzi@medhit.com.br" ||
+     authenticatedUser.role === "owner")
+  );
+
   const rawUser = members.find((m) => m.id === activeUserId) || members[0];
   const currentUser: Member = {
     ...rawUser,
     role: (simulatedRole || rawUser.role) as Member["role"],
+  };
+
+  const isSimulating = Boolean(activeUserId !== authenticatedUserId || simulatedRole !== null);
+
+  const restoreOwnerUser = () => {
+    setActiveUserId(authenticatedUserId);
+    setSimulatedRole(null);
+    telemetry.track(
+      "rbac_user_restored",
+      `Visualização restaurada para o usuário autenticado: ${authenticatedUser.name}`,
+      { userId: authenticatedUserId },
+      "info",
+      "task-context"
+    );
+    toast.success(`Visualização restaurada: ${authenticatedUser.name}`);
   };
 
   const hasPermission = (action: PermissionAction): boolean => {
@@ -269,6 +308,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const switchActiveRole = (newRole: UserRole) => {
+    if (!isOwnerSession) {
+      toast.error("Apenas o Proprietário tem permissão para simular papéis RBAC.");
+      return;
+    }
     setSimulatedRole(newRole);
     telemetry.track(
       "rbac_role_switched",
@@ -281,6 +324,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
   const switchActiveUser = (memberId: string) => {
+    if (!isOwnerSession) {
+      toast.error("Apenas o Proprietário tem permissão para alternar contas de teste.");
+      return;
+    }
     const found = members.find((m) => m.id === memberId);
     if (found) {
       setActiveUserId(memberId);
@@ -292,7 +339,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         "info",
         "task-context"
       );
-      toast.success(`Usuário ativo: ${found.name}`);
+      toast.success(`Simulando: ${found.name} (${found.role})`);
     }
   };
 
@@ -310,6 +357,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return { success: false, error: "Senha incorreta. Verifique suas credenciais." };
     }
 
+    setAuthenticatedUserId(found.id);
     setActiveUserId(found.id);
     setSimulatedRole(null);
     setIsAuthenticated(true);
@@ -346,6 +394,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setIsAuthenticated(false);
     setSimulatedRole(null);
+    const defaultUser = store.workspace.members.find(
+      (m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")
+    ) || store.workspace.members[0];
+    const fallbackId = defaultUser?.id || "user-1";
+    setAuthenticatedUserId(fallbackId);
+    setActiveUserId(fallbackId);
+
     if (typeof window !== "undefined") {
       try {
         localStorage.removeItem("medhit_auth_session_v1");
@@ -1280,6 +1335,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         reviewApproval,
         triggerClaim,
         currentUser,
+        authenticatedUser,
+        isOwnerSession,
+        isSimulating,
+        restoreOwnerUser,
         isAuthenticated,
         hasHydrated,
         login,

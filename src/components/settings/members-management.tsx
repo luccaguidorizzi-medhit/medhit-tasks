@@ -30,6 +30,8 @@ export function MembersManagement() {
     members,
     areas,
     currentUser,
+    authenticatedUser,
+    isOwnerSession,
     hasPermission,
     updateMemberRole,
     updateMemberPassword,
@@ -201,7 +203,7 @@ export function MembersManagement() {
               <span>•</span>
               <div className="inline-flex items-center gap-1.5 text-slate-300">
                 <span className="text-[11px] font-mono">
-                  Senha: {showOwnPassword ? currentUser.password || "x32kd58" : "••••••••"}
+                  Senha: {showOwnPassword ? currentUser.password || "••••••••" : "••••••••"}
                 </span>
                 <button
                   type="button"
@@ -302,10 +304,10 @@ export function MembersManagement() {
                   </td>
 
                   <td className="py-2.5 px-3 font-mono">
-                    {canManage || member.id === currentUser.id ? (
+                    {(isOwnerSession || member.id === authenticatedUser.id) ? (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300">
-                          {visiblePasswords[member.id] ? member.password || "x32kd58" : "••••••••"}
+                          {visiblePasswords[member.id] ? member.password || "••••••••" : "••••••••"}
                         </span>
                         <button
                           type="button"
@@ -352,7 +354,7 @@ export function MembersManagement() {
                   </td>
 
                   <td className="py-2.5 px-3 text-right">
-                    {canManage || member.id === currentUser.id ? (
+                    {(isOwnerSession || member.id === authenticatedUser.id || (canManage && member.role !== "owner")) ? (
                       <Button
                         size="sm"
                         variant="ghost"

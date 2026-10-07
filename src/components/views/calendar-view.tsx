@@ -129,8 +129,7 @@ export function CalendarView({
     tasks.forEach((t) => {
       let key = "";
       if (t.dueDate) {
-        const d = new Date(t.dueDate);
-        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        key = t.dueDate.includes("T") ? t.dueDate.split("T")[0] : t.dueDate.slice(0, 10);
       } else {
         // Fallback: distribui pelo dia de criação ou hoje
         const d = new Date(t.createdAt || Date.now());

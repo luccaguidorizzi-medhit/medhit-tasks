@@ -51,8 +51,19 @@ export function Topbar({
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const { currentUser, hasPermission, switchActiveRole, switchActiveUser, members, logout } = useTasks();
-  const isOwner = currentUser.email.toLowerCase() === "lucca@medhit.com.br" || currentUser.role === "owner";
+  const {
+    currentUser,
+    authenticatedUser,
+    isOwnerSession,
+    isSimulating,
+    restoreOwnerUser,
+    hasPermission,
+    switchActiveRole,
+    switchActiveUser,
+    members,
+    logout,
+  } = useTasks();
+  const isOwner = isOwnerSession;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -185,6 +196,23 @@ export function Topbar({
 
         {/* Direita: Ações & Perfil */}
         <div className="flex items-center gap-2">
+          {/* Indicador de Simulação Ativa para o Owner */}
+          {isOwnerSession && isSimulating && (
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs shadow-xs animate-in fade-in duration-150">
+              <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <span className="font-medium text-[11px] truncate max-w-[200px]">
+                Simulando: <strong>{currentUser.name}</strong> ({currentUser.role})
+              </span>
+              <button
+                onClick={restoreOwnerUser}
+                className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-bold text-[10px] hover:bg-amber-400 transition-colors cursor-pointer shrink-0"
+                title="Restaurar visualização original do Owner"
+              >
+                Voltar ao Owner
+              </button>
+            </div>
+          )}
+
           {/* Botão Configurações */}
           <EducationalTooltip
             title="Configurações do Workspace"
@@ -280,6 +308,20 @@ export function Topbar({
                       <span>Alternar Usuário de Teste:</span>
                       <span className="text-[9px] text-sky-400 font-normal">({members.length} contas)</span>
                     </div>
+
+                    {isSimulating && (
+                      <button
+                        onClick={() => {
+                          restoreOwnerUser();
+                          setIsProfileMenuOpen(false);
+                        }}
+                        className="w-full mb-2 py-1 px-2 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 text-[11px] font-bold border border-amber-500/30 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Restaurar {authenticatedUser.name} (Owner)</span>
+                      </button>
+                    )}
+
                     <div className="space-y-1 mb-2 max-h-36 overflow-y-auto pr-1">
                       {members.map((m) => (
                         <button

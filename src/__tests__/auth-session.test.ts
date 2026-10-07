@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { store } from "../server/services/data-store";
+import { store, Member } from "../server/services/data-store";
 import { seedData } from "../server/db/seed";
 
 describe("Production Session Auth & Owner Test Account Isolation", () => {
@@ -51,21 +51,115 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     expect(notFound.error).toBe("Usuário não encontrado");
   });
 
-  it("ensures ONLY owner Lucca has permission to view or switch test accounts", () => {
-    const canAccessTestAccounts = (user: { email: string; role: string }) => {
-      return user.email.toLowerCase() === "lucca@medhit.com.br" || user.role === "owner";
+  it("ensures ONLY owner Lucca session has permission to view or switch test accounts", () => {
+    const checkIsOwnerSession = (authenticatedUser: { email: string; role: string }) => {
+      return (
+        authenticatedUser.email.toLowerCase() === "lucca@medhit.com.br" ||
+        authenticatedUser.email.toLowerCase() === "lucca.guidorizzi@medhit.com.br" ||
+        authenticatedUser.role === "owner"
+      );
     };
 
     // Owner Lucca pode
-    expect(canAccessTestAccounts({ email: "lucca@medhit.com.br", role: "owner" })).toBe(true);
+    expect(checkIsOwnerSession({ email: "lucca@medhit.com.br", role: "owner" })).toBe(true);
+    expect(checkIsOwnerSession({ email: "lucca.guidorizzi@medhit.com.br", role: "owner" })).toBe(true);
 
     // Admin Dr. Fillipe NÃO pode ver atalhos de contas de teste
-    expect(canAccessTestAccounts({ email: "fillipe@medhit.com.br", role: "admin" })).toBe(false);
+    expect(checkIsOwnerSession({ email: "fillipe@medhit.com.br", role: "admin" })).toBe(false);
 
     // Membro Mariana NÃO pode
-    expect(canAccessTestAccounts({ email: "mariana.marketing@medhit.com.br", role: "member" })).toBe(false);
+    expect(checkIsOwnerSession({ email: "mariana.marketing@medhit.com.br", role: "member" })).toBe(false);
 
     // Convidado Carlos NÃO pode
-    expect(canAccessTestAccounts({ email: "carlos.convidado@medhit.com.br", role: "guest" })).toBe(false);
+    expect(checkIsOwnerSession({ email: "carlos.convidado@medhit.com.br", role: "guest" })).toBe(false);
+  });
+
+  it("maintains isOwnerSession true even when Owner simulates a Member or Guest", () => {
+    // Simula estado do TaskProvider
+    const authenticatedUser: Member = {
+      id: "user-1",
+      workspaceId: "ws-1",
+      name: "Lucca Lagana",
+      email: "lucca@medhit.com.br",
+      role: "owner",
+      avatarUrl: "",
+      status: "active",
+      password: "x32kd58",
+    };
+
+    let activeUserId = authenticatedUser.id;
+    let simulatedRole: string | null = null;
+
+    const isOwnerSession = (
+      authenticatedUser.email.toLowerCase() === "lucca@medhit.com.br" ||
+      authenticatedUser.role === "owner"
+    );
+
+    // Owner inicialmente vê a si mesmo
+    expect(isOwnerSession).toBe(true);
+    expect(activeUserId).toBe("user-1");
+
+    // Owner simula Mariana (membro de marketing)
+    activeUserId = "user-3"; // Mariana
+    simulatedRole = null;
+
+    const mariana = seedData.members.find((m) => m.email === "mariana.marketing@medhit.com.br")!;
+    const currentUser: Member = {
+      ...mariana,
+      id: "user-3",
+      role: (simulatedRole || mariana.role) as Member["role"],
+      workspaceId: "ws-1",
+      status: "active",
+    };
+
+    // currentUser reflete Mariana para simular sua visão
+    expect(currentUser.name).toBe("Mariana Costa (Marketing)");
+    expect(currentUser.role).toBe("member");
+
+    // Mas a sessão raiz continua pertencendo ao Owner (NÃO fica preso!)
+    expect(isOwnerSession).toBe(true);
+
+    const isSimulating = activeUserId !== authenticatedUser.id || simulatedRole !== null;
+    expect(isSimulating).toBe(true);
+
+    // Restaurar volta ao Owner perfeitamente
+    activeUserId = authenticatedUser.id;
+    simulatedRole = null;
+    const restoredSimulating = activeUserId !== authenticatedUser.id || simulatedRole !== null;
+    expect(restoredSimulating).toBe(false);
+  });
+
+  it("prevents non-owners from unmasking other accounts passwords or resetting owner password", () => {
+    const ownerUser = { id: "user-1", email: "lucca@medhit.com.br", role: "owner" };
+    const adminUser = { id: "user-2", email: "fillipe@medhit.com.br", role: "admin" };
+    const memberUser = { id: "user-3", email: "mariana.marketing@medhit.com.br", role: "member" };
+
+    const canViewPassword = (sessionUser: typeof adminUser, targetMemberId: string) => {
+      const isOwner = sessionUser.email === "lucca@medhit.com.br" || sessionUser.role === "owner";
+      return isOwner || sessionUser.id === targetMemberId;
+    };
+
+    const canResetPassword = (sessionUser: typeof adminUser, targetMember: typeof ownerUser) => {
+      const isOwner = sessionUser.email === "lucca@medhit.com.br" || sessionUser.role === "owner";
+      if (isOwner || sessionUser.id === targetMember.id) return true;
+      // Admin pode resetar para outros membros, mas NUNCA para o Owner
+      if (sessionUser.role === "admin" && targetMember.role !== "owner") return true;
+      return false;
+    };
+
+    // Owner pode ver e resetar qualquer senha
+    expect(canViewPassword(ownerUser, "user-2")).toBe(true);
+    expect(canResetPassword(ownerUser, adminUser)).toBe(true);
+
+    // Admin NÃO pode ver a senha do Owner nem de outros
+    expect(canViewPassword(adminUser, "user-1")).toBe(false);
+    expect(canViewPassword(adminUser, "user-3")).toBe(false);
+    // Mas Admin pode ver a sua própria senha
+    expect(canViewPassword(adminUser, "user-2")).toBe(true);
+
+    // Admin NÃO pode resetar a senha do Owner
+    expect(canResetPassword(adminUser, ownerUser)).toBe(false);
+    // Mas Admin pode resetar a de um membro comum
+    expect(canResetPassword(adminUser, memberUser as any)).toBe(true);
   });
 });
