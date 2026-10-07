@@ -17,7 +17,7 @@ export const seedData = {
   members: [
     {
       name: "Lucca Lagana",
-      email: "lucca@medhit.com.br",
+      email: "lucca.guidorizzi@medhit.com.br",
       role: "owner" as const,
       password: "x32kd58",
       mcpToken: "medtask_user_lucca_x32kd58_sec99",

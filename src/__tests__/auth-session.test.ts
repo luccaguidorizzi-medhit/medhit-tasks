@@ -4,7 +4,9 @@ import { seedData } from "../server/db/seed";
 
 describe("Production Session Auth & Owner Test Account Isolation", () => {
   it("verifies owner Lucca credentials in seed data", () => {
-    const owner = seedData.members.find((m) => m.email === "lucca@medhit.com.br");
+    const owner = seedData.members.find(
+      (m) => m.email === "lucca.guidorizzi@medhit.com.br" || m.email === "lucca@medhit.com.br"
+    );
     expect(owner).toBeDefined();
     expect(owner?.role).toBe("owner");
     expect(owner?.password).toBe("x32kd58");
@@ -29,16 +31,30 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     const authenticate = (email: string, pass: string) => {
       const cleanEmail = email.trim().toLowerCase();
       const cleanPass = pass.trim();
-      const found = seedData.members.find((m) => m.email.toLowerCase() === cleanEmail);
+      const found = seedData.members.find((m) => {
+        const mEmail = m.email.toLowerCase();
+        if (mEmail === cleanEmail) return true;
+        if (
+          (cleanEmail === "lucca.guidorizzi@medhit.com.br" || cleanEmail === "lucca@medhit.com.br") &&
+          (mEmail === "lucca.guidorizzi@medhit.com.br" || mEmail === "lucca@medhit.com.br")
+        ) {
+          return true;
+        }
+        return false;
+      });
       if (!found) return { success: false, error: "Usuário não encontrado" };
       if (found.password !== cleanPass) return { success: false, error: "Senha incorreta" };
       return { success: true, user: found };
     };
 
-    // Sucesso para o Owner Lucca
-    const ownerLogin = authenticate("lucca@medhit.com.br", "x32kd58");
+    // Sucesso para o Owner Lucca com o e-mail institucional
+    const ownerLogin = authenticate("lucca.guidorizzi@medhit.com.br", "x32kd58");
     expect(ownerLogin.success).toBe(true);
     expect(ownerLogin.user?.role).toBe("owner");
+
+    // Sucesso também com o alias simplificado
+    const ownerAliasLogin = authenticate("lucca@medhit.com.br", "x32kd58");
+    expect(ownerAliasLogin.success).toBe(true);
 
     // Falha por senha incorreta
     const wrongPass = authenticate("lucca@medhit.com.br", "wrongpassword123");

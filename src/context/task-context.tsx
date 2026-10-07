@@ -194,8 +194,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setMembers(parsed);
-            store.workspace.members = parsed;
+            // Assegura que o email do owner permaneça atualizado com lucca.guidorizzi@medhit.com.br
+            const updated = parsed.map((m: any) => {
+              if (m.role === "owner" || m.name.toLowerCase().includes("lucca")) {
+                return { ...m, email: "lucca.guidorizzi@medhit.com.br", password: m.password || "x32kd58" };
+              }
+              return m;
+            });
+            setMembers(updated);
+            store.workspace.members = updated;
           }
         }
 
@@ -347,7 +354,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = (password || "").trim();
 
-    const found = members.find((m) => m.email.toLowerCase() === cleanEmail);
+    // Permite login tanto por lucca.guidorizzi@medhit.com.br quanto por lucca@medhit.com.br
+    const found = members.find((m) => {
+      const mEmail = m.email.toLowerCase();
+      if (mEmail === cleanEmail) return true;
+      if (
+        (cleanEmail === "lucca.guidorizzi@medhit.com.br" || cleanEmail === "lucca@medhit.com.br") &&
+        (mEmail === "lucca.guidorizzi@medhit.com.br" || mEmail === "lucca@medhit.com.br")
+      ) {
+        return true;
+      }
+      return false;
+    });
+
     if (!found) {
       return { success: false, error: "E-mail não encontrado no sistema institucional." };
     }
