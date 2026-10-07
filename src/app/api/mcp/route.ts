@@ -306,7 +306,7 @@ function authenticateRequest(request: Request): Member | null {
   const authHeader = request.headers.get("authorization") || request.headers.get("x-mcp-token") || "";
   const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-  // Se nenhum token fornecido, retorna o primeiro membro (Lucca Lagana) como fallback em dev
+  // Se nenhum token fornecido, retorna o primeiro membro (Lucca Guidorizzi) como fallback em dev
   if (!token) {
     return store.workspace.members[0];
   }
@@ -624,7 +624,7 @@ export async function POST(request: Request) {
             args.taskId,
             args.content,
             "user",
-            activeUser ? activeUser.name : "Lucca Lagana"
+            activeUser ? activeUser.name : "Lucca Guidorizzi"
           );
           return NextResponse.json({
             jsonrpc: "2.0",
@@ -726,7 +726,7 @@ export async function POST(request: Request) {
             emailStatus = await emailService.sendInviteEmail({
               to: newMember.email,
               name: newMember.name,
-              invitedBy: activeUser ? activeUser.name : "Lucca Lagana",
+              invitedBy: activeUser ? activeUser.name : "MedHit",
               role: newMember.role,
               password: initialPassword,
               mcpToken: generatedMcpToken,

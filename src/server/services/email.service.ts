@@ -45,7 +45,7 @@ export const emailService = {
   async sendInviteEmail({
     to,
     name,
-    invitedBy = "Lucca Lagana",
+    invitedBy = "MedHit",
     role,
     password,
     mcpToken,
@@ -194,13 +194,13 @@ export const emailService = {
     <div class="header">
       <div class="badge">Medhit WorkTrack</div>
       <h1 class="title">Seu Acesso Foi Concedido</h1>
-      <p class="subtitle">Você foi convidado por <strong>${invitedBy}</strong> para o workspace.</p>
+      <p class="subtitle">Bem-vindo ao workspace oficial da MedHit.</p>
     </div>
 
     <div class="body">
       <p class="greeting">
         Olá, <strong>${name}</strong>!<br>
-        Você agora faz parte do <strong>Medhit WorkTrack</strong>. Acesse a plataforma para acompanhar suas demandas, gerenciar projetos e colaborar com o time.
+        Seu acesso ao <strong>Medhit WorkTrack</strong> foi liberado. Acesse a plataforma para gerenciar projetos, acompanhar entregas e colaborar com o time.
       </p>
 
       <div class="card">
@@ -262,7 +262,7 @@ export const emailService = {
       const response = await resend.emails.send({
         from: "Medhit WorkTrack <notifications@medhit.click>",
         to: [to],
-        subject: `Bem-vindo ao Medhit WorkTrack: Acesso Liberado por ${invitedBy}`,
+        subject: "Bem-vindo ao Medhit WorkTrack: Acesso Liberado",
         html: htmlContent,
       });
 
@@ -291,7 +291,7 @@ export const emailService = {
     projectName = "Medhit WorkTrack",
     dueDate,
     priority,
-    assignedBy = "Lucca Lagana",
+    assignedBy = "MedHit",
   }: SendTaskAssignedParams) {
     if (!resend) {
       console.log(`[Resend Simulação] Tarefa "${taskTitle}" atribuída para ${to}`);

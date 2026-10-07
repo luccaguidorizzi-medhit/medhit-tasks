@@ -65,7 +65,7 @@ export const tasksService = {
       taskId: newTask.id,
       projectId: newTask.projectId,
       actorType: "user",
-      actorName: "Lucca Lagana",
+      actorName: "Lucca Guidorizzi",
       action: `criou a tarefa "${newTask.title}"`,
       createdAt: new Date().toISOString(),
     });
@@ -91,7 +91,7 @@ export const tasksService = {
       taskId: id,
       projectId: updatedTask.projectId,
       actorType: "user",
-      actorName: "Lucca Lagana",
+      actorName: "Lucca Guidorizzi",
       action: `atualizou a tarefa "${updatedTask.title}"`,
       createdAt: new Date().toISOString(),
     });
@@ -116,7 +116,7 @@ export const tasksService = {
         taskId: task.id,
         projectId: task.projectId,
         actorType: "user",
-        actorName: "Lucca Lagana",
+        actorName: "Lucca Guidorizzi",
         action: `moveu a tarefa para outro status`,
         createdAt: new Date().toISOString(),
       });
@@ -140,7 +140,7 @@ export const tasksService = {
     return task;
   },
 
-  addComment(taskId: string, content: string, authorType: "user" | "agent" = "user", authorName = "Lucca Lagana") {
+  addComment(taskId: string, content: string, authorType: "user" | "agent" = "user", authorName = "Lucca Guidorizzi") {
     const task = store.tasks.find((t) => t.id === taskId);
     if (!task) return null;
 
@@ -180,7 +180,7 @@ export const tasksService = {
       id: `act-${Date.now()}`,
       projectId: deleted.projectId,
       actorType: "user",
-      actorName: "Lucca Lagana",
+      actorName: "Lucca Guidorizzi",
       action: `excluiu a tarefa "${deleted.title}"`,
       createdAt: new Date().toISOString(),
     });

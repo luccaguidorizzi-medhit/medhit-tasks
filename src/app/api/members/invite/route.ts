@@ -4,7 +4,7 @@ import { emailService } from "@/server/services/email.service";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { to, name, role, password, mcpToken, invitedBy = "Lucca Lagana" } = body;
+    const { to, name, role, password, mcpToken, invitedBy = "MedHit" } = body;
 
     if (!to || !name) {
       return NextResponse.json({ error: "E-mail e nome são obrigatórios" }, { status: 400 });

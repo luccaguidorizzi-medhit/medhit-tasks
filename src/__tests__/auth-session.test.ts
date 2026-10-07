@@ -86,7 +86,7 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     const authenticatedUser: Member = {
       id: "user-1",
       workspaceId: "ws-1",
-      name: "Lucca Lagana",
+      name: "Lucca Guidorizzi",
       email: "lucca@medhit.com.br",
       role: "owner",
       avatarUrl: "",

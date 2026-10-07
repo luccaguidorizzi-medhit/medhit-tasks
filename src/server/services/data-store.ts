@@ -272,8 +272,8 @@ function initializeData(): {
     {
       id: "act-init",
       actorType: "user",
-      actorName: "Lucca Lagana",
-      action: "inicializou o workspace MedHit Tasks limpo",
+      actorName: "Lucca Guidorizzi",
+      action: "inicializou o workspace Medhit WorkTrack limpo",
       createdAt: new Date().toISOString(),
     },
   ];
