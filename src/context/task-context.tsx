@@ -215,10 +215,24 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         const storedTasks = localStorage.getItem("medhit_tasks_data_v1");
         if (storedTasks) {
           const parsed = JSON.parse(storedTasks);
-          if (Array.isArray(parsed)) {
-            setTasks(parsed);
-            store.tasks = parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Garante que tarefas iniciais essenciais existam
+            const mergedTasks = [...parsed];
+            store.tasks.forEach((initTask) => {
+              if (!mergedTasks.some((t: any) => t.id === initTask.id)) {
+                mergedTasks.push(initTask);
+              }
+            });
+            setTasks(mergedTasks);
+            store.tasks = mergedTasks;
+            localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(mergedTasks));
+          } else if (store.tasks.length > 0) {
+            setTasks(store.tasks);
+            localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(store.tasks));
           }
+        } else {
+          setTasks(store.tasks);
+          localStorage.setItem("medhit_tasks_data_v1", JSON.stringify(store.tasks));
         }
         const storedMembers = localStorage.getItem("medhit_members_data_v1");
         if (storedMembers) {

@@ -261,7 +261,7 @@ function initializeData(): {
     })),
   }));
 
-  const tasks: Task[] = [];
+  const tasks: Task[] = (seedData as any).initialTasks ? [...(seedData as any).initialTasks] : [];
   const agentRuns: AgentRun[] = [];
 
   const approvals: Approval[] = [];

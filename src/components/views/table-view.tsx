@@ -18,6 +18,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { Task, Status } from "@/server/services/data-store";
 import { useTasks } from "@/context/task-context";
 import {
@@ -113,11 +114,21 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
   const [hideCompleted, setHideCompleted] = useState<boolean>(false);
 
   // 2. Filtros
+  const searchParams = useSearchParams();
+  const initialUrlTag = searchParams?.get("tag") || searchParams?.get("folder") || "all";
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatusId, setFilterStatusId] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterAssigneeId, setFilterAssigneeId] = useState<string>("all");
-  const [filterTag, setFilterTag] = useState<string>("all");
+  const [filterTag, setFilterTag] = useState<string>(initialUrlTag);
+
+  useEffect(() => {
+    const urlTag = searchParams?.get("tag") || searchParams?.get("folder");
+    if (urlTag) {
+      setFilterTag(urlTag);
+      setGroupBy("tag");
+    }
+  }, [searchParams]);
 
   // Lista de tags únicas disponíveis nas tarefas
   const availableTags = useMemo(() => {
@@ -129,6 +140,35 @@ export function TableView({ statuses, tasks, onTaskClick, projectId, areaId }: T
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [tasks]);
+
+  // Modal de Criação de Pasta / Tag
+  const [isNewFolderModalOpen, setIsNewFolderModalOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
+  const handleCreateFolder = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = newFolderName.trim().replace(/^#/, "");
+    if (!clean) {
+      toast.error("Informe o nome da pasta / tag");
+      return;
+    }
+    // Cria uma primeira tarefa nesta nova pasta/tag para fixá-la de imediato
+    createTask({
+      title: `Primeira demanda da pasta #${clean}`,
+      statusId: initialStatus.id,
+      projectId: projectId || currentProject?.id || "",
+      areaId: areaId || currentProject?.areaId || "",
+      priority: "medium",
+      taskType: "task",
+      tags: [clean],
+      assigneeIds: [],
+    });
+    setFilterTag(clean);
+    setGroupBy("tag");
+    setIsNewFolderModalOpen(false);
+    setNewFolderName("");
+    toast.success(`Pasta #${clean} criada com sucesso!`);
+  };
 
   // 3. Seleção em massa
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
@@ -549,7 +589,7 @@ interface SectionItem {
             </select>
           </div>
 
-          {/* Filtro por Pasta / Tag */}
+          {/* Filtro por Pasta / Tag + Botão Criar Pasta */}
           <div className="flex items-center gap-1 shrink-0 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-0.5">
             <Folder className="h-3 w-3 text-sky-400 shrink-0" />
             <select
@@ -565,6 +605,19 @@ interface SectionItem {
               ))}
             </select>
           </div>
+
+          {/* Botão + Nova Pasta */}
+          {canCreate && (
+            <button
+              type="button"
+              onClick={() => setIsNewFolderModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-500/10 hover:bg-sky-500/20 text-sky-500 border border-sky-500/30 transition-colors cursor-pointer shrink-0"
+              title="Criar nova pasta / tag"
+            >
+              <Plus className="h-3 w-3" />
+              <span>Nova Pasta</span>
+            </button>
+          )}
 
           {/* Filtro por Status (apenas se não estiver agrupado por status) */}
           {!isGroupingByStatus && (
@@ -638,22 +691,11 @@ interface SectionItem {
           )}
         </div>
 
-        {/* Lado Direito: Contador + Botão Primário Único */}
+        {/* Lado Direito: Contador de Tarefas */}
         <div className="flex items-center gap-3 shrink-0 ml-auto">
           <span className="text-[11px] font-mono text-slate-400">
             {processedTasks.length} {processedTasks.length === 1 ? "tarefa" : "tarefas"}
           </span>
-
-          {canCreate && (
-            <Button
-              onClick={() => setIsNewTaskModalOpen(true)}
-              size="sm"
-              className="h-8 px-3.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl shadow-xs cursor-pointer"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span>Nova tarefa</span>
-            </Button>
-          )}
         </div>
       </div>
 
@@ -1437,6 +1479,68 @@ interface SectionItem {
           </div>
         </div>
       </div>
+
+      {/* MODAL PARA NOVA PASTA / TAG */}
+      {isNewFolderModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-sm bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <form onSubmit={handleCreateFolder} className="p-5 flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-white/5 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                    <Folder className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">Criar Nova Pasta</h3>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Organize e agrupe demandas</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNewFolderModalOpen(false)}
+                  className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                  Nome da Pasta / Tag
+                </label>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Ex: Simulado Intensivo, Masterclass, Recursos Gerais..."
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsNewFolderModalOpen(false)}
+                  className="h-8 text-xs cursor-pointer"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="h-8 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-1.5 rounded-xl cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Criar Pasta</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* RODAPÉ OBRIGATÓRIO */}
       <footer className="pt-4 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500 shrink-0">

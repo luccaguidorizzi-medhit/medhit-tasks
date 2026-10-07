@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   CalendarCheck2,
   FolderKanban,
+  Folder,
   Plus,
   Users,
   Settings,
@@ -61,6 +62,7 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const {
+    tasks,
     areas,
     currentUser,
     hasPermission,
@@ -173,19 +175,19 @@ export function Sidebar({
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // Coleta projetos de todas as áreas
-  const allProjects = areas.flatMap((area) =>
-    area.projects.map((proj) => ({
-      ...proj,
-      areaSlug: area.slug,
-      areaName: area.name,
-      active: Boolean(currentProjectSlug && currentProjectSlug === proj.slug && pathname.includes(proj.slug)),
-    }))
-  );
+  // Pastas/Tags por projeto extraídas das tarefas existentes
+  const [collapsedSpaces, setCollapsedSpaces] = useState<Record<string, boolean>>({});
+
+  const toggleSpaceCollapse = (spaceSlug: string) => {
+    setCollapsedSpaces((prev) => ({
+      ...prev,
+      [spaceSlug]: !prev[spaceSlug],
+    }));
+  };
 
   return (
     <>
-      <aside className="w-60 border-r border-slate-200 dark:border-sky-500/15 bg-white/90 dark:bg-[#070e1e]/90 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
+      <aside className="w-64 border-r border-slate-200 dark:border-sky-500/15 bg-white/95 dark:bg-[#070e1e]/95 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
         {/* Brand Header */}
         <div className="p-3.5 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -245,80 +247,147 @@ export function Sidebar({
             </Link>
           </div>
 
-          {/* Seção 2: Projetos */}
-          <div>
-            <div className="px-2.5 mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+          {/* Seção 2: Espaços & Pastas (Padrão ClickUp) */}
+          <div className="space-y-3">
+            <div className="px-2.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
               <div className="flex items-center gap-1.5">
-                <FolderKanban className="h-3 w-3 text-sky-500" />
-                <span>Projetos</span>
+                <Layers className="h-3.5 w-3.5 text-sky-500" />
+                <span>Espaços</span>
               </div>
               {canCreateBoard && (
                 <button
                   type="button"
                   onClick={() => setIsNewBoardModalOpen(true)}
-                  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
-                  title="Criar novo projeto"
+                  className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
+                  title="Criar novo espaço / projeto"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
               )}
             </div>
 
-            <div className="space-y-0.5 max-h-[calc(100vh-320px)] overflow-y-auto">
-              {allProjects.map((proj) => (
-                <div
-                  key={proj.id}
-                  onContextMenu={(e) => handleBoardContextMenu(e, proj)}
-                  className="relative group/item"
-                >
-                  <Link
-                    href={`/${proj.areaSlug}/${proj.slug}/table`}
-                    className={cn(
-                      "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                      proj.active
-                        ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                    )}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0 shadow-xs"
-                        style={{ backgroundColor: proj.color || "#38bdf8" }}
-                      />
-                      <span className="truncate">{proj.name}</span>
-                    </div>
+            <div className="space-y-2">
+              {areas.map((area) => {
+                const isSpaceCollapsed = !!collapsedSpaces[area.slug];
+                const areaProject = area.projects[0];
+                const projectSlug = areaProject?.slug || area.slug;
 
-                    <div className="flex items-center gap-1">
-                      {proj.active && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-sky-400 shrink-0 shadow-[0_0_6px_#38bdf8]" />
-                      )}
+                // Extrai pastas (tags únicas) das tarefas desta área
+                const areaTasks = tasks.filter((t) => t.areaId === area.slug || t.areaId === (area as any).id || t.projectId === areaProject?.id);
+                const folderTagsMap = new Map<string, number>();
+                areaTasks.forEach((t) => {
+                  (t.tags || []).forEach((tag) => {
+                    const clean = tag.trim();
+                    if (clean) {
+                      folderTagsMap.set(clean, (folderTagsMap.get(clean) || 0) + 1);
+                    }
+                  });
+                });
+                const folderTags = Array.from(folderTagsMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+
+                const isCurrentSpace = pathname.includes(`/${area.slug}/`);
+
+                return (
+                  <div key={area.slug} className="space-y-1">
+                    {/* Espaço Header */}
+                    <div className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors group">
                       <button
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleBoardContextMenu(e, proj);
-                        }}
-                        className="opacity-0 group-hover/item:opacity-100 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-opacity cursor-pointer"
-                        title="Opções do projeto"
+                        onClick={() => toggleSpaceCollapse(area.slug)}
+                        className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer"
                       >
-                        <MoreVertical className="h-3 w-3" />
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs"
+                          style={{ backgroundColor: area.color || "#38bdf8" }}
+                        />
+                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                          {area.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          ({areaTasks.length})
+                        </span>
                       </button>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Link
+                          href={`/${area.slug}/${projectSlug}/table`}
+                          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500"
+                          title="Abrir quadro geral"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
                     </div>
-                  </Link>
-                </div>
-              ))}
+
+                    {/* Pastas dentro do Espaço */}
+                    {!isSpaceCollapsed && (
+                      <div className="pl-3.5 pr-1 space-y-0.5 border-l border-slate-200 dark:border-white/10 ml-3">
+                        {/* Ver tudo deste espaço */}
+                        <Link
+                          href={`/${area.slug}/${projectSlug}/table`}
+                          className={cn(
+                            "flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-medium transition-colors",
+                            isCurrentSpace && !pathname.includes("tag=") && !pathname.includes("folder=")
+                              ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+                          )}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <FolderKanban className="h-3 w-3 text-slate-400" />
+                            <span className="truncate">Todas as Tarefas</span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 font-mono">{areaTasks.length}</span>
+                        </Link>
+
+                        {/* Lista de Pastas (Tags) */}
+                        {folderTags.map(([tag, count]) => {
+                          const isTagActive = isCurrentSpace && (pathname.includes(`tag=${encodeURIComponent(tag)}`) || (typeof window !== "undefined" && window.location.search.includes(encodeURIComponent(tag))));
+                          return (
+                            <Link
+                              key={tag}
+                              href={`/${area.slug}/${projectSlug}/table?tag=${encodeURIComponent(tag)}`}
+                              className={cn(
+                                "flex items-center justify-between px-2 py-1 rounded-md text-[11px] transition-colors group/folder",
+                                isTagActive
+                                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+                              )}
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Folder className="h-3 w-3 text-amber-500/80 shrink-0" />
+                                <span className="truncate">{tag}</span>
+                              </div>
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400">
+                                {count}
+                              </span>
+                            </Link>
+                          );
+                        })}
+
+                        {/* Botão de Nova Pasta rápido */}
+                        <Link
+                          href={`/${area.slug}/${projectSlug}/table`}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] text-slate-400 hover:text-sky-500 transition-colors"
+                        >
+                          <Plus className="h-2.5 w-2.5" />
+                          <span>+ Nova Pasta</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {canCreateBoard && (
-              <div className="pt-1.5">
+              <div className="pt-1">
                 <button
                   type="button"
                   onClick={() => setIsNewBoardModalOpen(true)}
                   className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
                 >
                   <Plus className="h-3 w-3" />
-                  <span>+ Novo Projeto</span>
+                  <span>+ Novo Espaço</span>
                 </button>
               </div>
             )}
