@@ -27,6 +27,7 @@ import {
   Check,
   MoreVertical,
   Lock,
+  Layers,
 } from "lucide-react";
 import { useTasks } from "@/context/task-context";
 import { cn } from "@/lib/utils";
@@ -326,6 +327,21 @@ export function Sidebar({
 
         {/* Seção 3: Rodapé com Configurações e Membros */}
         <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
+          {currentUser.role !== "guest" && (
+            <Link
+              href="/medhit/squads"
+              className={cn(
+                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                pathname === "/medhit/squads"
+                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+              )}
+            >
+              <Layers className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <span>Áreas & Times</span>
+            </Link>
+          )}
+
           {currentUser.role !== "guest" && (
             <Link
               href="/medhit/members"

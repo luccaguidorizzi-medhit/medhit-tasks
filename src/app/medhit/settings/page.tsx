@@ -8,6 +8,7 @@
 
 import React, { useState } from "react";
 import { MembersManagement } from "@/components/settings/members-management";
+import { TeamsManagement } from "@/components/settings/teams-management";
 import { McpSettings } from "@/components/settings/mcp-settings";
 import { useTasks } from "@/context/task-context";
 import { useTheme } from "next-themes";
@@ -23,6 +24,7 @@ import {
   Sliders,
   Check,
   X,
+  Building2,
 } from "lucide-react";
 import { TelemetryModal } from "@/components/telemetry/telemetry-modal";
 import { Button } from "@/components/ui/button";
@@ -45,7 +47,8 @@ export default function SettingsPage() {
   const canManageAiTokens = hasPermission("manage_ai_tokens");
   const canManageMcp = hasPermission("manage_mcp");
 
-  const isTabAllowed = (tab: "appearance" | "members" | "permissions" | "ai" | "mcp") => {
+  const isTabAllowed = (tab: "appearance" | "teams" | "members" | "permissions" | "ai" | "mcp") => {
+    if (tab === "teams") return currentUser.role !== "guest";
     if (tab === "members") return currentUser.role !== "guest";
     if (tab === "permissions") return canManageSettings;
     if (tab === "ai") return canManageAiTokens;
@@ -53,7 +56,7 @@ export default function SettingsPage() {
     return true;
   };
 
-  const [activeTab, setActiveTab] = useState<"appearance" | "members" | "permissions" | "ai" | "mcp">("appearance");
+  const [activeTab, setActiveTab] = useState<"appearance" | "teams" | "members" | "permissions" | "ai" | "mcp">("appearance");
   const [isTelemetryModalOpen, setIsTelemetryModalOpen] = useState(false);
 
   // Garante que o usuário não fique em uma aba restrita caso seu papel mude
@@ -111,6 +114,20 @@ export default function SettingsPage() {
           <Sun className="h-3.5 w-3.5" />
           <span>Aparência</span>
         </button>
+
+        {currentUser.role !== "guest" && (
+          <button
+            onClick={() => setActiveTab("teams")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              activeTab === "teams"
+                ? "bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <Building2 className="h-3.5 w-3.5 text-sky-400" />
+            <span>Times & Áreas</span>
+          </button>
+        )}
 
         {currentUser.role !== "guest" && (
           <button
@@ -217,6 +234,8 @@ export default function SettingsPage() {
             </div>
           </div>
         )}
+
+        {activeTab === "teams" && <TeamsManagement />}
 
         {activeTab === "members" && <MembersManagement />}
 

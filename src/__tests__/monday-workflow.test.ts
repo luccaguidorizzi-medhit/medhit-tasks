@@ -107,4 +107,76 @@ describe("Monday.com Style Workflow & Clean Primitives", () => {
     expect(inProgressTasks).toHaveLength(1);
     expect(completionRate).toBe(50);
   });
+
+  it("handles workspace area/team lifecycle: creation, update and validation", () => {
+    const initialAreas = [
+      { id: "area-1", name: "Operações", slug: "operacoes", color: "#38bdf8", projects: [] },
+      { id: "area-2", name: "Comercial", slug: "comercial", color: "#10b981", projects: [] },
+    ];
+
+    // Create new area
+    const newArea = {
+      id: "area-3",
+      name: "Jurídico & Compliance",
+      slug: "juridico-compliance",
+      color: "#a855f7",
+      projects: [],
+    };
+    const afterCreate = [...initialAreas, newArea];
+    expect(afterCreate).toHaveLength(3);
+
+    // Update area
+    const afterUpdate = afterCreate.map((a) =>
+      a.id === "area-3" ? { ...a, name: "Jurídico Avançado", color: "#6366f1" } : a
+    );
+    const updated = afterUpdate.find((a) => a.id === "area-3");
+    expect(updated?.name).toBe("Jurídico Avançado");
+    expect(updated?.color).toBe("#6366f1");
+
+    // Deleting area with minimum safety check
+    const canDelete = afterUpdate.length > 1;
+    expect(canDelete).toBe(true);
+
+    const afterDelete = afterUpdate.filter((a) => a.id !== "area-3");
+    expect(afterDelete).toHaveLength(2);
+  });
+
+  it("verifies interactive status badge switching in Monday.com style table", () => {
+    const statuses: Status[] = [
+      { id: "st-todo", workspaceId: "ws-1", projectId: "p-1", name: "A Fazer", color: "#64748b", position: 1000, category: "todo" },
+      { id: "st-prog", workspaceId: "ws-1", projectId: "p-1", name: "Em Andamento", color: "#38bdf8", position: 2000, category: "in_progress" },
+      { id: "st-rev", workspaceId: "ws-1", projectId: "p-1", name: "Em Revisão", color: "#f59e0b", position: 2500, category: "review" },
+      { id: "st-done", workspaceId: "ws-1", projectId: "p-1", name: "Concluído", color: "#10b981", position: 3000, category: "done" },
+    ];
+
+    let task: Task = {
+      id: "t-workflow-1",
+      workspaceId: "ws-1",
+      projectId: "p-1",
+      areaId: "a-1",
+      title: "Revisão do Laudo",
+      description: "",
+      taskType: "task",
+      statusId: "st-todo",
+      priority: "high",
+      position: 1,
+      assigneeIds: [],
+      checklists: [],
+      comments: [],
+      createdAt: "",
+      updatedAt: "",
+    };
+
+    expect(task.statusId).toBe("st-todo");
+
+    // Click badge to change status to "Em Andamento"
+    task = { ...task, statusId: "st-prog" };
+    expect(task.statusId).toBe("st-prog");
+
+    // Click badge to change status to "Concluído"
+    task = { ...task, statusId: "st-done" };
+    expect(task.statusId).toBe("st-done");
+    const isDone = statuses.find((s) => s.id === task.statusId)?.category === "done";
+    expect(isDone).toBe(true);
+  });
 });

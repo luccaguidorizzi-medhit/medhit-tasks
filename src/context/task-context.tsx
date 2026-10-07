@@ -120,6 +120,7 @@ interface TaskContextType {
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
   createTeam: (data: { name: string; description?: string; color?: string; icon?: string }) => Area;
+  updateTeam: (teamId: string, updates: Partial<Area>) => void;
   deleteTeam: (teamId: string) => void;
   deleteTask: (taskId: string) => void;
   toggleChecklist: (taskId: string, checklistId: string, itemId: string) => void;
@@ -497,6 +498,37 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
 
     toast.success("Time removido com sucesso!");
+  };
+
+  const updateTeam = (teamId: string, updates: Partial<Area>) => {
+    if (!hasPermission("create_team") && currentUser.role !== "owner" && currentUser.role !== "admin") {
+      toast.error("Permissão insuficiente para editar áreas de trabalho.");
+      return;
+    }
+
+    const updated = areas.map((a) => {
+      if (a.id === teamId) {
+        return { ...a, ...updates };
+      }
+      return a;
+    });
+
+    setAreas(updated);
+    store.workspace.areas = updated;
+
+    if (currentArea?.id === teamId) {
+      setCurrentArea((prev) => (prev ? { ...prev, ...updates } : null));
+    }
+
+    telemetry.track(
+      "team_updated",
+      `Área de trabalho "${teamId}" atualizada`,
+      { teamId, updates },
+      "info",
+      "task-context"
+    );
+
+    toast.success("Área de trabalho atualizada!");
   };
 
   const deleteProject = (projectId: string) => {
@@ -1158,6 +1190,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         deleteProject,
         updateProject,
         createTeam,
+        updateTeam,
         deleteTeam,
         deleteTask,
         toggleChecklist,
