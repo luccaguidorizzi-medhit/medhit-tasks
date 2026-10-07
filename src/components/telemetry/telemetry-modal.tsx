@@ -163,7 +163,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
                   Telemetria & Auditoria de Ações
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30">
-                  MedHit Tasks
+                  Medhit WorkTrack
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -366,7 +366,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
             Total: <strong>{logs.length}</strong> eventos registrados em memória/localStorage
           </span>
           <span className="font-mono text-[10px]">
-            MedHit Tasks by Integrações & Automações
+            Medhit WorkTrack by Integrações & Automações
           </span>
         </div>
       </div>

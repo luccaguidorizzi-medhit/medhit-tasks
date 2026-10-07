@@ -73,7 +73,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
             </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900 dark:text-white">Criar Novo Projeto</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Configure um novo projeto no MedHit Tasks</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Configure um novo projeto no Medhit WorkTrack</p>
             </div>
           </div>
           <button
@@ -103,7 +103,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
 
           {/* Explicação de Visualizações Universais */}
           <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Essenciais:</strong> Qualquer projeto criado no MedHit Tasks inclui as visões de <strong className="text-sky-500">Lista</strong>, <strong className="text-sky-500">Quadro</strong>, <strong className="text-sky-500">Calendário</strong> e <strong className="text-sky-500">Visão Geral</strong>.
+            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Essenciais:</strong> Qualquer projeto criado no Medhit WorkTrack inclui as visões de <strong className="text-sky-500">Lista</strong>, <strong className="text-sky-500">Quadro</strong>, <strong className="text-sky-500">Calendário</strong> e <strong className="text-sky-500">Visão Geral</strong>.
           </div>
 
           {/* Cor do Projeto */}

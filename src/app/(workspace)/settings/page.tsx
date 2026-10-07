@@ -175,7 +175,7 @@ export default function SettingsPage() {
           <div className="max-w-xl space-y-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Tema da Interface</h3>
-              <p className="text-xs text-slate-400">Personalize o contraste e paleta visual do MedHit Tasks.</p>
+              <p className="text-xs text-slate-400">Personalize o contraste e paleta visual do Medhit WorkTrack.</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
@@ -302,7 +302,7 @@ export default function SettingsPage() {
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">Agentes & Token IA</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Conecte sua chave de API para habilitar os Agentes Autônomos de Inteligência Artificial no MedHit Tasks.
+                Conecte sua chave de API para habilitar os Agentes Autônomos de Inteligência Artificial no Medhit WorkTrack.
               </p>
             </div>
 
@@ -376,7 +376,7 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
-                    A chave é mantida de forma segura no ambiente local da sua sessão do MedHit Tasks.
+                    A chave é mantida de forma segura no ambiente local da sua sessão do Medhit WorkTrack.
                   </span>
                 </div>
               )}

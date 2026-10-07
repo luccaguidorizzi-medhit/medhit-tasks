@@ -103,7 +103,7 @@ export default function WorkspaceHomePage() {
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Bem-vindo ao MedHit Tasks 👋
+            Bem-vindo ao Medhit WorkTrack 👋
           </h1>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             Acesse seus projetos e acompanhe o andamento das tarefas e entregas em tempo real.
@@ -323,7 +323,7 @@ export default function WorkspaceHomePage() {
 
       {/* Rodapé com Assinatura */}
       <footer className="pt-8 pb-4 text-center border-t border-slate-200/60 dark:border-white/5 text-[11px] font-mono text-slate-400 dark:text-slate-500">
-        MedHit Tasks by Integrações & Automações
+        Medhit WorkTrack by Integrações & Automações
       </footer>
     </div>
   );

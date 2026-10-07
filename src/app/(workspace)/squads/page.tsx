@@ -282,7 +282,7 @@ export default function SquadsManagementPage() {
               Squads Operacionais Ativas
             </h2>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-              Arquitetura MedHit Tasks
+              Arquitetura Medhit WorkTrack
             </span>
           </div>
 

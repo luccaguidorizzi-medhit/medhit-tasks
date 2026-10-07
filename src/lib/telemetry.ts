@@ -206,7 +206,7 @@ class TelemetryService {
   public exportAsJson(): string {
     return JSON.stringify(
       {
-        project: "MedHit Tasks",
+        project: "Medhit WorkTrack",
         architect: "MedHit Integrações & Automações",
         exportedAt: new Date().toISOString(),
         totalLogs: this.logs.length,

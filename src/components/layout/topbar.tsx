@@ -77,7 +77,7 @@ export function Topbar({
   const isInsideProject = Boolean(
     projectSlug &&
     projectName &&
-    projectName !== "MedHit Tasks" &&
+    projectName !== "Medhit WorkTrack" &&
     pathname.includes(projectSlug)
   );
 
@@ -124,7 +124,7 @@ export function Topbar({
               alt="MedHit"
               className="h-4 w-4 object-contain"
             />
-            <span>MedHit Tasks</span>
+            <span>Medhit WorkTrack</span>
           </Link>
 
           {isInsideProject ? (
@@ -397,7 +397,7 @@ export function Topbar({
                       className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left cursor-pointer"
                     >
                       <Users className="h-3.5 w-3.5 text-sky-400" />
-                      <span>Membros & Senhas</span>
+                      <span>Membros & Acessos</span>
                     </button>
 
                     {canViewTelemetry && (

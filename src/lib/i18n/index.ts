@@ -1,6 +1,6 @@
 export const i18n = {
   common: {
-    appName: "MedHit Tasks",
+    appName: "Medhit WorkTrack",
     workspaces: "Espaços de Trabalho",
     areas: "Áreas",
     projects: "Projetos",

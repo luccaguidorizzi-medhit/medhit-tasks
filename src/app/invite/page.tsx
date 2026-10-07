@@ -107,7 +107,7 @@ function InviteContent() {
               Ativar Seu Acesso
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              Defina sua senha pessoal para acessar seus quadros e demandas no MedHit Tasks.
+              Defina sua senha pessoal para acessar seus quadros e demandas no Medhit WorkTrack.
             </p>
           </div>
 

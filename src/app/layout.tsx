@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "MedHit Tasks | Gestão de Projetos & Demandas",
+  title: "Medhit WorkTrack | Gestão de Projetos & Demandas",
   description: "Plataforma avançada de gestão de projetos, tarefas e automações corporativas",
   authors: [{ name: "MedHit Integrações & Automações" }],
   icons: {

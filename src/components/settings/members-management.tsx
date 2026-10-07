@@ -153,7 +153,7 @@ export function MembersManagement() {
             <span>Gestão de Usuários & Equipes</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Controle de acessos, senhas individuais e tokens MCP por usuário.
+            Controle de acessos, permissões e tokens MCP da equipe.
           </p>
         </div>
 
@@ -200,20 +200,6 @@ export function MembersManagement() {
             </div>
             <div className="text-[11px] text-slate-400 font-mono flex items-center gap-2 mt-0.5">
               <span>{currentUser.email}</span>
-              <span>•</span>
-              <div className="inline-flex items-center gap-1.5 text-slate-300">
-                <span className="text-[11px] font-mono">
-                  Senha: {showOwnPassword ? currentUser.password || "••••••••" : "••••••••"}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowOwnPassword(!showOwnPassword)}
-                  className="p-0.5 rounded text-slate-400 hover:text-sky-400 transition-colors"
-                  title={showOwnPassword ? "Ocultar senha" : "Exibir senha"}
-                >
-                  {showOwnPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -230,7 +216,7 @@ export function MembersManagement() {
             className="h-7 text-xs gap-1 border-slate-300 dark:border-white/10"
           >
             <Lock className="h-3 w-3 text-sky-400" />
-            <span>Alterar Senha</span>
+            <span>Alterar Acesso</span>
           </Button>
 
           <div className="bg-slate-950/70 border border-white/10 rounded-lg px-2.5 py-1 text-left">
@@ -256,7 +242,7 @@ export function MembersManagement() {
             <tr>
               <th className="py-2.5 px-3 font-semibold">Membro</th>
               <th className="py-2.5 px-3 font-semibold">Papel</th>
-              <th className="py-2.5 px-3 font-semibold">Segurança & Senha</th>
+              <th className="py-2.5 px-3 font-semibold">Status de Acesso</th>
               <th className="py-2.5 px-3 font-semibold">Token MCP</th>
               <th className="py-2.5 px-3 font-semibold text-right">Ação</th>
             </tr>
@@ -304,29 +290,12 @@ export function MembersManagement() {
                   </td>
 
                   <td className="py-2.5 px-3 font-mono">
-                    {(isOwnerSession || member.id === authenticatedUser.id) ? (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-mono text-slate-700 dark:text-slate-300">
-                          {visiblePasswords[member.id] ? member.password || "••••••••" : "••••••••"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => togglePasswordVisibility(member.id)}
-                          className="p-0.5 rounded text-slate-400 hover:text-sky-400 transition-colors cursor-pointer"
-                          title={visiblePasswords[member.id] ? "Ocultar senha" : "Ver senha"}
-                        >
-                          {visiblePasswords[member.id] ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20 inline-flex items-center gap-1">
-                          <Lock className="h-2.5 w-2.5" />
-                          <span>Protegida</span>
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-mono">••••••••</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1">
+                        <Lock className="h-2.5 w-2.5" />
+                        <span>Ativo & Seguro</span>
+                      </span>
+                    </div>
                   </td>
 
                   <td className="py-2.5 px-3 font-mono">
@@ -366,7 +335,7 @@ export function MembersManagement() {
                         className="h-6 px-1.5 text-[10px] text-sky-400 hover:bg-sky-500/10 gap-1 rounded"
                       >
                         <Lock className="h-3 w-3" />
-                        <span>Redefinir Senha</span>
+                        <span>Redefinir Acesso</span>
                       </Button>
                     ) : (
                       <span className="text-[10px] text-slate-500 font-mono">Protegido</span>
@@ -463,11 +432,11 @@ export function MembersManagement() {
           <div className="w-full max-w-sm bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl text-slate-900 dark:text-slate-100 shadow-2xl p-5 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Lock className="h-4 w-4 text-sky-400" />
-              <span>Redefinir Senha de {selectedMemberForSecurity.name}</span>
+              <span>Redefinir Acesso de {selectedMemberForSecurity.name}</span>
             </h3>
 
             <p className="text-xs text-slate-400">
-              Digite a nova senha segura. A senha anterior permanecerá criptografada e não pode ser revelada.
+              Digite a nova credencial de acesso. A credencial é armazenada com segurança e criptografia.
             </p>
 
             <form onSubmit={handleSavePassword} className="space-y-3">

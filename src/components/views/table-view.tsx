@@ -1544,7 +1544,7 @@ interface SectionItem {
 
       {/* RODAPÉ OBRIGATÓRIO */}
       <footer className="pt-4 text-center text-[11px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
-        MedHit Tasks by Integrações & Automações
+        Medhit WorkTrack by Integrações & Automações
       </footer>
     </div>
   );

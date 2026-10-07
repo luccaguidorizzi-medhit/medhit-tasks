@@ -291,7 +291,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         {/* Footer */}
         <div className="p-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/30 flex items-center justify-between text-[11px] text-slate-400 font-mono">
           <span>Pressione ESC para fechar</span>
-          <span>MedHit Tasks</span>
+          <span>Medhit WorkTrack</span>
         </div>
       </div>
     </div>

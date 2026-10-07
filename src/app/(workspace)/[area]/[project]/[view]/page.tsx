@@ -117,7 +117,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
           {/* Badge MedHit */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-mono font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>MedHit Tasks • Recuperação de Rota</span>
+            <span>Medhit WorkTrack • Recuperação de Rota</span>
           </div>
 
           {/* Ícone de Estado */}

@@ -173,7 +173,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">Configurações do Workspace</h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-bold border border-sky-500/20">
-                  MedHit Tasks
+                  Medhit WorkTrack
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -290,7 +290,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                     Tema da Interface
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Selecione o esquema de cores para sua visualização no MedHit Tasks.
+                    Selecione o esquema de cores para sua visualização no Medhit WorkTrack.
                   </p>
                 </div>
 
@@ -348,7 +348,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                     <span>Controle de Acessos & Permissões (RBAC)</span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Definição de privilégios de segurança por cargo no Workspace MedHit Tasks.
+                    Definição de privilégios de segurança por cargo no Workspace Medhit WorkTrack.
                   </p>
                 </div>
 
@@ -437,7 +437,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                     <span>Chaves de API & Modelos LLM</span>
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Gerenciamento seguro de credenciais para os agentes autônomos e automações do MedHit Tasks.
+                    Gerenciamento seguro de credenciais para os agentes autônomos e automações do Medhit WorkTrack.
                   </p>
                 </div>
 
@@ -523,7 +523,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                         </Button>
                       </div>
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
-                        A chave é mantida de forma segura no ambiente local da sua sessão do MedHit Tasks.
+                        A chave é mantida de forma segura no ambiente local da sua sessão do Medhit WorkTrack.
                       </span>
                     </div>
                   )}

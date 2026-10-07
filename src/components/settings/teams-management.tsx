@@ -150,7 +150,7 @@ export function TeamsManagement() {
             <span>Áreas de Trabalho & Equipes</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Gerencie, crie e exclua áreas de trabalho departamentais e squads da MedHit Tasks.
+            Gerencie, crie e exclua áreas de trabalho departamentais e squads da Medhit WorkTrack.
           </p>
         </div>
 
@@ -203,7 +203,7 @@ export function TeamsManagement() {
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                        {area.description || "Área de trabalho departamental no MedHit Tasks."}
+                        {area.description || "Área de trabalho departamental no Medhit WorkTrack."}
                       </p>
                     </div>
                   </div>

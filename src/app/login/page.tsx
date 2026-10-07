@@ -87,7 +87,7 @@ export default function LoginPage() {
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
-              MedHit <span className="text-sky-400">Tasks</span>
+              Medhit <span className="text-sky-400">WorkTrack</span>
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
               Ambiente Corporativo de Gestão de Projetos, Automações & Agentes

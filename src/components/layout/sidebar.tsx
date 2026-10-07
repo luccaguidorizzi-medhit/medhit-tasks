@@ -200,7 +200,7 @@ export function Sidebar({
             </div>
             <div>
               <div className="font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
-                <span>MedHit Tasks</span>
+                <span>Medhit WorkTrack</span>
               </div>
             </div>
           </Link>
@@ -412,7 +412,7 @@ export function Sidebar({
           {/* Assinatura no Rodapé */}
           <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex flex-col gap-0.5 font-mono">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">MedHit Tasks</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Medhit WorkTrack</span>
               <span className="text-sky-500 font-bold text-[9px]">v1.0</span>
             </div>
             <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate">

@@ -40,7 +40,7 @@ export interface SendTaskAssignedParams {
 
 export const emailService = {
   /**
-   * Envia convite de acesso ao MedHit Tasks para definição de senha e início de trabalho
+   * Envia convite de acesso ao Medhit WorkTrack para definição de senha e início de trabalho
    */
   async sendInviteEmail({
     to,
@@ -67,7 +67,7 @@ export const emailService = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acesso Liberado - MedHit Tasks</title>
+  <title>Acesso Liberado - Medhit WorkTrack</title>
   <style>
     body {
       margin: 0;
@@ -192,7 +192,7 @@ export const emailService = {
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="badge">MedHit Tasks</div>
+      <div class="badge">Medhit WorkTrack</div>
       <h1 class="title">Seu Acesso Foi Concedido</h1>
       <p class="subtitle">Você foi convidado por <strong>${invitedBy}</strong> para o workspace.</p>
     </div>
@@ -200,7 +200,7 @@ export const emailService = {
     <div class="body">
       <p class="greeting">
         Olá, <strong>${name}</strong>!<br>
-        Você agora faz parte do <strong>MedHit Tasks</strong>. Acesse a plataforma para acompanhar suas demandas, gerenciar projetos e colaborar com o time.
+        Você agora faz parte do <strong>Medhit WorkTrack</strong>. Acesse a plataforma para acompanhar suas demandas, gerenciar projetos e colaborar com o time.
       </p>
 
       <div class="card">
@@ -240,7 +240,7 @@ export const emailService = {
     </div>
 
     <div class="footer">
-      <p style="margin: 0 0 4px;"><strong>MedHit Tasks</strong> • Gestão de Tarefas &amp; Projetos</p>
+      <p style="margin: 0 0 4px;"><strong>Medhit WorkTrack</strong> • Gestão de Tarefas &amp; Projetos</p>
       <p style="margin: 0;">Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
     </div>
   </div>
@@ -260,9 +260,9 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <onboarding@resend.dev>",
         to: [to],
-        subject: `Bem-vindo ao MedHit Tasks: Acesso Liberado por ${invitedBy}`,
+        subject: `Bem-vindo ao Medhit WorkTrack: Acesso Liberado por ${invitedBy}`,
         html: htmlContent,
       });
 
@@ -288,7 +288,7 @@ export const emailService = {
     name,
     taskTitle,
     taskUrl,
-    projectName = "MedHit Tasks",
+    projectName = "Medhit WorkTrack",
     dueDate,
     priority,
     assignedBy = "Lucca Lagana",
@@ -314,7 +314,7 @@ export const emailService = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nova Tarefa Atribuída - MedHit Tasks</title>
+  <title>Nova Tarefa Atribuída - Medhit WorkTrack</title>
   <style>
     body {
       margin: 0;
@@ -424,7 +424,7 @@ export const emailService = {
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="badge">MedHit Tasks</div>
+      <div class="badge">Medhit WorkTrack</div>
       <h1 class="title">Nova Tarefa Atribuída</h1>
     </div>
 
@@ -467,7 +467,7 @@ export const emailService = {
     </div>
 
     <div class="footer">
-      <p style="margin: 0;">MedHit Tasks • Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
+      <p style="margin: 0;">Medhit WorkTrack • Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
     </div>
   </div>
 </body>
@@ -476,7 +476,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <onboarding@resend.dev>",
         to: [to],
         subject: `Nova Tarefa: ${taskTitle}`,
         html: htmlContent,
@@ -501,7 +501,7 @@ export const emailService = {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bem-vindo ao MedHit Tasks</title>
+  <title>Bem-vindo ao Medhit WorkTrack</title>
   <style>
     body {
       margin: 0;
@@ -631,7 +631,7 @@ export const emailService = {
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="badge">MedHit Tasks</div>
+      <div class="badge">Medhit WorkTrack</div>
       <h1 class="title">Bem-vindo à Plataforma!</h1>
       <p class="subtitle">Gestão de Tarefas &amp; Projetos em Alta Performance</p>
     </div>
@@ -639,7 +639,7 @@ export const emailService = {
     <div class="body">
       <p class="greeting">
         Olá, <strong>${name}</strong>!<br>
-        Seu ambiente de trabalho no <strong>MedHit Tasks</strong> está pronto para uso. Acompanhe entregáveis, priorize atividades e colabore de forma simples e eficiente.
+        Seu ambiente de trabalho no <strong>Medhit WorkTrack</strong> está pronto para uso. Acompanhe entregáveis, priorize atividades e colabore de forma simples e eficiente.
       </p>
 
       <div class="feature-list">
@@ -667,12 +667,12 @@ export const emailService = {
       </div>
 
       <div class="btn-wrap">
-        <a href="${loginUrl}" class="btn">Acessar o MedHit Tasks</a>
+        <a href="${loginUrl}" class="btn">Acessar o Medhit WorkTrack</a>
       </div>
     </div>
 
     <div class="footer">
-      <p style="margin: 0 0 4px;"><strong>MedHit Tasks</strong> • Gestão de Tarefas &amp; Projetos</p>
+      <p style="margin: 0 0 4px;"><strong>Medhit WorkTrack</strong> • Gestão de Tarefas &amp; Projetos</p>
       <p style="margin: 0;">Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
     </div>
   </div>
@@ -687,15 +687,15 @@ export const emailService = {
         mocked: true,
         message: "E-mail simulado com sucesso (RESEND_API_KEY ausente)",
         to,
-        subject: "Bem-vindo ao MedHit Tasks: Plataforma Ativa!",
+        subject: "Bem-vindo ao Medhit WorkTrack: Plataforma Ativa!",
       };
     }
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <onboarding@resend.dev>",
+        from: "Medhit WorkTrack <onboarding@resend.dev>",
         to: [to],
-        subject: "Bem-vindo ao MedHit Tasks: Plataforma Ativa!",
+        subject: "Bem-vindo ao Medhit WorkTrack: Plataforma Ativa!",
         html: htmlContent,
       });
 
