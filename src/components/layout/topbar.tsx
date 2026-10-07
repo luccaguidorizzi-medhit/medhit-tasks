@@ -54,7 +54,7 @@ export function Topbar({
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "teams" | "members" | "permissions" | "ai" | "mcp" | "telemetry">("appearance");
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState<"appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry">("appearance");
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   const canViewTelemetry = hasPermission("view_telemetry");
@@ -117,10 +117,10 @@ export function Topbar({
             <>
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <Link
-                href={`/medhit/${areaSlug}`}
-                className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium text-slate-600 dark:text-slate-400 max-w-[130px] truncate"
+                href="/medhit"
+                className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium text-slate-600 dark:text-slate-400"
               >
-                {areaName}
+                Projetos
               </Link>
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <span className="text-slate-900 dark:text-white font-bold truncate max-w-xs">
@@ -333,17 +333,6 @@ export function Topbar({
                 {/* Ações do Menu - Protegidas para Guest */}
                 {currentUser.role !== "guest" && (
                   <div className="space-y-0.5">
-                    <button
-                      onClick={() => {
-                        setSettingsDefaultTab("teams");
-                        setIsSettingsOpen(true);
-                        setIsProfileMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-400 transition-colors text-left cursor-pointer"
-                    >
-                      <Layers className="h-3.5 w-3.5 text-sky-400" />
-                      <span>Áreas de Trabalho & Times</span>
-                    </button>
 
                     <button
                       onClick={() => {

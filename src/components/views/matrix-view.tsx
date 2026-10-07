@@ -165,7 +165,7 @@ export function MatrixView({
               <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Matriz de Priorização Eisenhower</span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 font-semibold">
-                  ClickUp / Monday Flow
+                  Priorização Ágil
                 </span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">

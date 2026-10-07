@@ -43,7 +43,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast.error("Informe o nome do quadro");
+      toast.error("Informe o nome do projeto");
       return;
     }
 
@@ -55,11 +55,11 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
       methodology,
     });
 
-    toast.success(`Quadro "${created.name}" criado com sucesso!`);
+    toast.success(`Projeto "${created.name}" criado com sucesso!`);
     onClose();
     setName("");
     setDescription("");
-    router.push(`/medhit/${selectedAreaSlug}/${created.slug}/board`);
+    router.push(`/medhit/${selectedAreaSlug}/${created.slug}/table`);
   };
 
   return (
@@ -72,8 +72,8 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
               <FolderPlus className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Criar Novo Quadro / Projeto</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Configure um novo espaço de trabalho</p>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Criar Novo Projeto</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Configure um novo projeto no MedHit Tasks</p>
             </div>
           </div>
           <button
@@ -89,7 +89,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
           {/* Nome */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Nome do Board / Projeto *
+              Nome do Projeto *
             </label>
             <input
               autoFocus
@@ -101,33 +101,15 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
             />
           </div>
 
-          {/* Área / Squad */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Área de Trabalho (Squad)
-            </label>
-            <select
-              value={selectedAreaSlug}
-              onChange={(e) => setSelectedAreaSlug(e.target.value)}
-              className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-xl p-2.5 text-xs text-slate-900 dark:text-white outline-none focus:border-sky-500 transition-colors"
-            >
-              {areas.map((a) => (
-                <option key={a.id} value={a.slug} className="bg-slate-900 text-white">
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Explicação de Visualizações Universais */}
           <div className="p-3 rounded-xl bg-sky-500/5 border border-sky-500/20 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Essenciais:</strong> Qualquer quadro criado no MedHit Tasks inclui as visões de <strong className="text-sky-500">Quadro (Kanban)</strong>, <strong className="text-sky-500">Tabela Interativa</strong>, <strong className="text-sky-500">Calendário de Entregas</strong> e <strong className="text-sky-500">Visão Geral (Dashboard)</strong>.
+            💡 <strong className="text-slate-800 dark:text-slate-200">Visualizações Essenciais:</strong> Qualquer projeto criado no MedHit Tasks inclui as visões de <strong className="text-sky-500">Lista</strong>, <strong className="text-sky-500">Quadro</strong>, <strong className="text-sky-500">Calendário</strong> e <strong className="text-sky-500">Visão Geral</strong>.
           </div>
 
           {/* Cor do Projeto */}
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Identificador Visual (Cor do Board)
+              Identificador Visual (Cor do Projeto)
             </label>
             <div className="flex items-center gap-3">
               {colorOptions.map((c) => (
@@ -164,7 +146,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
               Cancelar
             </Button>
             <Button type="submit" size="sm" className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs">
-              Criar Quadro
+              Criar Projeto
             </Button>
           </div>
         </form>

@@ -37,7 +37,7 @@ export function DeleteBoardModal({ isOpen, onClose, project }: DeleteBoardModalP
               <Trash2 className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Excluir Quadro</h2>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">Excluir Projeto</h2>
               <p className="text-xs text-rose-500/90 font-medium">Ação irreversível</p>
             </div>
           </div>
@@ -54,11 +54,11 @@ export function DeleteBoardModal({ isOpen, onClose, project }: DeleteBoardModalP
           <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-rose-500 shrink-0 mt-0.5" />
             <div className="text-xs text-rose-700 dark:text-rose-300 leading-relaxed">
-              Você está prestes a excluir o quadro <strong>"{project.name}"</strong>.
+              Você está prestes a excluir o projeto <strong>"{project.name}"</strong>.
               {projectTasksCount > 0 ? (
-                <span> Todas as <strong>{projectTasksCount}</strong> tarefas deste quadro serão removidas permanentemente.</span>
+                <span> Todas as <strong>{projectTasksCount}</strong> tarefas deste projeto serão removidas permanentemente.</span>
               ) : (
-                <span> Não há tarefas associadas a este quadro.</span>
+                <span> Não há tarefas associadas a este projeto.</span>
               )}
             </div>
           </div>
@@ -82,7 +82,7 @@ export function DeleteBoardModal({ isOpen, onClose, project }: DeleteBoardModalP
               className="bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-rose-600/30 gap-1.5"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              <span>Sim, Excluir Quadro</span>
+              <span>Sim, Excluir Projeto</span>
             </Button>
           </div>
         </div>

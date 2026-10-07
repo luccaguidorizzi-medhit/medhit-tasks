@@ -128,10 +128,10 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
           {/* Textos Informativos */}
           <div className="space-y-2">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Quadro não encontrado ou removido
+              Projeto não encontrado ou removido
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              O quadro <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-500 font-mono text-[11px]">"{project}"</code> foi excluído ou o endereço informado não está mais associado a esta squad.
+              O projeto <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-sky-500 font-mono text-[11px]">"{project}"</code> foi excluído ou o endereço informado não está mais acessível.
             </p>
           </div>
 
@@ -166,7 +166,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
                 }
                 className="w-full sm:w-auto gap-2 text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-lg shadow-sky-500/20"
               >
-                <span>Acessar Primeiro Quadro</span>
+                <span>Acessar Primeiro Projeto</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )}
@@ -177,7 +177,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
               className="w-full sm:w-auto gap-2 text-xs rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15"
             >
               <Plus className="h-4 w-4" />
-              <span>Novo Board</span>
+              <span>Novo Projeto</span>
             </Button>
           </div>
         </div>
@@ -224,6 +224,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     switch (view) {
       case "table":
       case "list":
+      case "lista":
         return (
           <div className="flex-1 overflow-auto p-6">
             <TableView
@@ -237,6 +238,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
         );
 
       case "calendar":
+      case "calendario":
         return (
           <div className="flex-1 overflow-y-auto p-6">
             <CalendarView
@@ -259,6 +261,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
         );
 
       case "board":
+      case "quadro":
       default:
         return (
           <div className="flex-1 overflow-hidden p-6">

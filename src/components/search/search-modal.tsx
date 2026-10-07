@@ -103,7 +103,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const handleSelectProject = (project: typeof allProjects[0]) => {
     onClose();
-    router.push(`/medhit/${project.areaSlug}/${project.slug}/board`);
+    router.push(`/medhit/${project.areaSlug}/${project.slug}/table`);
   };
 
   return (
@@ -186,7 +186,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
               <div>
                 <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block mb-2">
-                  Quadros & Projetos Ativos
+                  Projetos Ativos
                 </span>
                 <div className="space-y-1">
                   {allProjects.slice(0, 4).map((p) => (
@@ -202,9 +202,6 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         />
                         <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate">
                           {p.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          ({p.areaName})
                         </span>
                       </div>
                       <ArrowRight className="h-3.5 w-3.5 text-slate-400" />

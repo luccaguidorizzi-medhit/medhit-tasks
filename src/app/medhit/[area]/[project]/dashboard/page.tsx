@@ -167,7 +167,7 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
           <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0c1830]/80 backdrop-blur-xl p-5 shadow-xs space-y-4">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center gap-2">
               <BarChart3 className="h-4 w-4 text-sky-500" />
-              <span>Distribuição por Status (Monday Rollup)</span>
+              <span>Distribuição por Status</span>
             </h3>
 
             <div className="space-y-3 pt-1">

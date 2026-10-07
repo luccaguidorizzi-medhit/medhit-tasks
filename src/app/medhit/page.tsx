@@ -106,7 +106,7 @@ export default function WorkspaceHomePage() {
             Bem-vindo ao MedHit Tasks 👋
           </h1>
           <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Selecione uma área de trabalho abaixo, explore seus quadros e acompanhe métricas de entrega em tempo real.
+            Acesse seus projetos e acompanhe o andamento das tarefas e entregas em tempo real.
           </p>
         </div>
 
@@ -118,7 +118,7 @@ export default function WorkspaceHomePage() {
               className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs gap-2 shadow-lg shadow-sky-500/30 rounded-xl cursor-pointer"
             >
               <FolderPlus className="h-4 w-4" />
-              <span>+ Criar Novo Board</span>
+              <span>+ Criar Novo Projeto</span>
             </Button>
           )}
 
@@ -179,16 +179,16 @@ export default function WorkspaceHomePage() {
         </div>
       </div>
 
-      {/* Seleção de Área de Trabalho & Filtros */}
+      {/* Lista de Projetos do Workspace */}
       <div className="space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Layers className="h-4 w-4 text-sky-500" />
-              <span>Áreas de Trabalho & Quadros</span>
+              <Kanban className="h-4 w-4 text-sky-500" />
+              <span>Projetos do Workspace</span>
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Filtre por squad ou utilize a busca para acessar seu quadro
+              Acesse seus projetos ativos ou busque pelo nome
             </p>
           </div>
 
@@ -197,58 +197,25 @@ export default function WorkspaceHomePage() {
             <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar quadros..."
+              placeholder="Buscar projetos..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-white dark:bg-[#0c1830] border border-slate-200 dark:border-sky-500/20 rounded-xl pl-8.5 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 transition-colors shadow-inner"
             />
           </div>
         </div>
-
-        {/* Pílulas de Seleção de Área de Trabalho */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setSelectedAreaId("all")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-              selectedAreaId === "all"
-                ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                : "bg-white/80 dark:bg-[#0c1830]/80 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            Todas as Áreas ({areas.reduce((acc, a) => acc + a.projects.length, 0)})
-          </button>
-
-          {areas.map((area) => (
-            <button
-              key={area.id}
-              onClick={() => setSelectedAreaId(area.id)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-                selectedAreaId === area.id
-                  ? "bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20"
-                  : "bg-white/80 dark:bg-[#0c1830]/80 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: area.color || "#38bdf8" }}
-              />
-              <span>{area.name}</span>
-              <span className="text-[10px] opacity-75 font-mono">({area.projects.length})</span>
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Grid de Quadros & Projetos */}
+      {/* Grid de Projetos */}
       <div className="space-y-4">
         {filteredProjects.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 dark:border-white/10 p-12 text-center space-y-3 bg-white/40 dark:bg-[#081226]/40">
             <Kanban className="h-8 w-8 text-slate-400 mx-auto" />
             <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              Nenhum quadro encontrado
+              Nenhum projeto encontrado
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Não encontramos projetos para os filtros selecionados. Crie um novo quadro para começar.
+              Não encontramos projetos com esse critério de busca. Crie um novo projeto para começar.
             </p>
             {canCreateBoard && (
               <Button
@@ -256,7 +223,7 @@ export default function WorkspaceHomePage() {
                 size="sm"
                 className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs rounded-xl"
               >
-                + Criar Novo Board
+                + Criar Novo Projeto
               </Button>
             )}
           </div>
@@ -289,7 +256,7 @@ export default function WorkspaceHomePage() {
                           style={{ backgroundColor: proj.color || "#38bdf8" }}
                         />
                         <span className="text-[10px] font-mono text-slate-400 uppercase font-semibold">
-                          {proj.areaName}
+                          Projeto
                         </span>
                       </div>
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-semibold border border-emerald-500/20">
@@ -327,7 +294,7 @@ export default function WorkspaceHomePage() {
                             setIsDeleteBoardModalOpen(true);
                           }}
                           className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="Excluir quadro"
+                          title="Excluir projeto"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -339,7 +306,7 @@ export default function WorkspaceHomePage() {
                         Métricas
                       </Link>
                       <Link
-                        href={`/medhit/${proj.areaSlug}/${proj.slug}/board`}
+                        href={`/medhit/${proj.areaSlug}/${proj.slug}/table`}
                         className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-sky-500 text-slate-950 hover:bg-sky-400 transition-colors"
                       >
                         <span>Abrir</span>

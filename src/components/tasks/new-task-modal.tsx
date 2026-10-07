@@ -239,7 +239,7 @@ export function NewTaskModal({
               {/* Quadro/Projeto */}
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  Quadro / Projeto
+                  Projeto
                 </label>
                 <select
                   value={selectedProjectId}
@@ -248,7 +248,7 @@ export function NewTaskModal({
                 >
                   {allProjects.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.areaName})
+                      {p.name}
                     </option>
                   ))}
                 </select>

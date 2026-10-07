@@ -54,8 +54,18 @@ export function ProjectToolbar({
 }: ProjectToolbarProps) {
   const pathname = usePathname();
 
-  // As 4 visões essenciais estilo Monday.com
+  // As 4 visões essenciais: Lista, Quadro, Calendário, Visão Geral
   const views = [
+    {
+      id: "table",
+      label: "Lista",
+      icon: TableIcon,
+      href: `/medhit/${areaSlug}/${projectSlug}/table`,
+      tooltip: {
+        title: "Visualização em Lista",
+        description: "Tabela limpa com status, responsável, prioridade, prazos e criação rápida.",
+      },
+    },
     {
       id: "board",
       label: "Quadro",
@@ -64,16 +74,6 @@ export function ProjectToolbar({
       tooltip: {
         title: "Quadro Kanban",
         description: "Visualização espacial de fluxo com cartões organizados por status.",
-      },
-    },
-    {
-      id: "table",
-      label: "Lista & Tabela",
-      icon: TableIcon,
-      href: `/medhit/${areaSlug}/${projectSlug}/table`,
-      tooltip: {
-        title: "Tabela Interativa",
-        description: "Planilha estilo Monday com badges de status, responsável, prazos e criação rápida.",
       },
     },
     {
@@ -120,14 +120,14 @@ export function ProjectToolbar({
 
           {onDeleteBoard && (
             <EducationalTooltip
-              title="Excluir este Quadro"
-              description="Exclui este projeto/quadro e suas tarefas."
+              title="Excluir este Projeto"
+              description="Exclui este projeto e suas tarefas."
             >
               <button
                 type="button"
                 onClick={onDeleteBoard}
                 className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                title="Excluir quadro"
+                title="Excluir projeto"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -143,7 +143,10 @@ export function ProjectToolbar({
           {views.map((v) => {
             const isActive =
               pathname.endsWith(`/${v.id}`) ||
-              (v.id === "table" && pathname.endsWith("/list"));
+              (v.id === "table" && (pathname.endsWith("/list") || pathname.endsWith("/lista"))) ||
+              (v.id === "board" && pathname.endsWith("/quadro")) ||
+              (v.id === "calendar" && pathname.endsWith("/calendario")) ||
+              (v.id === "dashboard" && pathname.endsWith("/visao-geral"));
 
             return (
               <EducationalTooltip

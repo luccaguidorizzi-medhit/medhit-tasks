@@ -14,7 +14,6 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { McpSettings } from "@/components/settings/mcp-settings";
 import { MembersManagement } from "@/components/settings/members-management";
-import { TeamsManagement } from "@/components/settings/teams-management";
 import { useTasks } from "@/context/task-context";
 import {
   Sun,
@@ -42,7 +41,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Lock,
-  Building2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { telemetry, TelemetryLog, TelemetryLevel } from "@/lib/telemetry";
@@ -50,7 +48,7 @@ import { telemetry, TelemetryLog, TelemetryLevel } from "@/lib/telemetry";
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: "appearance" | "teams" | "members" | "permissions" | "ai" | "mcp" | "telemetry";
+  defaultTab?: "appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry";
 }
 
 export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: SettingsModalProps) {
@@ -72,9 +70,8 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
   const canManageAiTokens = hasPermission("manage_ai_tokens");
   const canManageMcp = hasPermission("manage_mcp");
 
-  const isTabAllowed = (tab: "appearance" | "teams" | "members" | "permissions" | "ai" | "mcp" | "telemetry") => {
+  const isTabAllowed = (tab: "appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry") => {
     if (currentUser.role === "guest" && tab !== "appearance") return false;
-    if (tab === "teams") return currentUser.role !== "guest";
     if (tab === "members") return currentUser.role !== "guest";
     if (tab === "telemetry") return canViewTelemetry;
     if (tab === "permissions") return canManageSettings;
@@ -83,7 +80,7 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
     return true;
   };
 
-  const [activeTab, setActiveTab] = useState<"appearance" | "teams" | "members" | "permissions" | "ai" | "mcp" | "telemetry">(
+  const [activeTab, setActiveTab] = useState<"appearance" | "members" | "permissions" | "ai" | "mcp" | "telemetry">(
     isTabAllowed(defaultTab) ? defaultTab : "appearance"
   );
   const [copiedKey, setCopiedKey] = useState(false);
@@ -207,20 +204,6 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
               <Sun className="h-4 w-4" />
               <span>Aparência & Tema</span>
             </button>
-
-            {currentUser.role !== "guest" && (
-              <button
-                onClick={() => setActiveTab("teams")}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  activeTab === "teams"
-                    ? "bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30 font-semibold"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5"
-                }`}
-              >
-                <Building2 className="h-4 w-4 text-sky-400" />
-                <span>Times & Áreas</span>
-              </button>
-            )}
 
             {currentUser.role !== "guest" && (
               <button
@@ -351,8 +334,6 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
               </div>
             )}
 
-            {activeTab === "teams" && <TeamsManagement />}
-
             {activeTab === "members" && (
               <div className="space-y-4">
                 <MembersManagement />
@@ -418,9 +399,9 @@ export function SettingsModal({ isOpen, onClose, defaultTab = "appearance" }: Se
                         { name: "Visualizar Telemetria & Logs", owner: true, admin: true, member: false, guest: false, desc: "Acesso a auditoria e registros de integridade" },
                         { name: "Gestão de Membros & Convites", owner: true, admin: true, member: false, guest: false, desc: "Convidar, alterar papéis e redefinir credenciais" },
                         { name: "Configurar Servidor MCP & IA", owner: true, admin: true, member: false, guest: false, desc: "Ajustar tokens e endpoints externos" },
-                        { name: "Criar Novos Boards & Projetos", owner: true, admin: true, member: true, guest: false, desc: "Estruturar novos fluxos de trabalho" },
-                        { name: "Excluir Boards do Workspace", owner: true, admin: true, member: false, guest: false, desc: "Ação crítica de remoção permanente" },
-                        { name: "Criar e Editar Tarefas", owner: true, admin: true, member: true, guest: false, desc: "Operação diária em kanban, lista e tabela" },
+                        { name: "Criar Novos Projetos", owner: true, admin: true, member: true, guest: false, desc: "Estruturar novos fluxos de trabalho" },
+                        { name: "Excluir Projetos do Workspace", owner: true, admin: true, member: false, guest: false, desc: "Ação crítica de remoção permanente" },
+                        { name: "Criar e Editar Tarefas", owner: true, admin: true, member: true, guest: false, desc: "Operação diária em lista, quadro e calendário" },
                         { name: "Aprovar Execuções de Agentes", owner: true, admin: true, member: false, guest: false, desc: "Homologação de ações de IA" },
                       ].map((item, idx) => (
                         <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">

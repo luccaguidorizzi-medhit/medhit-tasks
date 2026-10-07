@@ -53,8 +53,8 @@ export const i18n = {
   },
   views: {
     list: "Lista",
-    board: "Quadro Kanban",
-    table: "Tabela Monday",
+    board: "Quadro",
+    table: "Lista",
     calendar: "Calendário",
     timeline: "Gantt / Timeline",
     backlog: "Backlog Ágil",

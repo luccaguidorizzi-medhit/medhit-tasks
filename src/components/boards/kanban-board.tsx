@@ -114,7 +114,7 @@ export function KanbanBoard({
             <div className="h-8 w-8 rounded-full border border-slate-300 dark:border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center">
               <Plus className="h-4 w-4" />
             </div>
-            <span className="text-xs font-semibold">Add Task</span>
+            <span className="text-xs font-semibold">Nova Tarefa</span>
           </button>
         </div>
       </div>

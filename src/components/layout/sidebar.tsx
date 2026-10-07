@@ -127,7 +127,7 @@ export function Sidebar({
 
   const handleOpenBoard = () => {
     if (!contextMenu.project) return;
-    const targetUrl = `/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/board`;
+    const targetUrl = `/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
     router.push(targetUrl);
   };
@@ -135,11 +135,11 @@ export function Sidebar({
   const handleCopyLink = () => {
     if (!contextMenu.project) return;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const fullUrl = `${origin}/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/board`;
+    const fullUrl = `${origin}/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
 
     navigator.clipboard.writeText(fullUrl);
     setCopiedLink(true);
-    toast.success("Link do quadro copiado!");
+    toast.success("Link do projeto copiado!");
 
     setTimeout(() => {
       setCopiedLink(false);
@@ -150,7 +150,7 @@ export function Sidebar({
   const handleDeleteBoard = () => {
     if (!contextMenu.project) return;
     if (!canDeleteBoard) {
-      toast.error("Apenas administradores podem excluir quadros.");
+      toast.error("Apenas administradores podem excluir projetos.");
       setContextMenu((prev) => ({ ...prev, isOpen: false }));
       return;
     }
@@ -245,19 +245,19 @@ export function Sidebar({
             </Link>
           </div>
 
-          {/* Seção 2: Projetos & Quadros */}
+          {/* Seção 2: Projetos */}
           <div>
             <div className="px-2.5 mb-1.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
               <div className="flex items-center gap-1.5">
                 <FolderKanban className="h-3 w-3 text-sky-500" />
-                <span>Projetos & Quadros</span>
+                <span>Projetos</span>
               </div>
               {canCreateBoard && (
                 <button
                   type="button"
                   onClick={() => setIsNewBoardModalOpen(true)}
                   className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
-                  title="Criar novo quadro"
+                  title="Criar novo projeto"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
@@ -272,7 +272,7 @@ export function Sidebar({
                   className="relative group/item"
                 >
                   <Link
-                    href={`/medhit/${proj.areaSlug}/${proj.slug}/board`}
+                    href={`/medhit/${proj.areaSlug}/${proj.slug}/table`}
                     className={cn(
                       "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
                       proj.active
@@ -300,7 +300,7 @@ export function Sidebar({
                           handleBoardContextMenu(e, proj);
                         }}
                         className="opacity-0 group-hover/item:opacity-100 p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-opacity cursor-pointer"
-                        title="Opções do quadro"
+                        title="Opções do projeto"
                       >
                         <MoreVertical className="h-3 w-3" />
                       </button>
@@ -318,45 +318,15 @@ export function Sidebar({
                   className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
                 >
                   <Plus className="h-3 w-3" />
-                  <span>Novo Projeto</span>
+                  <span>+ Novo Projeto</span>
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Seção 3: Rodapé com Configurações e Membros */}
+        {/* Seção 3: Rodapé com Configurações */}
         <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
-          {currentUser.role !== "guest" && (
-            <Link
-              href="/medhit/squads"
-              className={cn(
-                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                pathname === "/medhit/squads"
-                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <Layers className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <span>Áreas & Times</span>
-            </Link>
-          )}
-
-          {currentUser.role !== "guest" && (
-            <Link
-              href="/medhit/members"
-              className={cn(
-                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                pathname === "/medhit/members"
-                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-              )}
-            >
-              <Users className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <span>Membros & Equipe</span>
-            </Link>
-          )}
-
           <Link
             href="/medhit/settings"
             className={cn(
@@ -406,7 +376,7 @@ export function Sidebar({
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer text-left"
             >
               <ExternalLink className="h-3.5 w-3.5 text-sky-500" />
-              <span>Abrir Quadro</span>
+              <span>Abrir Projeto</span>
             </button>
 
             <button
@@ -418,7 +388,7 @@ export function Sidebar({
               ) : (
                 <Copy className="h-3.5 w-3.5 text-slate-400" />
               )}
-              <span>{copiedLink ? "Link Copiado!" : "Copiar Link"}</span>
+              <span>{copiedLink ? "Link Copiado!" : "Copiar Link do Projeto"}</span>
             </button>
 
             <div className="my-1 border-t border-slate-200/60 dark:border-white/5" />
@@ -434,7 +404,7 @@ export function Sidebar({
               )}
             >
               {canDeleteBoard ? <Trash2 className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              <span>{canDeleteBoard ? "Excluir Quadro" : "Excluir (Restrito)"}</span>
+              <span>{canDeleteBoard ? "Excluir Projeto" : "Excluir (Restrito)"}</span>
             </button>
           </div>
         </div>
