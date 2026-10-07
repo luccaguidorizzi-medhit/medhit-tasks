@@ -60,7 +60,7 @@ export function ProjectToolbar({
       id: "table",
       label: "Lista",
       icon: TableIcon,
-      href: `/medhit/${areaSlug}/${projectSlug}/table`,
+      href: `/${areaSlug}/${projectSlug}/table`,
       tooltip: {
         title: "Visualização em Lista",
         description: "Tabela limpa com status, responsável, prioridade, prazos e criação rápida.",
@@ -70,7 +70,7 @@ export function ProjectToolbar({
       id: "board",
       label: "Quadro",
       icon: Kanban,
-      href: `/medhit/${areaSlug}/${projectSlug}/board`,
+      href: `/${areaSlug}/${projectSlug}/board`,
       tooltip: {
         title: "Quadro Kanban",
         description: "Visualização espacial de fluxo com cartões organizados por status.",
@@ -80,7 +80,7 @@ export function ProjectToolbar({
       id: "calendar",
       label: "Calendário",
       icon: CalendarDays,
-      href: `/medhit/${areaSlug}/${projectSlug}/calendar`,
+      href: `/${areaSlug}/${projectSlug}/calendar`,
       tooltip: {
         title: "Calendário de Entregas",
         description: "Tarefas organizadas por data de vencimento.",
@@ -90,7 +90,7 @@ export function ProjectToolbar({
       id: "dashboard",
       label: "Visão Geral",
       icon: BarChart3,
-      href: `/medhit/${areaSlug}/${projectSlug}/dashboard`,
+      href: `/${areaSlug}/${projectSlug}/dashboard`,
       tooltip: {
         title: "Visão Geral & Métricas",
         description: "Percentual de conclusão, distribuição por status e progresso do projeto.",

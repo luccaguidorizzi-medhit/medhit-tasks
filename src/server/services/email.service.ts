@@ -493,7 +493,7 @@ export const emailService = {
   async sendWelcomeEmail({
     to,
     name,
-    loginUrl = "https://tasks.medhit.click/medhit",
+    loginUrl = "https://tasks.medhit.click",
   }: SendWelcomeEmailParams) {
     const htmlContent = `
 <!DOCTYPE html>

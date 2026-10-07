@@ -96,7 +96,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
     if (!activeProject) {
       setIsRedirecting(true);
       const timer = setTimeout(() => {
-        router.replace("/medhit");
+        router.replace("/");
       }, 1500);
 
       return () => clearTimeout(timer);
@@ -147,7 +147,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
 
           {/* Ações manuais imediatas */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <Link href="/medhit" className="w-full sm:w-auto">
+            <Link href="/" className="w-full sm:w-auto">
               <Button
                 variant="outline"
                 className="w-full gap-2 text-xs rounded-xl border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5"
@@ -161,7 +161,7 @@ export default function ProjectViewPage({ params }: ProjectViewPageProps) {
               <Button
                 onClick={() =>
                   router.replace(
-                    `/medhit/${firstAvailableBoard.area.slug}/${firstAvailableBoard.project.slug}/board`
+                    `/${firstAvailableBoard.area.slug}/${firstAvailableBoard.project.slug}/board`
                   )
                 }
                 className="w-full sm:w-auto gap-2 text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 rounded-xl shadow-lg shadow-sky-500/20"

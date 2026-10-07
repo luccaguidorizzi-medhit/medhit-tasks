@@ -78,7 +78,7 @@ function InviteContent() {
       login(member.email, cleanPass, true);
 
       toast.success("Senha cadastrada com sucesso! Bem-vindo ao time MedHit.");
-      router.replace("/medhit");
+      router.replace("/");
     } catch {
       setErrorMessage("Erro ao salvar senha. Tente novamente.");
     } finally {

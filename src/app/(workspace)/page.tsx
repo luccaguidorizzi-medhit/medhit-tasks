@@ -300,13 +300,13 @@ export default function WorkspaceHomePage() {
                         </button>
                       )}
                       <Link
-                        href={`/medhit/${proj.areaSlug}/${proj.slug}/dashboard`}
+                        href={`/${proj.areaSlug}/${proj.slug}/dashboard`}
                         className="px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 transition-colors"
                       >
                         Métricas
                       </Link>
                       <Link
-                        href={`/medhit/${proj.areaSlug}/${proj.slug}/table`}
+                        href={`/${proj.areaSlug}/${proj.slug}/table`}
                         className="flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-sky-500 text-slate-950 hover:bg-sky-400 transition-colors"
                       >
                         <span>Abrir</span>

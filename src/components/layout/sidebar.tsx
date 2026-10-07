@@ -127,7 +127,7 @@ export function Sidebar({
 
   const handleOpenBoard = () => {
     if (!contextMenu.project) return;
-    const targetUrl = `/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
+    const targetUrl = `/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
     router.push(targetUrl);
   };
@@ -135,7 +135,7 @@ export function Sidebar({
   const handleCopyLink = () => {
     if (!contextMenu.project) return;
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const fullUrl = `${origin}/medhit/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
+    const fullUrl = `${origin}/${contextMenu.project.areaSlug}/${contextMenu.project.slug}/table`;
 
     navigator.clipboard.writeText(fullUrl);
     setCopiedLink(true);
@@ -188,7 +188,7 @@ export function Sidebar({
       <aside className="w-60 border-r border-slate-200 dark:border-sky-500/15 bg-white/90 dark:bg-[#070e1e]/90 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
         {/* Brand Header */}
         <div className="p-3.5 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
-          <Link href="/medhit" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group">
             <div className="h-8 w-8 rounded-xl bg-sky-500/10 border border-sky-500/20 p-1 flex items-center justify-center shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
               <img
                 src="/logo.svg"
@@ -209,10 +209,10 @@ export function Sidebar({
           {/* Seção 1: Início & Tarefas */}
           <div className="space-y-0.5">
             <Link
-              href="/medhit"
+              href="/"
               className={cn(
                 "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                pathname === "/medhit"
+                pathname === "/"
                   ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               )}
@@ -220,17 +220,17 @@ export function Sidebar({
               <LayoutDashboard
                 className={cn(
                   "h-4 w-4",
-                  pathname === "/medhit" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                  pathname === "/" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
                 )}
               />
               <span>Início</span>
             </Link>
 
             <Link
-              href="/medhit/today"
+              href="/today"
               className={cn(
                 "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                pathname === "/medhit/today"
+                pathname === "/today"
                   ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               )}
@@ -238,7 +238,7 @@ export function Sidebar({
               <CalendarCheck2
                 className={cn(
                   "h-4 w-4",
-                  pathname === "/medhit/today" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                  pathname === "/today" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
                 )}
               />
               <span>Minhas Tarefas</span>
@@ -272,7 +272,7 @@ export function Sidebar({
                   className="relative group/item"
                 >
                   <Link
-                    href={`/medhit/${proj.areaSlug}/${proj.slug}/table`}
+                    href={`/${proj.areaSlug}/${proj.slug}/table`}
                     className={cn(
                       "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
                       proj.active
@@ -328,10 +328,10 @@ export function Sidebar({
         {/* Seção 3: Rodapé com Configurações */}
         <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
           <Link
-            href="/medhit/settings"
+            href="/settings"
             className={cn(
               "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-              pathname === "/medhit/settings"
+              pathname === "/settings"
                 ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
             )}

@@ -81,10 +81,10 @@ export function Topbar({
     pathname.includes(projectSlug)
   );
 
-  const isToday = pathname.startsWith("/medhit/today");
-  const isMembers = pathname.startsWith("/medhit/members");
-  const isSettings = pathname.startsWith("/medhit/settings");
-  const isSquads = pathname.startsWith("/medhit/squads");
+  const isToday = pathname.startsWith("/today");
+  const isMembers = pathname.startsWith("/members");
+  const isSettings = pathname.startsWith("/settings");
+  const isSquads = pathname.startsWith("/squads");
 
   // Atalho global Cmd+K / Ctrl+K
   useEffect(() => {
@@ -116,7 +116,7 @@ export function Topbar({
         {/* Breadcrumbs Dinâmicos & Contextuais */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
           <Link
-            href="/medhit"
+            href="/"
             className="text-slate-800 dark:text-slate-200 font-bold flex items-center gap-2 hover:text-sky-500 transition-colors"
           >
             <img
@@ -131,7 +131,7 @@ export function Topbar({
             <>
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <Link
-                href="/medhit"
+                href="/"
                 className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium text-slate-600 dark:text-slate-400"
               >
                 Projetos
@@ -161,7 +161,7 @@ export function Topbar({
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <span className="text-slate-900 dark:text-white font-bold">Equipes & Áreas</span>
             </>
-          ) : pathname.startsWith("/medhit/") && pathname.split("/").filter(Boolean).length === 2 && !isToday && !isMembers && !isSettings ? (
+          ) : pathname.split("/").filter(Boolean).length === 1 && !isToday && !isMembers && !isSettings ? (
             <>
               <ChevronRight className="h-3 w-3 text-slate-400 dark:text-slate-600 shrink-0" />
               <span className="text-slate-900 dark:text-white font-bold">{areaName}</span>

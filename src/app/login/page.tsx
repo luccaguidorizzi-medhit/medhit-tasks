@@ -20,7 +20,7 @@ export default function LoginPage() {
   // Redireciona se o usuário já estiver com sessão autenticada ativa
   useEffect(() => {
     if (hasHydrated && isAuthenticated) {
-      router.replace("/medhit");
+      router.replace("/");
     }
   }, [hasHydrated, isAuthenticated, router]);
 
@@ -48,7 +48,7 @@ export default function LoginPage() {
 
       const result = login(cleanEmail, cleanPassword, remember);
       if (result.success) {
-        router.replace("/medhit");
+        router.replace("/");
       } else {
         setErrorMessage(result.error || "Credenciais inválidas. Verifique seu e-mail e senha.");
       }

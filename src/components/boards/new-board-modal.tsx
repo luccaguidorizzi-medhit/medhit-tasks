@@ -59,7 +59,7 @@ export function NewBoardModal({ isOpen, onClose }: NewBoardModalProps) {
     onClose();
     setName("");
     setDescription("");
-    router.push(`/medhit/${selectedAreaSlug}/${created.slug}/table`);
+    router.push(`/${selectedAreaSlug}/${created.slug}/table`);
   };
 
   return (

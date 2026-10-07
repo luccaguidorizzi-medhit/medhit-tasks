@@ -103,7 +103,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const handleSelectProject = (project: typeof allProjects[0]) => {
     onClose();
-    router.push(`/medhit/${project.areaSlug}/${project.slug}/table`);
+    router.push(`/${project.areaSlug}/${project.slug}/table`);
   };
 
   return (
@@ -153,7 +153,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <button
                     onClick={() => {
                       onClose();
-                      router.push("/medhit/today");
+                      router.push("/today");
                     }}
                     className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/5 hover:border-sky-500/40 bg-slate-50/70 dark:bg-white/[0.02] hover:bg-sky-500/5 transition-all text-left cursor-pointer"
                   >
@@ -169,7 +169,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <button
                     onClick={() => {
                       onClose();
-                      router.push("/medhit");
+                      router.push("/");
                     }}
                     className="flex items-center gap-2.5 p-2.5 rounded-xl border border-slate-200/80 dark:border-white/5 hover:border-sky-500/40 bg-slate-50/70 dark:bg-white/[0.02] hover:bg-sky-500/5 transition-all text-left cursor-pointer"
                   >

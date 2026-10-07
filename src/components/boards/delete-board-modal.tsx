@@ -24,7 +24,7 @@ export function DeleteBoardModal({ isOpen, onClose, project }: DeleteBoardModalP
   const handleDelete = () => {
     deleteProject(project.id);
     onClose();
-    router.push("/medhit");
+    router.push("/");
   };
 
   return (
