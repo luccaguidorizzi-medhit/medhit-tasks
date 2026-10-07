@@ -178,9 +178,39 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (storedAreas) {
           const parsed = JSON.parse(storedAreas);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setAreas(parsed);
-            store.workspace.areas = parsed;
+            // Garante que os 2 projetos oficiais (Marketing e Integrações e Automações) estejam presentes
+            const defaultAreas = store.workspace.areas;
+            const mergedAreas = [...parsed];
+            
+            defaultAreas.forEach((defArea) => {
+              const existingAreaIdx = mergedAreas.findIndex(
+                (a) => a.slug === defArea.slug || a.name.toLowerCase() === defArea.name.toLowerCase()
+              );
+              if (existingAreaIdx === -1) {
+                mergedAreas.push(defArea);
+              } else {
+                defArea.projects.forEach((defProj) => {
+                  const hasProj = mergedAreas[existingAreaIdx].projects?.some(
+                    (p: any) => p.slug === defProj.slug || p.name.toLowerCase() === defProj.name.toLowerCase()
+                  );
+                  if (!hasProj) {
+                    if (!mergedAreas[existingAreaIdx].projects) mergedAreas[existingAreaIdx].projects = [];
+                    mergedAreas[existingAreaIdx].projects.push(defProj);
+                  }
+                });
+              }
+            });
+
+            setAreas(mergedAreas);
+            store.workspace.areas = mergedAreas;
+            localStorage.setItem("medhit_areas_data_v1", JSON.stringify(mergedAreas));
+          } else {
+            setAreas(store.workspace.areas);
+            localStorage.setItem("medhit_areas_data_v1", JSON.stringify(store.workspace.areas));
           }
+        } else {
+          setAreas(store.workspace.areas);
+          localStorage.setItem("medhit_areas_data_v1", JSON.stringify(store.workspace.areas));
         }
         const storedTasks = localStorage.getItem("medhit_tasks_data_v1");
         if (storedTasks) {

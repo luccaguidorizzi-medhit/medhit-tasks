@@ -282,7 +282,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <notificacoes@medhit.click>",
+        from: "MedHit Tasks <onboarding@resend.dev>",
         to: [to],
         subject: `Bem-vindo ao MedHit Tasks: Acesso Liberado por ${invitedBy}`,
         html: htmlContent,
@@ -319,7 +319,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <notificacoes@medhit.click>",
+        from: "MedHit Tasks <onboarding@resend.dev>",
         to: [to],
         subject: `Nova Tarefa Atribuída: ${taskTitle}`,
         html: `
@@ -413,7 +413,7 @@ export const emailService = {
 
     try {
       const response = await resend.emails.send({
-        from: "MedHit Tasks <notificacoes@medhit.click>",
+        from: "MedHit Tasks <onboarding@resend.dev>",
         to: [to],
         subject: "Bem-vindo ao MedHit Tasks: Plataforma Ativa!",
         html: htmlContent,

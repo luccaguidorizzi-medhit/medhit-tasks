@@ -99,7 +99,7 @@ export const seedData = {
           workspaceId: "ws-medhit-001",
           areaId: "area-2",
           name: "Integrações e Automações",
-          slug: "integrações-e-automacoes",
+          slug: "integracoes-e-automacoes",
           description: "Quadro de automações n8n, webhooks e esteiras",
           icon: "cpu",
           color: "#3b82f6",
