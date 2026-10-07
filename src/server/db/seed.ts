@@ -23,6 +23,14 @@ export const seedData = {
       mcpToken: "medtask_user_lucca_x32kd58_sec99",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca",
     },
+    {
+      name: "Thiago Ghiraldini",
+      email: "thiago.ghiraldini@medhit.com.br",
+      role: "owner" as const,
+      password: "x32kd58",
+      mcpToken: "medtask_user_thiago_sec100",
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thiago",
+    },
   ],
   agents: [
     {

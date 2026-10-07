@@ -267,8 +267,20 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
                 if (m.role === "owner" || (m.name || "").toLowerCase().includes("lucca")) {
                   return { ...m, email: "lucca.guidorizzi@medhit.com.br", password: m.password || "x32kd58" };
                 }
+                if (m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br") {
+                  return { ...m, role: "owner", password: m.password || "x32kd58" };
+                }
                 return m;
               });
+
+            // Garante que o Thiago Ghiraldini como owner esteja presente
+            const hasThiago = filtered.some((m: any) => m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br");
+            if (!hasThiago) {
+              const thiagoDef = store.workspace.members.find((m) => m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br");
+              if (thiagoDef) {
+                filtered.push(thiagoDef);
+              }
+            }
 
             if (filtered.length > 0) {
               setMembers(filtered);
@@ -431,13 +443,19 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanPass = (password || "").trim();
 
-    // Permite login tanto por lucca.guidorizzi@medhit.com.br quanto por lucca@medhit.com.br
+    // Permite login tanto por lucca.guidorizzi@medhit.com.br quanto por lucca@medhit.com.br, e thiago.ghiraldini@medhit.com.br quanto thiago@medhit.com.br
     const found = members.find((m) => {
       const mEmail = m.email.toLowerCase();
       if (mEmail === cleanEmail) return true;
       if (
         (cleanEmail === "lucca.guidorizzi@medhit.com.br" || cleanEmail === "lucca@medhit.com.br") &&
         (mEmail === "lucca.guidorizzi@medhit.com.br" || mEmail === "lucca@medhit.com.br")
+      ) {
+        return true;
+      }
+      if (
+        (cleanEmail === "thiago.ghiraldini@medhit.com.br" || cleanEmail === "thiago@medhit.com.br") &&
+        (mEmail === "thiago.ghiraldini@medhit.com.br" || mEmail === "thiago@medhit.com.br")
       ) {
         return true;
       }

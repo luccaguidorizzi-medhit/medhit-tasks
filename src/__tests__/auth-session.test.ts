@@ -12,10 +12,10 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     expect(owner?.password).toBe("x32kd58");
   });
 
-  it("verifies single-owner isolation in clean seed data", () => {
-    expect(seedData.members.length).toBe(1);
-    expect(seedData.members[0].email).toBe("lucca.guidorizzi@medhit.com.br");
-    expect(seedData.members[0].role).toBe("owner");
+  it("verifies single-owner or co-owner isolation in clean seed data", () => {
+    expect(seedData.members.length).toBe(2);
+    expect(seedData.members.some((m) => m.email === "lucca.guidorizzi@medhit.com.br" && m.role === "owner")).toBe(true);
+    expect(seedData.members.some((m) => m.email === "thiago.ghiraldini@medhit.com.br" && m.role === "owner")).toBe(true);
   });
 
   it("validates login authentication logic against seed members", () => {
