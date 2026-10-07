@@ -254,7 +254,11 @@ function initializeData(): {
     description: areaSeed.description,
     icon: areaSeed.icon,
     color: areaSeed.color,
-    projects: [],
+    projects: (areaSeed.projects || []).map((p: any) => ({
+      ...p,
+      areaId: `area-${areaIdx + 1}`,
+      workspaceId: WORKSPACE_ID,
+    })),
   }));
 
   const tasks: Task[] = [];

@@ -194,16 +194,35 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Assegura que o email do owner permaneça atualizado com lucca.guidorizzi@medhit.com.br
-            const updated = parsed.map((m: any) => {
-              if (m.role === "owner" || m.name.toLowerCase().includes("lucca")) {
-                return { ...m, email: "lucca.guidorizzi@medhit.com.br", password: m.password || "x32kd58" };
-              }
-              return m;
-            });
-            setMembers(updated);
-            store.workspace.members = updated;
+            // Remove antigos mocks testes, mantendo estritamente o owner (Lucca) e colaboradores convidados via invite
+            const filtered = parsed
+              .filter((m: any) => {
+                const name = (m.name || "").toLowerCase();
+                const email = (m.email || "").toLowerCase();
+                // Exclui mocks legados
+                if (email === "fillipe@medhit.com.br" || email === "mariana.marketing@medhit.com.br" || email === "rafael.automacao@medhit.com.br" || email === "carlos.convidado@medhit.com.br") {
+                  return false;
+                }
+                return true;
+              })
+              .map((m: any) => {
+                if (m.role === "owner" || (m.name || "").toLowerCase().includes("lucca")) {
+                  return { ...m, email: "lucca.guidorizzi@medhit.com.br", password: m.password || "x32kd58" };
+                }
+                return m;
+              });
+
+            if (filtered.length > 0) {
+              setMembers(filtered);
+              store.workspace.members = filtered;
+              localStorage.setItem("medhit_members_data_v1", JSON.stringify(filtered));
+            } else {
+              setMembers(store.workspace.members);
+              localStorage.setItem("medhit_members_data_v1", JSON.stringify(store.workspace.members));
+            }
           }
+        } else {
+          localStorage.setItem("medhit_members_data_v1", JSON.stringify(store.workspace.members));
         }
 
         // Recupera sessão persistida

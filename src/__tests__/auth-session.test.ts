@@ -12,19 +12,10 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     expect(owner?.password).toBe("x32kd58");
   });
 
-  it("verifies credentials for internal team members", () => {
-    const fillipe = seedData.members.find((m) => m.email === "fillipe@medhit.com.br");
-    expect(fillipe).toBeDefined();
-    expect(fillipe?.role).toBe("admin");
-    expect(fillipe?.password).toBe("medhit_fillipe_2026");
-
-    const mariana = seedData.members.find((m) => m.email === "mariana.marketing@medhit.com.br");
-    expect(mariana).toBeDefined();
-    expect(mariana?.role).toBe("member");
-
-    const guest = seedData.members.find((m) => m.email === "carlos.convidado@medhit.com.br");
-    expect(guest).toBeDefined();
-    expect(guest?.role).toBe("guest");
+  it("verifies single-owner isolation in clean seed data", () => {
+    expect(seedData.members.length).toBe(1);
+    expect(seedData.members[0].email).toBe("lucca.guidorizzi@medhit.com.br");
+    expect(seedData.members[0].role).toBe("owner");
   });
 
   it("validates login authentication logic against seed members", () => {
@@ -115,20 +106,25 @@ describe("Production Session Auth & Owner Test Account Isolation", () => {
     expect(isOwnerSession).toBe(true);
     expect(activeUserId).toBe("user-1");
 
-    // Owner simula Mariana (membro de marketing)
-    activeUserId = "user-3"; // Mariana
+    // Owner simula um membro convidado
+    activeUserId = "user-invited-2";
     simulatedRole = null;
 
-    const mariana = seedData.members.find((m) => m.email === "mariana.marketing@medhit.com.br")!;
-    const currentUser: Member = {
-      ...mariana,
-      id: "user-3",
-      role: (simulatedRole || mariana.role) as Member["role"],
+    const invitedMember: Member = {
+      id: "user-invited-2",
+      name: "Mariana Costa (Marketing)",
+      email: "mariana.marketing@medhit.com.br",
+      role: "member",
       workspaceId: "ws-1",
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mariana",
       status: "active",
     };
+    const currentUser: Member = {
+      ...invitedMember,
+      role: (simulatedRole || invitedMember.role) as Member["role"],
+    };
 
-    // currentUser reflete Mariana para simular sua visão
+    // currentUser reflete o membro para simular sua visão
     expect(currentUser.name).toBe("Mariana Costa (Marketing)");
     expect(currentUser.role).toBe("member");
 

@@ -51,7 +51,7 @@ export const emailService = {
     role,
     password,
     mcpToken,
-    loginUrl = "https://medhit-tasks.vercel.app/medhit",
+    loginUrl = "https://tasks.medhit.click/invite",
   }: SendInviteEmailParams) {
     const roleLabels: Record<string, string> = {
       owner: "Proprietário (Owner)",
