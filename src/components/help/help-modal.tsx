@@ -156,7 +156,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   </div>
                   <h4 className="font-bold text-sm">Escolha seu Espaço</h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Na barra lateral à esquerda, selecione o Espaço correspondente à sua área (Campanhas Marketing, Produção Contínuas, Operação Thiago ou Integrações).
+                    Na barra lateral à esquerda, selecione o Espaço ou Projeto correspondente (ex: CASA MEDHIT 2026, Obras & Infraestrutura).
                   </p>
                 </div>
 
@@ -218,9 +218,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 <div className="p-3.5 rounded-xl border border-pink-500/20 bg-pink-500/5 flex items-start gap-3">
                   <Layers className="h-5 w-5 text-pink-500 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-bold text-sm text-pink-600 dark:text-pink-400">1. Espaços (Spaces)</h4>
+                    <h4 className="font-bold text-sm text-pink-600 dark:text-pink-400">1. Espaços / Projetos</h4>
                     <p className="text-slate-600 dark:text-slate-300 mt-0.5">
-                      São as grandes áreas operacionais da MedHit (ex: <strong>Campanhas Marketing</strong>, <strong>Produção Contínuas</strong>, <strong>Operação Thiago</strong>, <strong>Integrações & Automações</strong>). Cada espaço possui seu quadro geral de tarefas.
+                      São as grandes áreas e iniciativas operacionais da MedHit (ex: <strong>CASA MEDHIT 2026</strong>, <strong>Obras & Infraestrutura</strong>, <strong>Redes & Automação</strong>). Cada espaço possui seu quadro visual e tabela de tarefas.
                     </p>
                   </div>
                 </div>

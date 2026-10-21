@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 import { tasksService } from "@/server/services/tasks.service";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const projectId = searchParams.get("projectId") || undefined;
-  const tasks = tasksService.getAllTasks(projectId);
-  return NextResponse.json(tasks);
+  try {
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get("projectId") || undefined;
+    const tasks = await tasksService.getAllTasksAsync(projectId);
+    return NextResponse.json(tasks);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Falha ao listar tarefas", details: String(error) },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: Request) {

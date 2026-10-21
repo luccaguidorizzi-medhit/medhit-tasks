@@ -1,4 +1,5 @@
 import { store, Task } from "./data-store";
+import { supabase, mapRowToTask, mapTaskToRow } from "@/lib/supabase";
 
 export interface CreateTaskInput {
   workspaceId?: string;
@@ -12,11 +13,45 @@ export interface CreateTaskInput {
   storyPoints?: number;
   aiContext?: string;
   assigneeIds?: { type: "user" | "agent"; id: string; name: string; avatarUrl: string }[];
+  tags?: string[];
+  dueDate?: string;
 }
 
 export const tasksService = {
   getWorkspace() {
     return store.workspace;
+  },
+
+  async getAllTasksAsync(projectId?: string): Promise<Task[]> {
+    try {
+      let query = supabase.from("medtask_tasks").select("*").order("position", { ascending: true });
+      if (projectId) {
+        query = query.eq("project_id", projectId);
+      }
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        const dbTasks = data.map(mapRowToTask);
+        // Atualiza cache em memória
+        if (!projectId) {
+          store.tasks = dbTasks;
+        } else {
+          // Atualiza apenas as tarefas deste projeto no cache
+          store.tasks = [
+            ...store.tasks.filter((t) => t.projectId !== projectId),
+            ...dbTasks,
+          ];
+        }
+        return dbTasks;
+      }
+    } catch (e) {
+      console.error("[tasksService] Erro ao sincronizar tarefas com Supabase:", e);
+    }
+
+    // Fallback para store em memória
+    if (projectId) {
+      return store.tasks.filter((t) => t.projectId === projectId);
+    }
+    return store.tasks;
   },
 
   getAllTasks(projectId?: string) {
@@ -28,6 +63,22 @@ export const tasksService = {
 
   getTaskById(id: string) {
     return store.tasks.find((t) => t.id === id);
+  },
+
+  async getTaskByIdAsync(id: string): Promise<Task | null> {
+    try {
+      const { data, error } = await supabase
+        .from("medtask_tasks")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (!error && data) {
+        return mapRowToTask(data);
+      }
+    } catch (e) {
+      console.error("[tasksService] Erro ao buscar tarefa do Supabase:", e);
+    }
+    return store.tasks.find((t) => t.id === id) || null;
   },
 
   createTask(input: CreateTaskInput): Task {
@@ -52,6 +103,8 @@ export const tasksService = {
       assigneeIds: input.assigneeIds || [],
       storyPoints: input.storyPoints,
       aiContext: input.aiContext,
+      tags: input.tags || [],
+      dueDate: input.dueDate,
       checklists: [],
       comments: [],
       createdAt: new Date().toISOString(),
@@ -69,6 +122,16 @@ export const tasksService = {
       action: `criou a tarefa "${newTask.title}"`,
       createdAt: new Date().toISOString(),
     });
+
+    // Persistência assíncrona no Supabase
+    void (async () => {
+      try {
+        const { error } = await supabase.from("medtask_tasks").insert(mapTaskToRow(newTask));
+        if (error) console.error("[tasksService] Erro ao persistir nova tarefa no Supabase:", error);
+      } catch (err) {
+        console.error("[tasksService] Exceção ao persistir no Supabase:", err);
+      }
+    })();
 
     return newTask;
   },
@@ -96,6 +159,16 @@ export const tasksService = {
       createdAt: new Date().toISOString(),
     });
 
+    // Atualização no Supabase
+    void (async () => {
+      try {
+        const { error } = await supabase.from("medtask_tasks").update(mapTaskToRow(updates)).eq("id", id);
+        if (error) console.error("[tasksService] Erro ao atualizar tarefa no Supabase:", error);
+      } catch (err) {
+        console.error("[tasksService] Exceção ao atualizar no Supabase:", err);
+      }
+    })();
+
     return updatedTask;
   },
 
@@ -122,6 +195,23 @@ export const tasksService = {
       });
     }
 
+    // Persiste mudança de status/posição no Supabase
+    void (async () => {
+      try {
+        const { error } = await supabase
+          .from("medtask_tasks")
+          .update({
+            status_id: targetStatusId,
+            ...(typeof newPosition === "number" ? { position: newPosition } : {}),
+            updated_at: task.updatedAt,
+          })
+          .eq("id", taskId);
+        if (error) console.error("[tasksService] Erro ao mover tarefa no Supabase:", error);
+      } catch (err) {
+        console.error("[tasksService] Exceção ao mover tarefa no Supabase:", err);
+      }
+    })();
+
     return task;
   },
 
@@ -137,6 +227,18 @@ export const tasksService = {
 
     item.isCompleted = !item.isCompleted;
     task.updatedAt = new Date().toISOString();
+
+    void (async () => {
+      try {
+        await supabase
+          .from("medtask_tasks")
+          .update({ checklists: task.checklists, updated_at: task.updatedAt })
+          .eq("id", taskId);
+      } catch (err) {
+        console.error("[tasksService] Erro ao alternar checklist no Supabase:", err);
+      }
+    })();
+
     return task;
   },
 
@@ -168,6 +270,17 @@ export const tasksService = {
       createdAt: new Date().toISOString(),
     });
 
+    void (async () => {
+      try {
+        await supabase
+          .from("medtask_tasks")
+          .update({ comments: task.comments, updated_at: task.updatedAt })
+          .eq("id", taskId);
+      } catch (err) {
+        console.error("[tasksService] Erro ao salvar comentário no Supabase:", err);
+      }
+    })();
+
     return newComment;
   },
 
@@ -184,6 +297,16 @@ export const tasksService = {
       action: `excluiu a tarefa "${deleted.title}"`,
       createdAt: new Date().toISOString(),
     });
+
+    void (async () => {
+      try {
+        const { error } = await supabase.from("medtask_tasks").delete().eq("id", taskId);
+        if (error) console.error("[tasksService] Erro ao excluir tarefa no Supabase:", error);
+      } catch (err) {
+        console.error("[tasksService] Exceção ao excluir no Supabase:", err);
+      }
+    })();
+
     return true;
   },
 };

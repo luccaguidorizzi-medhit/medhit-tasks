@@ -24,6 +24,7 @@ import {
 } from "@/server/services/data-store";
 import { toast } from "sonner";
 import { telemetry } from "@/lib/telemetry";
+import { supabase, mapRowToTask, mapTaskToRow } from "@/lib/supabase";
 
 export type UserRole = "owner" | "admin" | "member" | "guest";
 
@@ -176,74 +177,45 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        // Limpeza de chaves legadas com tarefas antigas caso existam
+        // Limpeza de chaves legadas e migração para a nova taxonomia CASA MEDHIT 2026
         if (localStorage.getItem("medhit_tasks_data_v1")) {
           localStorage.removeItem("medhit_tasks_data_v1");
         }
         if (localStorage.getItem("medhit_areas_data_v1")) {
           localStorage.removeItem("medhit_areas_data_v1");
         }
+        if (localStorage.getItem("medhit_areas_data_v2")) {
+          localStorage.removeItem("medhit_areas_data_v2");
+        }
 
-        const storedAreas = localStorage.getItem("medhit_areas_data_v2");
+        const storedAreas = localStorage.getItem("medhit_areas_data_v3");
         if (storedAreas) {
           const parsed = JSON.parse(storedAreas);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Garante que todas as 4 áreas e suas pastas oficiais estejam mescladas
-            const defaultAreas = store.workspace.areas;
-            const mergedAreas = [...parsed];
-
-            defaultAreas.forEach((defArea) => {
-              const existingAreaIdx = mergedAreas.findIndex(
-                (a) => a.slug === defArea.slug || a.name.toLowerCase() === defArea.name.toLowerCase()
-              );
-              if (existingAreaIdx === -1) {
-                mergedAreas.push(defArea);
-              } else {
-                // Mescla folders
-                const existingFolders = new Set(mergedAreas[existingAreaIdx].folders || []);
-                (defArea.folders || []).forEach((f) => existingFolders.add(f));
-                mergedAreas[existingAreaIdx].folders = Array.from(existingFolders);
-
-                defArea.projects.forEach((defProj) => {
-                  const hasProj = mergedAreas[existingAreaIdx].projects?.some(
-                    (p: any) => p.slug === defProj.slug || p.name.toLowerCase() === defProj.name.toLowerCase()
-                  );
-                  if (!hasProj) {
-                    if (!mergedAreas[existingAreaIdx].projects) mergedAreas[existingAreaIdx].projects = [];
-                    mergedAreas[existingAreaIdx].projects.push(defProj);
-                  }
-                });
-              }
-            });
-
-            setAreas(mergedAreas);
-            store.workspace.areas = mergedAreas;
-            localStorage.setItem("medhit_areas_data_v2", JSON.stringify(mergedAreas));
+            setAreas(parsed);
+            store.workspace.areas = parsed;
           } else {
             setAreas(store.workspace.areas);
-            localStorage.setItem("medhit_areas_data_v2", JSON.stringify(store.workspace.areas));
+            localStorage.setItem("medhit_areas_data_v3", JSON.stringify(store.workspace.areas));
           }
         } else {
           setAreas(store.workspace.areas);
-          localStorage.setItem("medhit_areas_data_v2", JSON.stringify(store.workspace.areas));
+          localStorage.setItem("medhit_areas_data_v3", JSON.stringify(store.workspace.areas));
         }
 
-        const storedTasks = localStorage.getItem("medhit_tasks_data_v2");
+        const storedTasks = localStorage.getItem("medhit_tasks_data_v3");
         if (storedTasks) {
           const parsed = JSON.parse(storedTasks);
           if (Array.isArray(parsed)) {
             setTasks(parsed);
             store.tasks = parsed;
           } else {
-            setTasks([]);
-            store.tasks = [];
-            localStorage.setItem("medhit_tasks_data_v2", JSON.stringify([]));
+            setTasks(store.tasks);
+            localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(store.tasks));
           }
         } else {
-          // Inicia zerado sem tarefas falsas
-          setTasks([]);
-          store.tasks = [];
-          localStorage.setItem("medhit_tasks_data_v2", JSON.stringify([]));
+          setTasks(store.tasks);
+          localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(store.tasks));
         }
 
         const storedMembers = localStorage.getItem("medhit_members_data_v1");
@@ -317,7 +289,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_tasks_data_v2", JSON.stringify(tasks));
+        localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(tasks));
         store.tasks = tasks;
       } catch (e) {
         console.error("Erro ao salvar tarefas:", e);
@@ -325,11 +297,86 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [tasks, hasHydrated]);
 
+  // Sincronização viva com o Supabase e Realtime para eliminar dependência de localStorage isolado
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const fetchTasksFromSource = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("medtask_tasks")
+          .select("*")
+          .order("position", { ascending: true });
+
+        if (!error && Array.isArray(data)) {
+          const loaded = data.map(mapRowToTask);
+          setTasks(loaded);
+          store.tasks = loaded;
+          return;
+        }
+
+        // Fallback para rota interna /api/tasks caso supabase client direto falhe
+        const res = await fetch("/api/tasks");
+        if (res.ok) {
+          const apiTasks = await res.json();
+          if (Array.isArray(apiTasks) && apiTasks.length > 0) {
+            setTasks(apiTasks);
+            store.tasks = apiTasks;
+          }
+        }
+      } catch (err) {
+        console.warn("[task-context] Falha na sincronização de tarefas:", err);
+      }
+    };
+
+    fetchTasksFromSource();
+
+    // Inscrição em tempo real no Supabase
+    const channel = supabase
+      .channel("medtask_tasks_live_sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "medtask_tasks" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newTask = mapRowToTask(payload.new);
+            setTasks((prev) => {
+              if (prev.some((t) => t.id === newTask.id)) return prev;
+              return [newTask, ...prev];
+            });
+          } else if (payload.eventType === "UPDATE") {
+            const updatedTask = mapRowToTask(payload.new);
+            setTasks((prev) =>
+              prev.map((t) => (t.id === updatedTask.id ? updatedTask : t))
+            );
+          } else if (payload.eventType === "DELETE") {
+            const deletedId = (payload.old as any)?.id;
+            if (deletedId) {
+              setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Polling suave a cada 6 segundos quando a aba estiver visível
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        fetchTasksFromSource();
+      }
+    }, 6000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Persiste areas sempre que alteradas após hidratação
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_areas_data_v2", JSON.stringify(areas));
+        localStorage.setItem("medhit_areas_data_v3", JSON.stringify(areas));
         store.workspace.areas = areas;
       } catch (e) {
         console.error("Erro ao salvar áreas:", e);
@@ -1017,6 +1064,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       );
     }
 
+    // Persistência no banco Supabase
+    supabase
+      .from("medtask_tasks")
+      .update({ status_id: targetStatusId, updated_at: new Date().toISOString() })
+      .eq("id", taskId)
+      .then();
+
     telemetry.track(
       "task_moved",
       `Tarefa "${movedTaskTitle || taskId}" movida para novo status`,
@@ -1045,6 +1099,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (selectedTask?.id === taskId) {
       setSelectedTask((prev) => (prev ? { ...prev, ...updates } : null));
     }
+
+    // Persistência no banco Supabase
+    supabase
+      .from("medtask_tasks")
+      .update(mapTaskToRow(updates))
+      .eq("id", taskId)
+      .then();
 
     telemetry.track(
       "task_updated",
@@ -1093,6 +1154,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     setTasks((prev) => [newTask, ...prev]);
 
+    // Persistência no banco Supabase
+    supabase
+      .from("medtask_tasks")
+      .insert(mapTaskToRow(newTask))
+      .then();
+
     telemetry.track(
       "task_created",
       `Nova tarefa criada: "${newTask.title}"`,
@@ -1116,6 +1183,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     if (selectedTask?.id === taskId) {
       setSelectedTask(null);
     }
+
+    // Remoção no banco Supabase
+    supabase
+      .from("medtask_tasks")
+      .delete()
+      .eq("id", taskId)
+      .then();
 
     telemetry.track(
       "task_deleted",
