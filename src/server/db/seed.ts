@@ -16,7 +16,7 @@ export const seedData = {
   },
   members: [
     {
-      name: "Lucca Guidorizzi",
+      name: "Lucca G.",
       email: "lucca.guidorizzi@medhit.com.br",
       role: "owner" as const,
       password: "x32kd58",
@@ -24,7 +24,7 @@ export const seedData = {
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca",
     },
     {
-      name: "Thiago Ghiraldini",
+      name: "Thiago G.",
       email: "thiago.ghiraldini@medhit.com.br",
       role: "owner" as const,
       password: "x32kd58",
@@ -156,7 +156,7 @@ export const seedData = {
           taskId: "task-casa-01",
           authorType: "user" as const,
           authorId: "user-1",
-          authorName: "Lucca Guidorizzi",
+          authorName: "Lucca G.",
           authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca",
           content: "Relatório técnico aprovado com resistência de solo adequada para fundação rasa.",
           createdAt: new Date().toISOString(),
@@ -231,7 +231,7 @@ export const seedData = {
           taskId: "task-casa-03",
           authorType: "user" as const,
           authorId: "user-2",
-          authorName: "Thiago Ghiraldini",
+          authorName: "Thiago G.",
           authorAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thiago",
           content: "Primeiro andar 70% erguido. Previsão de finalizar as colunas até quinta-feira.",
           createdAt: new Date().toISOString(),

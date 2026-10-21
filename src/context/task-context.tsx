@@ -26,6 +26,28 @@ import { toast } from "sonner";
 import { telemetry } from "@/lib/telemetry";
 import { supabase, mapRowToTask, mapTaskToRow } from "@/lib/supabase";
 
+/**
+ * Padroniza nomes de exibição dos usuários: Primeiro Nome + Primeira Letra do Sobrenome (ex: "Lucca G.", "Thiago G.")
+ */
+export function formatMemberName(fullName: string): string {
+  if (!fullName) return "";
+  const trimmed = fullName.trim();
+  // Se contiver menção a Lagana, substitui imediatamente
+  const cleanName = trimmed.replace(/\blagana\b/gi, "Guidorizzi").trim();
+  const parts = cleanName.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+
+  const firstName = parts[0];
+  const lastPart = parts[parts.length - 1];
+  // Se já estiver no padrão "Nome S." ou "Nome S", preserva
+  if (/^[A-Za-z]\.?$/.test(lastPart)) {
+    return `${firstName} ${lastPart.replace(".", "")}.`;
+  }
+  const lastInitial = lastPart.charAt(0).toUpperCase();
+  return `${firstName} ${lastInitial}.`;
+}
+
 export type UserRole = "owner" | "admin" | "member" | "guest";
 
 export type PermissionAction =
@@ -222,8 +244,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (localStorage.getItem("medhit_members_data_v1")) {
           localStorage.removeItem("medhit_members_data_v1");
         }
+        if (localStorage.getItem("medhit_members_data_v2")) {
+          localStorage.removeItem("medhit_members_data_v2");
+        }
 
-        const storedMembers = localStorage.getItem("medhit_members_data_v2");
+        const storedMembers = localStorage.getItem("medhit_members_data_v3");
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -236,34 +261,40 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               if (!emailKey || seenEmails.has(emailKey)) continue;
               seenEmails.add(emailKey);
 
-              // Corrige nomes históricos
+              // Formata nome estritamente no padrão Nome + Inicial do Sobrenome (ex: Lucca G., Thiago G.)
+              const formattedName = formatMemberName(m.name || (emailKey.includes("lucca") ? "Lucca Guidorizzi" : "Membro"));
               const updatedMember: Member = {
                 ...m,
-                name: (m.name || "").toLowerCase().includes("lucca") ? "Lucca Guidorizzi" : m.name,
+                name: formattedName,
                 email: emailKey,
               };
               uniqueList.push(updatedMember);
             }
 
-            // Garante membros oficiais do seed
+            // Garante membros oficiais do seed com nomes formatados
             store.workspace.members.forEach((defMember) => {
               const defEmail = defMember.email.toLowerCase().trim();
               if (!seenEmails.has(defEmail)) {
                 seenEmails.add(defEmail);
-                uniqueList.push(defMember);
+                uniqueList.push({
+                  ...defMember,
+                  name: formatMemberName(defMember.name),
+                });
               }
             });
 
             setMembers(uniqueList);
             store.workspace.members = uniqueList;
-            localStorage.setItem("medhit_members_data_v2", JSON.stringify(uniqueList));
+            localStorage.setItem("medhit_members_data_v3", JSON.stringify(uniqueList));
           } else {
-            setMembers(store.workspace.members);
-            localStorage.setItem("medhit_members_data_v2", JSON.stringify(store.workspace.members));
+            const seedMembers = store.workspace.members.map((m) => ({ ...m, name: formatMemberName(m.name) }));
+            setMembers(seedMembers);
+            localStorage.setItem("medhit_members_data_v3", JSON.stringify(seedMembers));
           }
         } else {
-          setMembers(store.workspace.members);
-          localStorage.setItem("medhit_members_data_v2", JSON.stringify(store.workspace.members));
+          const seedMembers = store.workspace.members.map((m) => ({ ...m, name: formatMemberName(m.name) }));
+          setMembers(seedMembers);
+          localStorage.setItem("medhit_members_data_v3", JSON.stringify(seedMembers));
         }
 
         // Recupera sessão persistida
@@ -383,7 +414,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [areas, hasHydrated]);
 
-  // Persiste members sempre que alterados após hidratação (deduplicando estritamente por e-mail)
+  // Persiste members sempre que alterados após hidratação (deduplicando estritamente por e-mail e aplicando padrão Nome + Inicial)
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
@@ -395,10 +426,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           seen.add(email);
           deduped.push({
             ...m,
-            name: (m.name || "").toLowerCase().includes("lucca") ? "Lucca Guidorizzi" : m.name,
+            name: formatMemberName(m.name),
           });
         }
-        localStorage.setItem("medhit_members_data_v2", JSON.stringify(deduped));
+        localStorage.setItem("medhit_members_data_v3", JSON.stringify(deduped));
         store.workspace.members = deduped;
       } catch (e) {
         console.error("Erro ao salvar membros:", e);
@@ -1502,7 +1533,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const newMember: Member = {
       id: newId,
       workspaceId: store.workspace.id,
-      name: data.name,
+      name: formatMemberName(data.name),
       email: cleanEmail,
       password: pass,
       mcpToken: generatedToken,

@@ -24,7 +24,7 @@ export const agentsService = {
     if (!appr) return null;
 
     appr.status = status;
-    appr.reviewedBy = "Lucca Guidorizzi";
+    appr.reviewedBy = "Lucca G.";
     appr.reviewedAt = new Date().toISOString();
     appr.reviewComment = comment;
 
@@ -34,7 +34,7 @@ export const agentsService = {
       run.events.push({
         id: `ev-${Date.now()}`,
         type: status === "approved" ? "message" : "error",
-        content: `Aprovação humana ${status === "approved" ? "CONCEDIDA" : "REJEITADA"} por Lucca Guidorizzi${comment ? `: "${comment}"` : ""}`,
+        content: `Aprovação humana ${status === "approved" ? "CONCEDIDA" : "REJEITADA"} por Lucca G.${comment ? `: "${comment}"` : ""}`,
         createdAt: new Date().toISOString(),
       });
     }
@@ -43,7 +43,7 @@ export const agentsService = {
       id: `act-${Date.now()}`,
       taskId: appr.taskId,
       actorType: "user",
-      actorName: "Lucca Guidorizzi",
+      actorName: "Lucca G.",
       action: `${status === "approved" ? "aprovou" : "rejeitou"} solicitação do agente ${appr.agentName}`,
       createdAt: new Date().toISOString(),
     });

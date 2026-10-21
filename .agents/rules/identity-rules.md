@@ -10,9 +10,11 @@
 
 ---
 
-## 👤 2. Usuário Principal e Owner
-- **Nome do Usuário Principal:** Estritamente **`Lucca Guidorizzi`** (E-mail: `lucca@medhit.com.br`).
-- **NUNCA** utilizar "Lagana" ou qualquer variação no nome do usuário ou em qualquer perfil.
+## 👤 2. Usuários Principais e Padrão de Nomes
+- **Padrão Obrigatório de Nomenclatura no Workspace:** **Primeiro Nome + Inicial do Sobrenome** (ex: `Lucca G.`, `Thiago G.`).
+- **Owner / Administrador Principal:** **`Lucca G.`** (E-mail: `lucca.guidorizzi@medhit.com.br` / `lucca@medhit.com.br`).
+- **Co-Owner:** **`Thiago G.`** (E-mail: `thiago.ghiraldini@medhit.com.br`).
+- **Proibição Absoluta:** NUNCA utilizar "Lagana" em nenhum ponto do sistema, perfis, tarefas, comentários ou documentação.
 
 ---
 
