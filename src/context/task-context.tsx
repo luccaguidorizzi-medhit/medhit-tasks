@@ -218,53 +218,52 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(store.tasks));
         }
 
-        const storedMembers = localStorage.getItem("medhit_members_data_v1");
+        // Limpa chave legada de membros com duplicações
+        if (localStorage.getItem("medhit_members_data_v1")) {
+          localStorage.removeItem("medhit_members_data_v1");
+        }
+
+        const storedMembers = localStorage.getItem("medhit_members_data_v2");
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const filtered = parsed
-              .filter((m: any) => {
-                const email = (m.email || "").toLowerCase();
-                if (
-                  email === "fillipe@medhit.com.br" ||
-                  email === "mariana.marketing@medhit.com.br" ||
-                  email === "rafael.automacao@medhit.com.br" ||
-                  email === "carlos.convidado@medhit.com.br"
-                ) {
-                  return false;
-                }
-                return true;
-              })
-              .map((m: any) => {
-                if (m.role === "owner" || (m.name || "").toLowerCase().includes("lucca")) {
-                  return { ...m, email: "lucca.guidorizzi@medhit.com.br", password: m.password || "x32kd58" };
-                }
-                if (m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br") {
-                  return { ...m, role: "owner", password: m.password || "x32kd58" };
-                }
-                return m;
-              });
+            // Deduplica estritamente por e-mail e id
+            const seenEmails = new Set<string>();
+            const uniqueList: Member[] = [];
 
-            // Garante que o Thiago Ghiraldini como owner esteja presente
-            const hasThiago = filtered.some((m: any) => m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br");
-            if (!hasThiago) {
-              const thiagoDef = store.workspace.members.find((m) => m.email.toLowerCase() === "thiago.ghiraldini@medhit.com.br");
-              if (thiagoDef) {
-                filtered.push(thiagoDef);
+            for (const m of parsed) {
+              const emailKey = (m.email || "").toLowerCase().trim();
+              if (!emailKey || seenEmails.has(emailKey)) continue;
+              seenEmails.add(emailKey);
+
+              // Corrige nomes históricos
+              const updatedMember: Member = {
+                ...m,
+                name: (m.name || "").toLowerCase().includes("lucca") ? "Lucca Guidorizzi" : m.name,
+                email: emailKey,
+              };
+              uniqueList.push(updatedMember);
+            }
+
+            // Garante membros oficiais do seed
+            store.workspace.members.forEach((defMember) => {
+              const defEmail = defMember.email.toLowerCase().trim();
+              if (!seenEmails.has(defEmail)) {
+                seenEmails.add(defEmail);
+                uniqueList.push(defMember);
               }
-            }
+            });
 
-            if (filtered.length > 0) {
-              setMembers(filtered);
-              store.workspace.members = filtered;
-              localStorage.setItem("medhit_members_data_v1", JSON.stringify(filtered));
-            } else {
-              setMembers(store.workspace.members);
-              localStorage.setItem("medhit_members_data_v1", JSON.stringify(store.workspace.members));
-            }
+            setMembers(uniqueList);
+            store.workspace.members = uniqueList;
+            localStorage.setItem("medhit_members_data_v2", JSON.stringify(uniqueList));
+          } else {
+            setMembers(store.workspace.members);
+            localStorage.setItem("medhit_members_data_v2", JSON.stringify(store.workspace.members));
           }
         } else {
-          localStorage.setItem("medhit_members_data_v1", JSON.stringify(store.workspace.members));
+          setMembers(store.workspace.members);
+          localStorage.setItem("medhit_members_data_v2", JSON.stringify(store.workspace.members));
         }
 
         // Recupera sessão persistida
@@ -384,12 +383,23 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [areas, hasHydrated]);
 
-  // Persiste members sempre que alterados após hidratação
+  // Persiste members sempre que alterados após hidratação (deduplicando estritamente por e-mail)
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_members_data_v1", JSON.stringify(members));
-        store.workspace.members = members;
+        const seen = new Set<string>();
+        const deduped: Member[] = [];
+        for (const m of members) {
+          const email = (m.email || "").toLowerCase().trim();
+          if (!email || seen.has(email)) continue;
+          seen.add(email);
+          deduped.push({
+            ...m,
+            name: (m.name || "").toLowerCase().includes("lucca") ? "Lucca Guidorizzi" : m.name,
+          });
+        }
+        localStorage.setItem("medhit_members_data_v2", JSON.stringify(deduped));
+        store.workspace.members = deduped;
       } catch (e) {
         console.error("Erro ao salvar membros:", e);
       }
@@ -1475,18 +1485,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const cleanEmail = data.email.toLowerCase().trim();
+    const existing = members.find((m) => m.email.toLowerCase().trim() === cleanEmail);
+    if (existing) {
+      toast.info(`O usuário com e-mail ${cleanEmail} já é membro do workspace.`);
+      return;
+    }
+
     const newId = `user-${Date.now()}`;
     const generatedToken =
-      data.email === "lucca@medhit.com.br"
+      cleanEmail === "lucca@medhit.com.br"
         ? "medtask_user_lucca_x32kd58_sec99"
         : `medtask_user_${data.name.toLowerCase().replace(/[^a-z0-9]/g, "")}_${Date.now().toString().slice(-4)}`;
-    const pass = data.initialPassword || (data.email === "lucca@medhit.com.br" ? "x32kd58" : `medhit_${Math.random().toString(36).slice(-6)}`);
+    const pass = data.initialPassword || (cleanEmail === "lucca@medhit.com.br" ? "x32kd58" : `medhit_${Math.random().toString(36).slice(-6)}`);
 
     const newMember: Member = {
       id: newId,
       workspaceId: store.workspace.id,
       name: data.name,
-      email: data.email,
+      email: cleanEmail,
       password: pass,
       mcpToken: generatedToken,
       role: data.role,
