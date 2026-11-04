@@ -23,6 +23,7 @@ import {
   UserCheck,
   Users,
   LogOut,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/settings-modal";
@@ -62,6 +63,7 @@ export function Topbar({
     switchActiveUser,
     members,
     logout,
+    setIsMobileSidebarOpen,
   } = useTasks();
   const isOwner = isOwnerSession;
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -115,6 +117,16 @@ export function Topbar({
       <header className="h-14 border-b border-slate-200 dark:border-sky-500/15 bg-white/80 dark:bg-[#070e1e]/85 backdrop-blur-xl px-6 flex items-center justify-between gap-4 select-none shrink-0 z-20">
         {/* Breadcrumbs Dinâmicos & Contextuais */}
         <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+          {/* Botão Menu Mobile */}
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="md:hidden p-2 -ml-2 rounded-xl text-slate-500 hover:text-sky-500 hover:bg-sky-500/10 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer transition-colors"
+            title="Abrir menu"
+            aria-label="Abrir menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           <Link
             href="/"
             className="text-slate-800 dark:text-slate-200 font-bold flex items-center gap-2 hover:text-sky-500 transition-colors"

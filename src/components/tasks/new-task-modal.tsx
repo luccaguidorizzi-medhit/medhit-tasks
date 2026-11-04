@@ -58,6 +58,7 @@ interface NewTaskModalProps {
     statusId: string;
     priority: "urgent" | "high" | "medium" | "low" | "none";
     taskType: "task" | "bug" | "agent_task";
+    groupId?: string;
     dueDate?: string;
     tags?: string[];
     projectId?: string;
@@ -81,6 +82,7 @@ export function NewTaskModal({
   const [dueDate, setDueDate] = useState<string>("");
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>(currentUser?.id || "");
   const [selectedProjectId, setSelectedProjectId] = useState(currentProjectId);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
 
@@ -105,6 +107,8 @@ export function NewTaskModal({
       const proj = allProjects.find((p) => p.id === initialProjId);
       const projStatuses = proj?.statuses?.length ? proj.statuses : statuses;
       setStatusId(projStatuses[0]?.id || "");
+    setSelectedGroupId(proj?.groups?.[0]?.id || "");
+      setSelectedGroupId(proj?.groups?.[0]?.id || "");
       setSelectedAssigneeId(currentUser?.id || "");
     }
   }, [isOpen, currentProjectId]);
@@ -114,6 +118,7 @@ export function NewTaskModal({
     const proj = allProjects.find((p) => p.id === newProjId);
     const projStatuses = proj?.statuses?.length ? proj.statuses : statuses;
     setStatusId(projStatuses[0]?.id || "");
+    setSelectedGroupId(proj?.groups?.[0]?.id || "");
   };
 
   if (!isOpen) return null;
@@ -163,6 +168,7 @@ export function NewTaskModal({
       statusId: statusId || statuses[0]?.id || "st-todo",
       priority,
       taskType: "task",
+      groupId: selectedGroupId || undefined,
       dueDate: dueDate || undefined,
       tags,
       projectId: selectedProjectId,
@@ -189,12 +195,12 @@ export function NewTaskModal({
   return (
     <div
       onKeyDown={handleKeyDown}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-150"
     >
-      <div className="w-full max-w-lg bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
-        <form onSubmit={handleSubmit} className="flex flex-col">
+      <div className="w-full max-w-lg max-h-[92vh] flex flex-col bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/25 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Header */}
-          <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/60 dark:bg-slate-950/40">
+          <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/60 dark:bg-slate-950/40 shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-slate-900 dark:text-white">
                 Nova Tarefa
@@ -209,7 +215,7 @@ export function NewTaskModal({
             </button>
           </div>
 
-          <div className="p-5 space-y-4">
+          <div className="p-5 space-y-4 flex-1 overflow-y-auto">
             {/* Título */}
             <div className="space-y-1">
               <input
@@ -253,6 +259,27 @@ export function NewTaskModal({
                   ))}
                 </select>
               </div>
+
+              {/* Módulo / Grupo do Projeto */}
+              {currentProjectObj?.groups && currentProjectObj.groups.length > 0 && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    Módulo / Fase
+                  </label>
+                  <select
+                    value={selectedGroupId}
+                    onChange={(e) => setSelectedGroupId(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none cursor-pointer focus:border-sky-500 transition-colors"
+                  >
+                    <option value="">(Sem Grupo)</option>
+                    {currentProjectObj.groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Status Inicial em Pílulas */}
               <div className="space-y-1.5 sm:col-span-2">
@@ -459,7 +486,7 @@ export function NewTaskModal({
           </div>
 
           {/* Footer */}
-          <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+          <div className="px-5 py-3 bg-slate-50 dark:bg-slate-950/60 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-400 font-mono shrink-0">
             <span>
               <kbd className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 font-bold">
                 ⌘

@@ -2,12 +2,13 @@
 
 import React, { useState, useMemo } from "react";
 import { Task, Status } from "@/server/services/data-store";
+import { useTasks } from "@/context/task-context";
 import {
   ChevronLeft,
   ChevronRight,
   Calendar as CalendarIcon,
   Plus,
-  AlertCircle,
+  Play,
   Clock,
   Sparkles,
 } from "lucide-react";
@@ -21,8 +22,13 @@ interface CalendarViewProps {
   onQuickAddTask?: (statusId: string, title: string, dueDate?: string) => void;
 }
 
+interface CalendarEvent {
+  task: Task;
+  kind: "due" | "release";
+}
+
 /**
- * Visão em Calendário Avançada - MedHit Tasks
+ * Visão em Calendário Avançada - MedHit Tasks v2
  * Desenvolvido pela equipe MedHit Integrações & Automações
  */
 export function CalendarView({
@@ -31,6 +37,7 @@ export function CalendarView({
   onTaskClick,
   onQuickAddTask,
 }: CalendarViewProps) {
+  const { currentProject } = useTasks();
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [addingDate, setAddingDate] = useState<string | null>(null);
   const [quickTitle, setQuickTitle] = useState("");
@@ -94,8 +101,7 @@ export function CalendarView({
     // Dias do mês atual
     for (let d = 1; d <= totalDaysInMonth; d++) {
       const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-      const isToday =
-        isCurrentMonthActual && today.getDate() === d;
+      const isToday = isCurrentMonthActual && today.getDate() === d;
       cells.push({
         day: d,
         isCurrentMonth: true,
@@ -104,7 +110,7 @@ export function CalendarView({
       });
     }
 
-    // Preenche os dias restantes da última semana (para totalizar múltiplos de 7, máx 42)
+    // Preenche os dias restantes da última semana
     const totalCells = Math.ceil(cells.length / 7) * 7;
     let nextMonthDay = 1;
     while (cells.length < (totalCells < 35 ? 35 : totalCells)) {
@@ -122,24 +128,35 @@ export function CalendarView({
     return cells;
   }, [year, month, isCurrentMonthActual, today]);
 
-  // Indexação de tarefas por data (YYYY-MM-DD)
-  const tasksByDate = useMemo(() => {
-    const map = new Map<string, Task[]>();
+  // Indexação de eventos por data (YYYY-MM-DD) incluindo dueDate e customFields.releaseDate
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+
+    const addEvent = (dateKey: string, task: Task, kind: "due" | "release") => {
+      if (!map.has(dateKey)) map.set(dateKey, []);
+      map.get(dateKey)!.push({ task, kind });
+    };
 
     tasks.forEach((t) => {
-      let key = "";
+      let hasDate = false;
       if (t.dueDate) {
-        key = t.dueDate.includes("T") ? t.dueDate.split("T")[0] : t.dueDate.slice(0, 10);
-      } else {
-        // Fallback: distribui pelo dia de criação ou hoje
+        hasDate = true;
+        const key = t.dueDate.includes("T") ? t.dueDate.split("T")[0] : t.dueDate.slice(0, 10);
+        addEvent(key, t, "due");
+      }
+      if (t.customFields?.releaseDate) {
+        hasDate = true;
+        const key = t.customFields.releaseDate.includes("T")
+          ? t.customFields.releaseDate.split("T")[0]
+          : t.customFields.releaseDate.slice(0, 10);
+        addEvent(key, t, "release");
+      }
+      // Se não tiver data de vencimento nem liberação, distribui na data de criação
+      if (!hasDate) {
         const d = new Date(t.createdAt || Date.now());
-        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        addEvent(key, t, "due");
       }
-
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-      map.get(key)!.push(t);
     });
 
     return map;
@@ -161,6 +178,10 @@ export function CalendarView({
   const statusMap = useMemo(() => {
     return new Map(statuses.map((s) => [s.id, s]));
   }, [statuses]);
+
+  const groupMap = useMemo(() => {
+    return new Map((currentProject?.groups || []).map((g) => [g.id, g]));
+  }, [currentProject]);
 
   return (
     <div className="rounded-2xl border border-slate-200 dark:border-sky-500/20 bg-white/80 dark:bg-[#0c1830]/80 backdrop-blur-xl shadow-lg p-5 space-y-4 select-none">
@@ -212,14 +233,19 @@ export function CalendarView({
         </div>
       </div>
 
-      {/* Grid de Dias */}
-      <div className="border border-slate-200 dark:border-sky-500/20 rounded-xl overflow-hidden bg-slate-100/50 dark:bg-slate-950/40">
+      {/* Grade do Calendário */}
+      <div className="overflow-x-auto">
         {/* Cabeçalho dos Dias da Semana */}
-        <div className="grid grid-cols-7 border-b border-slate-200 dark:border-white/5 text-center bg-slate-100 dark:bg-slate-900/60">
-          {daysOfWeek.map((day) => (
+        <div className="grid grid-cols-7 gap-1.5 text-center mb-1">
+          {daysOfWeek.map((day, idx) => (
             <div
               key={day}
-              className="py-2 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
+              className={cn(
+                "py-1 text-[11px] font-mono uppercase font-bold",
+                idx === 0 || idx === 6
+                  ? "text-slate-400 dark:text-slate-500"
+                  : "text-slate-600 dark:text-slate-300"
+              )}
             >
               {day}
             </div>
@@ -227,25 +253,30 @@ export function CalendarView({
         </div>
 
         {/* Células dos Dias */}
-        <div className="grid grid-cols-7 divide-x divide-y divide-slate-200 dark:divide-white/5">
+        <div className="grid grid-cols-7 gap-1.5 min-w-[700px]">
           {calendarGrid.map((cell) => {
-            const dayTasks = tasksByDate.get(cell.dateKey) || [];
+            const dayEvents = eventsByDate.get(cell.dateKey) || [];
 
             return (
               <div
                 key={cell.dateKey}
+                onClick={() => {
+                  setAddingDate(cell.dateKey);
+                  setQuickTitle("");
+                }}
                 className={cn(
-                  "min-h-[110px] p-2 flex flex-col justify-between transition-colors relative group",
+                  "min-h-[110px] p-1.5 rounded-xl border flex flex-col justify-between transition-all group relative cursor-pointer",
                   cell.isCurrentMonth
-                    ? "bg-white/40 dark:bg-[#070e1e]/40 hover:bg-sky-500/5"
-                    : "bg-slate-100/30 dark:bg-slate-950/40 opacity-40 hover:opacity-70",
-                  cell.isToday && "bg-sky-500/10 dark:bg-sky-500/15 ring-1 ring-inset ring-sky-500/40"
+                    ? "bg-white/40 dark:bg-white/[0.02] border-slate-200/80 dark:border-white/5 hover:border-sky-500/30"
+                    : "bg-slate-50/40 dark:bg-slate-950/20 border-transparent opacity-40 hover:opacity-70",
+                  cell.isToday && "ring-2 ring-sky-500/50 bg-sky-500/5 dark:bg-sky-500/10"
                 )}
               >
-                {/* Header da Célula: Número do Dia + Botão + */}
+                {/* Topo da Célula: Número do Dia + Botão Rápido Add */}
                 <div className="flex items-center justify-between">
                   {onQuickAddTask && (
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAddingDate(cell.dateKey);
@@ -262,7 +293,7 @@ export function CalendarView({
                     className={cn(
                       "text-xs font-mono px-1.5 py-0.5 rounded-full ml-auto font-medium",
                       cell.isToday
-                        ? "bg-sky-500 text-slate-950 font-bold shadow-sm shadow-sky-500/30"
+                        ? "bg-sky-500 text-slate-950 font-bold shadow-xs shadow-sky-500/30"
                         : "text-slate-600 dark:text-slate-400"
                     )}
                   >
@@ -301,31 +332,46 @@ export function CalendarView({
                   </form>
                 )}
 
-                {/* Lista de Tarefas do Dia com Badges de Prioridade & Status */}
+                {/* Lista de Eventos do Dia */}
                 <div className="space-y-1 my-1 overflow-y-auto max-h-[75px] scrollbar-thin">
-                  {dayTasks.map((t) => {
+                  {dayEvents.map((ev, evIdx) => {
+                    const t = ev.task;
                     const statusObj = statusMap.get(t.statusId);
                     const statusColor = statusObj?.color || "#38bdf8";
+                    const isRelease = ev.kind === "release";
+                    const taskGroup = t.groupId ? groupMap.get(t.groupId) : null;
 
                     return (
                       <div
-                        key={t.id}
-                        onClick={() => onTaskClick(t)}
-                        className="p-1 px-1.5 rounded-md bg-white dark:bg-[#0c1830] border border-slate-200 dark:border-white/10 hover:border-sky-500/40 shadow-2xs text-[10px] flex items-center gap-1.5 transition-all cursor-pointer group/item truncate"
+                        key={`${t.id}-${ev.kind}-${evIdx}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTaskClick(t);
+                        }}
+                        className={cn(
+                          "p-1 px-1.5 rounded-md border shadow-2xs text-[10px] flex items-center gap-1.5 transition-all cursor-pointer group/item truncate",
+                          isRelease
+                            ? "bg-purple-500/10 dark:bg-purple-950/40 border-purple-500/30 text-purple-700 dark:text-purple-300"
+                            : "bg-white dark:bg-[#0c1830] border-slate-200 dark:border-white/10 hover:border-sky-500/40 text-slate-800 dark:text-slate-200"
+                        )}
+                        title={isRelease ? `Liberação de Conteúdo: ${t.title}` : `Prazo: ${t.title}`}
                       >
-                        {/* Indicador de Prioridade */}
-                        {renderPriorityBadge(t.priority)}
+                        {isRelease ? (
+                          <Play className="h-2.5 w-2.5 text-purple-400 shrink-0" />
+                        ) : (
+                          renderPriorityBadge(t.priority)
+                        )}
 
-                        {/* Status Dot */}
+                        {/* Status ou Group Dot */}
                         <span
                           className="h-1.5 w-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: statusColor }}
-                          title={statusObj?.name || "Status"}
+                          style={{ backgroundColor: taskGroup?.color || statusColor }}
+                          title={taskGroup?.name || statusObj?.name || "Status"}
                         />
 
-                        {/* Título da Tarefa */}
-                        <span className="truncate font-medium text-slate-800 dark:text-slate-200 group-hover/item:text-sky-400">
-                          {t.title}
+                        {/* Título */}
+                        <span className="truncate font-medium group-hover/item:text-sky-400">
+                          {isRelease ? `[Aula] ${t.title}` : t.title}
                         </span>
                       </div>
                     );
@@ -334,9 +380,9 @@ export function CalendarView({
 
                 {/* Rodapé da Célula */}
                 <div className="text-[9px] font-mono text-slate-400 flex items-center justify-between">
-                  {dayTasks.length > 0 && (
+                  {dayEvents.length > 0 && (
                     <span>
-                      {dayTasks.length} {dayTasks.length === 1 ? "tarefa" : "tarefas"}
+                      {dayEvents.length} {dayEvents.length === 1 ? "evento" : "eventos"}
                     </span>
                   )}
                 </div>
@@ -348,7 +394,7 @@ export function CalendarView({
 
       {/* Legenda do Calendário */}
       <div className="pt-2 flex items-center justify-between flex-wrap gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_4px_#f43f5e]" />
             <span>Urgente</span>
@@ -358,17 +404,17 @@ export function CalendarView({
             <span>Alta</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-sky-400" />
-            <span>Média</span>
+            <span className="h-2 w-2 rounded-full bg-purple-500" />
+            <span>Liberação de Aula</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-slate-400" />
-            <span>Baixa</span>
+            <span className="h-2 w-2 rounded-full bg-sky-400" />
+            <span>Prazo de Entrega</span>
           </div>
         </div>
 
         <span className="font-mono text-[10px] text-slate-400">
-          MedHit Integrações & Automações • Calendário Dinâmico
+          Equipe MedHit I&A • Calendário Monday v2
         </span>
       </div>
     </div>

@@ -28,7 +28,7 @@ export function DeleteBoardModal({ isOpen, onClose, project }: DeleteBoardModalP
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150">
       <div className="w-full max-w-md bg-white dark:bg-[#081226] border border-rose-500/30 rounded-2xl text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-4 px-6 border-b border-rose-500/20 flex items-center justify-between bg-rose-500/5">

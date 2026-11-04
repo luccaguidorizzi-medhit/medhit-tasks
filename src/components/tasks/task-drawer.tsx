@@ -43,6 +43,13 @@ import {
   Tag,
   Lock,
   UserCheck,
+  ExternalLink,
+  Layers,
+  Video,
+  Play,
+  ArrowUpRight,
+  FolderTree,
+  GraduationCap,
 } from "lucide-react";
 import { Task, Status, Member, Agent } from "@/server/services/data-store";
 import { Button } from "@/components/ui/button";
@@ -118,7 +125,7 @@ export function TaskDrawer({
   const [tagInput, setTagInput] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
 
-  const { hasPermission, areas, currentUser, isTaskVisibleForCurrentUser, isAiConfigured } = useTasks();
+  const { hasPermission, areas, currentUser, isTaskVisibleForCurrentUser, isAiConfigured, tasks, setSelectedTask } = useTasks();
   const isGuest = currentUser.role === "guest";
   const isVisible = task ? isTaskVisibleForCurrentUser(task) : false;
   const isAssignedToUser = Boolean(
@@ -138,6 +145,9 @@ export function TaskDrawer({
   const taskProject = taskArea?.projects.find((p) => p.id === task.projectId);
   const taskAreaName = taskArea?.name || "Equipe Geral";
   const taskProjectName = taskProject?.name || "Projeto Geral";
+  const parentTask = task.parentId ? tasks.find((t) => t.id === task.parentId) : null;
+  const childTasks = tasks.filter((t) => t.parentId === task.id);
+  const groups = taskProject?.groups || [];
 
   // Se for convidado e a tarefa não for permitida
   if (!isVisible) {
@@ -343,7 +353,7 @@ export function TaskDrawer({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="h-8 w-8 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg"
+              className="h-9 w-9 min-h-[44px] min-w-[44px] text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-lg flex items-center justify-center cursor-pointer"
               title="Fechar painel (Esc)"
             >
               <X className="h-4 w-4" />
@@ -352,9 +362,9 @@ export function TaskDrawer({
         </div>
 
         {/* Layout de Conteúdo: Coluna Principal + Coluna de Propriedades */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
           {/* COLUNA ESQUERDA: TÍTULO, DESCRIÇÃO, CHECKLIST, ORIENTAÇÕES, COMENTÁRIOS */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 md:overflow-y-auto p-4 sm:p-6 space-y-6">
             {/* Banner Informativo para Usuários Convidados */}
             {isGuest && (
               <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2.5 text-xs text-amber-700 dark:text-amber-400">
@@ -364,6 +374,27 @@ export function TaskDrawer({
                 </span>
               </div>
             )}
+            {/* Link para Tarefa-Pai (se for Subtarefa) */}
+            {parentTask && (
+              <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 flex items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Layers className="h-4 w-4 text-sky-400 shrink-0" />
+                  <span className="text-slate-400">Subitem de:</span>
+                  <span className="font-bold text-sky-500 dark:text-sky-300 truncate">
+                    {parentTask.title}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTask(parentTask)}
+                  className="text-xs font-semibold text-sky-500 hover:text-sky-400 underline flex items-center gap-1 shrink-0 cursor-pointer"
+                >
+                  <span>Abrir Item-Pai</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Título da Demanda */}
             <div className="space-y-1">
               <label className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 font-bold tracking-wider">
@@ -494,6 +525,65 @@ export function TaskDrawer({
               </div>
             </div>
 
+            {/* Subtarefas & Aulas Vinculadas (se houver) */}
+            {childTasks.length > 0 && (
+              <div className="space-y-3 p-4 rounded-2xl bg-slate-50/70 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FolderTree className="h-4 w-4 text-sky-400" />
+                    <span className="text-xs font-bold text-slate-900 dark:text-white">
+                      Subtarefas & Aulas ({childTasks.length})
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {childTasks.filter((ct) => ct.statusId?.includes("done") || ct.customFields?.secondaryStatus === "Feito" || ct.customFields?.secondaryStatus === "Concluído").length} concluídas
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {childTasks.map((ct) => {
+                    const ctStatus = statuses.find((s) => s.id === ct.statusId);
+                    return (
+                      <div
+                        key={ct.id}
+                        onClick={() => setSelectedTask(ct)}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/60 dark:border-white/5 bg-white dark:bg-[#0c1830]/50 hover:border-sky-500/40 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          {ct.customFields?.areaTag && (
+                            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-400 shrink-0">
+                              {ct.customFields.areaTag}
+                            </span>
+                          )}
+                          <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate group-hover:text-sky-400">
+                            {ct.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {ct.customFields?.durationText && (
+                            <span className="text-[10px] font-mono text-slate-400">
+                              {ct.customFields.durationText}
+                            </span>
+                          )}
+                          <span
+                            className="px-2 py-0.5 rounded text-[10px] font-bold"
+                            style={{
+                              backgroundColor: `${ctStatus?.color || "#38bdf8"}20`,
+                              color: ctStatus?.color || "#38bdf8",
+                            }}
+                          >
+                            {ctStatus?.name || "Pendente"}
+                          </span>
+                          <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 group-hover:text-sky-400 transition-colors" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Conversas & Histórico da Tarefa */}
             <div className="space-y-3 pt-2">
               <label className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 font-bold tracking-wider flex items-center gap-1.5">
@@ -560,10 +650,36 @@ export function TaskDrawer({
           </div>
 
           {/* COLUNA DIREITA: PROPRIEDADES (STATUS, PRIORIDADE, MEMBROS, PRAZO, ESTIMATIVA) */}
-          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 p-5 space-y-5 select-none shrink-0 overflow-y-auto">
+          <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-slate-950/40 p-4 sm:p-5 space-y-5 select-none shrink-0 md:overflow-y-auto">
             <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block">
               Propriedades da Demanda
             </span>
+
+            {/* Grupo / Módulo / Fase */}
+            {groups.length > 0 && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Grupo / Módulo
+                </label>
+                <select
+                  disabled={!canEditTask}
+                  value={task.groupId || ""}
+                  onChange={(e) => {
+                    const newGroupId = e.target.value || undefined;
+                    onUpdateTask(task.id, { groupId: newGroupId });
+                    toast.success("Grupo da tarefa atualizado!");
+                  }}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs cursor-pointer"
+                >
+                  <option value="">(Sem Grupo)</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* 1. Status Dropdown */}
             <div className="space-y-1.5 relative">
@@ -961,6 +1077,176 @@ export function TaskDrawer({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* 6. Campos Especializados (Produção & Conteúdo v2) */}
+            <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-white/10">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-bold block">
+                Produção & Mídia (v2)
+              </span>
+
+              {/* Área Temática */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                  <GraduationCap className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Grande Área Médica</span>
+                </label>
+                <div className="flex gap-1 flex-wrap">
+                  {(["CIR", "GO", "PED", "PREV", "CLI"] as const).map((area) => (
+                    <button
+                      key={area}
+                      type="button"
+                      disabled={!canEditTask}
+                      onClick={() => {
+                        const current = task.customFields?.areaTag;
+                        const next = current === area ? undefined : area;
+                        onUpdateTask(task.id, {
+                          customFields: { ...task.customFields, areaTag: next },
+                        });
+                        toast.success(next ? `Área definida: ${area}` : "Área removida");
+                      }}
+                      className={cn(
+                        "px-2 py-0.5 rounded text-[10px] font-mono font-bold border transition-all cursor-pointer",
+                        task.customFields?.areaTag === area
+                          ? "bg-sky-500 text-slate-950 border-sky-500 shadow-xs"
+                          : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-sky-500"
+                      )}
+                    >
+                      {area}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Docente / Professor */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  Professor / Docente
+                </label>
+                <input
+                  type="text"
+                  disabled={!canEditTask}
+                  defaultValue={Array.isArray(task.customFields?.professors) ? task.customFields.professors.join(", ") : ""}
+                  onBlur={(e) => {
+                    if (!canEditTask) return;
+                    onUpdateTask(task.id, {
+                      customFields: { ...task.customFields, professors: e.target.value.split(",").map((p) => p.trim()).filter(Boolean) },
+                    });
+                    toast.success("Docente atualizado!");
+                  }}
+                  placeholder="Ex: Dra. Camila S."
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs"
+                />
+              </div>
+
+              {/* Data de Liberação */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  Data de Liberação aos Alunos
+                </label>
+                <input
+                  type="date"
+                  disabled={!canEditTask}
+                  value={task.customFields?.releaseDate ? String(task.customFields.releaseDate).split("T")[0] : ""}
+                  onChange={(e) => {
+                    if (!canEditTask) return;
+                    onUpdateTask(task.id, {
+                      customFields: { ...task.customFields, releaseDate: e.target.value || undefined },
+                    });
+                    toast.success("Data de liberação atualizada!");
+                  }}
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs"
+                />
+              </div>
+
+              {/* Duração Estimada / Gravada */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                  Duração da Aula
+                </label>
+                <input
+                  type="text"
+                  disabled={!canEditTask}
+                  defaultValue={task.customFields?.durationText || ""}
+                  onBlur={(e) => {
+                    if (!canEditTask) return;
+                    onUpdateTask(task.id, {
+                      customFields: { ...task.customFields, durationText: e.target.value.trim() },
+                    });
+                    toast.success("Duração atualizada!");
+                  }}
+                  placeholder="Ex: 45 min ou 1h 20m"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs font-mono"
+                />
+              </div>
+
+              {/* Link do Google Drive */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    Materiais (Drive)
+                  </label>
+                  {task.customFields?.driveUrl && (
+                    <a
+                      href={task.customFields.driveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-sky-500 hover:text-sky-400 flex items-center gap-0.5"
+                    >
+                      <span>Abrir</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  disabled={!canEditTask}
+                  defaultValue={task.customFields?.driveUrl || ""}
+                  onBlur={(e) => {
+                    if (!canEditTask) return;
+                    onUpdateTask(task.id, {
+                      customFields: { ...task.customFields, driveUrl: e.target.value.trim() },
+                    });
+                    toast.success("Link do Drive salvo!");
+                  }}
+                  placeholder="https://drive.google.com/..."
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs truncate font-mono text-[11px]"
+                />
+              </div>
+
+              {/* Link do Panda Video */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                    Vídeo da Aula (Panda)
+                  </label>
+                  {task.customFields?.videoUrl && (
+                    <a
+                      href={task.customFields.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-emerald-500 hover:text-emerald-400 flex items-center gap-0.5"
+                    >
+                      <Play className="h-3 w-3" />
+                      <span>Assistir</span>
+                    </a>
+                  )}
+                </div>
+                <input
+                  type="url"
+                  disabled={!canEditTask}
+                  defaultValue={task.customFields?.videoUrl || ""}
+                  onBlur={(e) => {
+                    if (!canEditTask) return;
+                    onUpdateTask(task.id, {
+                      customFields: { ...task.customFields, videoUrl: e.target.value.trim() },
+                    });
+                    toast.success("Link do Panda Vídeo salvo!");
+                  }}
+                  placeholder="https://pandavideo.com.br/..."
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-sky-500 shadow-xs truncate font-mono text-[11px]"
+                />
+              </div>
             </div>
           </div>
         </div>

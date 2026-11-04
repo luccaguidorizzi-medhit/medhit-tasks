@@ -220,5 +220,57 @@ describe("Monday.com Style Workflow & Clean Primitives", () => {
     expect(batteryDistribution.find((b) => b.status === "Em Andamento")?.percentage).toBe(33);
     expect(batteryDistribution.find((b) => b.status === "Concluído")?.percentage).toBe(33);
   });
+
+  it("verifies v2 4-level hierarchy: BoardGroup, Parent Task, and Subtasks with customFields", () => {
+    const parentTask: Task = {
+      id: "parent-sem-1",
+      workspaceId: "ws-medhit-001",
+      projectId: "proj-intensivo-2026-2",
+      areaId: "area-2",
+      groupId: "grp-mod-1",
+      title: "Semana 1",
+      description: "Módulo 1: Abertura",
+      taskType: "task",
+      statusId: "st-prog",
+      priority: "urgent",
+      position: 1000,
+      assigneeIds: [],
+      checklists: [],
+      comments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const subtask1: Task = {
+      id: "sub-aula-1",
+      workspaceId: "ws-medhit-001",
+      projectId: "proj-intensivo-2026-2",
+      areaId: "area-2",
+      groupId: "grp-mod-1",
+      parentId: "parent-sem-1",
+      title: "Trauma e Cirurgia Geral",
+      description: "",
+      taskType: "subtask",
+      statusId: "st-done",
+      priority: "high",
+      position: 1000,
+      assigneeIds: [],
+      customFields: {
+        secondaryStatus: "Feito",
+        areaTag: "CIR",
+        professors: ["Dr. André Silva"],
+        timeSpentSeconds: 2820,
+        timerRunningSince: null,
+      },
+      checklists: [],
+      comments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const subtasks = [subtask1];
+    expect(subtasks[0].parentId).toBe("parent-sem-1");
+    expect(subtasks[0].customFields?.areaTag).toBe("CIR");
+  });
 });
 

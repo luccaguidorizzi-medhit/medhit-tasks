@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTasks } from "@/context/task-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
@@ -13,6 +13,10 @@ import { DeleteBoardModal } from "@/components/boards/delete-board-modal";
 
 function MedhitShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const segments = (pathname || "").split("/").filter(Boolean);
+  const globalRoutes = ["settings", "members", "squads", "agents", "approvals", "automations", "today", "login"];
+  const isProjectRoute = segments.length >= 2 && !globalRoutes.includes(segments[0]);
   const {
     currentArea,
     currentProject,
@@ -71,13 +75,15 @@ function MedhitShell({ children }: { children: React.ReactNode }) {
       {/* Área de Conteúdo Principal */}
       <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         {/* Topbar Global */}
-        <Topbar
+        {!isProjectRoute && (
+          <Topbar
           areaSlug={currentArea?.slug || ""}
           areaName={currentArea?.name || ""}
           projectSlug={currentProject?.slug || ""}
           projectName={currentProject?.name || ""}
           onOpenNewTask={() => setIsNewTaskModalOpen(true)}
         />
+        )}
 
         {/* Viewport da Página */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

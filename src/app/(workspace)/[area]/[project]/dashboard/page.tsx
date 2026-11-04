@@ -22,6 +22,7 @@ import {
   BarChart3,
   Users,
   Flame,
+  Layers,
 } from "lucide-react";
 import { ProjectToolbar } from "@/components/layout/project-toolbar";
 import { EducationalTooltip } from "@/components/ui/tooltip";
@@ -160,6 +161,95 @@ export default function ProjectDashboardPage({ params }: ProjectDashboardPagePro
             </div>
           </div>
         </div>
+
+        {/* Progresso por Grupo / Módulo (Monday Group Aggregations) */}
+        {activeProject.groups && activeProject.groups.length > 0 && (
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-[#0c1830]/80 backdrop-blur-xl p-5 shadow-xs space-y-4">
+            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center gap-2">
+              <Layers className="h-4 w-4 text-sky-500" />
+              <span>Progresso por Módulo / Grupo</span>
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-1">
+              {activeProject.groups.map((grp) => {
+                const groupTasks = projectTasks.filter((t) => t.groupId === grp.id);
+                const totalGrp = groupTasks.length;
+                const doneGrp = groupTasks.filter((t) => {
+                  const s = statuses.find((st) => st.id === t.statusId);
+                  return (
+                    s?.category === "done" ||
+                    t.customFields?.secondaryStatus === "Feito" ||
+                    t.customFields?.secondaryStatus === "Concluído"
+                  );
+                }).length;
+                const inProgGrp = groupTasks.filter((t) => {
+                  const s = statuses.find((st) => st.id === t.statusId);
+                  return (
+                    s?.category === "in_progress" ||
+                    t.customFields?.secondaryStatus === "Edição" ||
+                    t.customFields?.secondaryStatus === "Gravando"
+                  );
+                }).length;
+                const todoGrp = Math.max(0, totalGrp - doneGrp - inProgGrp);
+
+                const pctDone = totalGrp > 0 ? Math.round((doneGrp / totalGrp) * 100) : 0;
+                const pctInProg = totalGrp > 0 ? Math.round((inProgGrp / totalGrp) * 100) : 0;
+                const pctTodo = totalGrp > 0 ? Math.max(0, 100 - pctDone - pctInProg) : 0;
+
+                const grpHours = groupTasks.reduce((acc, t) => acc + (t.storyPoints || 0), 0);
+
+                return (
+                  <div
+                    key={grp.id}
+                    className="p-4 rounded-xl border border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: grp.color }} />
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {grp.name}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono text-slate-400 font-semibold">
+                        {doneGrp}/{totalGrp} concluídos
+                      </span>
+                    </div>
+
+                    {/* Barra de Progresso Segmentada */}
+                    <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden flex">
+                      {pctDone > 0 && (
+                        <div
+                          className="h-full bg-emerald-500 transition-all duration-300"
+                          style={{ width: `${pctDone}%` }}
+                          title={`Concluído: ${pctDone}%`}
+                        />
+                      )}
+                      {pctInProg > 0 && (
+                        <div
+                          className="h-full bg-amber-500 transition-all duration-300"
+                          style={{ width: `${pctInProg}%` }}
+                          title={`Em Andamento: ${pctInProg}%`}
+                        />
+                      )}
+                      {pctTodo > 0 && (
+                        <div
+                          className="h-full bg-slate-300 dark:bg-white/20 transition-all duration-300"
+                          style={{ width: `${pctTodo}%` }}
+                          title={`Pendente: ${pctTodo}%`}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                      <span>{pctDone}% Concluído</span>
+                      {grpHours > 0 && <span>{grpHours}h estimadas</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Grid Principal: Rollup por Status e Alocação da Equipe */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -34,7 +34,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4 sm:p-6 bg-black/70 backdrop-blur-md animate-in fade-in duration-200 select-none">
       <div
         className="w-full max-w-4xl max-h-[88vh] rounded-2xl bg-white dark:bg-[#081226] border border-slate-200 dark:border-sky-500/30 shadow-2xl flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}

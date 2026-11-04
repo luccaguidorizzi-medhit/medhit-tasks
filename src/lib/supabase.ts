@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
-import type { Task } from "@/server/services/data-store";
+import type { Task, TaskCustomFields } from "@/server/services/data-store";
 
 export const supabase = createClient(
   env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,13 +9,33 @@ export const supabase = createClient(
 
 /**
  * Converte um registro do banco medtask_tasks (snake_case) para a interface Task (camelCase)
+ * Inclui desserialização defensiva para campos v2 (groupId, customFields) sem quebrar dados legados
  */
 export function mapRowToTask(row: any): Task {
+  let groupId: string | undefined = row.group_id || undefined;
+  let customFields: TaskCustomFields | undefined = undefined;
+  let aiContextText: string | undefined = row.ai_context || undefined;
+
+  // Desserialização defensiva de metadados v2
+  if (row.ai_context && typeof row.ai_context === "string" && row.ai_context.trim().startsWith("{")) {
+    try {
+      const parsed = JSON.parse(row.ai_context);
+      if (parsed && typeof parsed === "object" && parsed.__medhit_v2) {
+        groupId = parsed.groupId || groupId;
+        customFields = parsed.customFields || undefined;
+        aiContextText = parsed.originalText || undefined;
+      }
+    } catch {
+      // Ignora erro de JSON e mantém aiContextText original
+    }
+  }
+
   return {
     id: row.id,
     workspaceId: row.workspace_id || "ws-medhit-001",
     projectId: row.project_id,
     areaId: row.area_id,
+    groupId,
     title: row.title,
     description: row.description || "",
     taskType: row.task_type || "task",
@@ -31,7 +51,8 @@ export function mapRowToTask(row: any): Task {
     dueDate: row.due_date || undefined,
     estimatedHours: row.estimated_hours ? Number(row.estimated_hours) : undefined,
     storyPoints: row.story_points ? Number(row.story_points) : undefined,
-    aiContext: row.ai_context || undefined,
+    aiContext: aiContextText,
+    customFields,
     tags: Array.isArray(row.tags) ? row.tags : [],
     checklists: Array.isArray(row.checklists) ? row.checklists : [],
     comments: Array.isArray(row.comments) ? row.comments : [],
@@ -42,6 +63,7 @@ export function mapRowToTask(row: any): Task {
 
 /**
  * Converte um objeto Task (camelCase) para o formato do banco medtask_tasks (snake_case)
+ * Serializa de forma compatível os campos v2
  */
 export function mapTaskToRow(task: Partial<Task>): Record<string, any> {
   const row: Record<string, any> = {};
@@ -65,12 +87,23 @@ export function mapTaskToRow(task: Partial<Task>): Record<string, any> {
   if (task.dueDate !== undefined) row.due_date = task.dueDate;
   if (task.estimatedHours !== undefined) row.estimated_hours = task.estimatedHours;
   if (task.storyPoints !== undefined) row.story_points = task.storyPoints;
-  if (task.aiContext !== undefined) row.ai_context = task.aiContext;
   if (task.tags !== undefined) row.tags = task.tags;
   if (task.checklists !== undefined) row.checklists = task.checklists;
   if (task.comments !== undefined) row.comments = task.comments;
   if (task.createdAt !== undefined) row.created_at = task.createdAt;
   if (task.updatedAt !== undefined) row.updated_at = task.updatedAt;
+
+  // Se houver groupId ou customFields, serializa com flag v2
+  if (task.groupId !== undefined || task.customFields !== undefined) {
+    row.ai_context = JSON.stringify({
+      __medhit_v2: true,
+      groupId: task.groupId,
+      customFields: task.customFields,
+      originalText: task.aiContext || "",
+    });
+  } else if (task.aiContext !== undefined) {
+    row.ai_context = task.aiContext;
+  }
 
   return row;
 }

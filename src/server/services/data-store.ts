@@ -87,11 +87,34 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface BoardGroup {
+  id: string;
+  projectId: string;
+  name: string;
+  color: string;
+  position: number;
+  collapsed?: boolean;
+}
+
+export interface TaskCustomFields {
+  secondaryStatus?: string;
+  pillStatus?: string;
+  areaTag?: string;
+  professors?: string[];
+  releaseDate?: string;
+  timeSpentSeconds?: number;
+  timerRunningSince?: string | null;
+  driveUrl?: string;
+  videoUrl?: string;
+  durationText?: string;
+}
+
 export interface Task {
   id: string;
   workspaceId: string;
   projectId: string;
   areaId: string;
+  groupId?: string;
   title: string;
   description: string;
   taskType: "task" | "bug" | "story" | "epic" | "subtask" | "agent_task";
@@ -108,6 +131,7 @@ export interface Task {
   estimatedHours?: number;
   storyPoints?: number;
   aiContext?: string;
+  customFields?: TaskCustomFields;
   tags?: string[];
   checklists: Checklist[];
   comments: Comment[];
@@ -139,6 +163,8 @@ export interface Project {
   icon: string;
   color: string;
   methodology: "simple" | "kanban" | "scrum" | "scrumban";
+  template?: "general" | "content_production";
+  groups?: BoardGroup[];
   statuses: Status[];
   sprints: Sprint[];
 }

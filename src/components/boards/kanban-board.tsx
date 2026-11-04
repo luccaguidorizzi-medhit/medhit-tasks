@@ -11,10 +11,12 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { Status, Task } from "@/server/services/data-store";
+import { useTasks } from "@/context/task-context";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
-import { Plus, Folder } from "lucide-react";
+import { Plus, Folder, Layers, ListFilter } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface KanbanBoardProps {
   statuses: Status[];
@@ -33,8 +35,11 @@ export function KanbanBoard({
   onQuickAddTask,
   onOpenNewTaskModal,
 }: KanbanBoardProps) {
+  const { currentProject } = useTasks();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [filterTag, setFilterTag] = useState<string>("all");
+  const [filterGroup, setFilterGroup] = useState<string>("all");
+  const [showOnlyParents, setShowOnlyParents] = useState<boolean>(true);
 
   // Lista de tags únicas
   const availableTags = React.useMemo(() => {
@@ -47,12 +52,28 @@ export function KanbanBoard({
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [tasks]);
 
+  const groups = currentProject?.groups || [];
+
   const filteredTasks = React.useMemo(() => {
-    if (filterTag === "all") return tasks;
-    return tasks.filter((t) =>
-      (t.tags || []).some((tg) => tg.toLowerCase() === filterTag.toLowerCase())
-    );
-  }, [tasks, filterTag]);
+    return tasks.filter((t) => {
+      // Filtro de hierarquia: apenas pais vs todos
+      if (showOnlyParents && t.parentId) {
+        return false;
+      }
+      // Filtro de grupo
+      if (filterGroup !== "all" && t.groupId !== filterGroup) {
+        return false;
+      }
+      // Filtro de tag
+      if (filterTag !== "all") {
+        const matchesTag = (t.tags || []).some(
+          (tg) => tg.toLowerCase() === filterTag.toLowerCase()
+        );
+        if (!matchesTag) return false;
+      }
+      return true;
+    });
+  }, [tasks, showOnlyParents, filterGroup, filterTag]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -97,54 +118,112 @@ export function KanbanBoard({
       if (task && task.statusId !== overTask.statusId) {
         onMoveTask(activeTaskId, overTask.statusId);
         const statusObj = statuses.find((s) => s.id === overTask.statusId);
-        toast.success(`Tarefa movida para "${statusObj?.name || 'novo status'}"`);
+        toast.success(`Tarefa movida para "${statusObj?.name || "novo status"}"`);
       }
     }
   };
 
   return (
     <div className="flex flex-col h-full gap-3">
-      {/* Barra de Filtro de Pastas / Tags no Quadro */}
-      {availableTags.length > 0 && (
-        <div className="flex items-center gap-2 px-1 flex-wrap shrink-0">
-          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Folder className="h-3.5 w-3.5 text-sky-400" />
-            <span className="font-mono text-[11px]">Pastas:</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFilterTag("all")}
-            className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
-              filterTag === "all"
-                ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
-                : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
-            }`}
-          >
-            Todas
-          </button>
-          {availableTags.map((tg) => (
+      {/* Barra Superior de Controles e Filtros do Quadro Kanban */}
+      <div className="flex items-center justify-between gap-3 px-1 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Toggle de Hierarquia: Apenas Itens-Pai vs Todos */}
+          <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs">
             <button
-              key={tg}
               type="button"
-              onClick={() => setFilterTag(tg)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer border ${
-                filterTag === tg
-                  ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
-                  : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
-              }`}
+              onClick={() => setShowOnlyParents(true)}
+              className={cn(
+                "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer flex items-center gap-1.5",
+                showOnlyParents
+                  ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-xs"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
             >
-              #{tg}
+              <Layers className="h-3 w-3" />
+              <span>Itens-Pai</span>
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setShowOnlyParents(false)}
+              className={cn(
+                "px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer flex items-center gap-1.5",
+                !showOnlyParents
+                  ? "bg-white dark:bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold shadow-xs"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-200"
+              )}
+            >
+              <ListFilter className="h-3 w-3" />
+              <span>Todos (com Subitens)</span>
+            </button>
+          </div>
+
+          {/* Filtro por Grupo/Fase (se houver grupos no projeto) */}
+          {groups.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <select
+                value={filterGroup}
+                onChange={(e) => setFilterGroup(e.target.value)}
+                className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-200 outline-none cursor-pointer hover:border-sky-500/50 transition-colors"
+              >
+                <option value="all">Todos os Grupos / Módulos</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Filtro de Pastas / Tags */}
+          {availableTags.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                <Folder className="h-3 w-3 text-sky-400" />
+              </span>
+              <button
+                type="button"
+                onClick={() => setFilterTag("all")}
+                className={cn(
+                  "px-2 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer border",
+                  filterTag === "all"
+                    ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
+                    : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
+                )}
+              >
+                Todas
+              </button>
+              {availableTags.map((tg) => (
+                <button
+                  key={tg}
+                  type="button"
+                  onClick={() => setFilterTag(tg)}
+                  className={cn(
+                    "px-2 py-0.5 rounded-md text-xs font-mono transition-all cursor-pointer border",
+                    filterTag === tg
+                      ? "bg-sky-500/15 text-sky-400 border-sky-500/30 font-bold"
+                      : "bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent hover:text-slate-200"
+                  )}
+                >
+                  #{tg}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+
+        <div className="text-[11px] font-mono text-slate-400 font-semibold">
+          {filteredTasks.length} {filteredTasks.length === 1 ? "demanda" : "demandas"}
+        </div>
+      </div>
 
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 items-stretch select-none pr-6">
+        <div className="flex gap-4 overflow-x-auto pb-4 flex-1 items-stretch select-none pr-6 touch-pan-x scrollbar-thin">
           {statuses.map((status) => {
             const columnTasks = filteredTasks.filter((t) => t.statusId === status.id);
             return (
@@ -160,28 +239,28 @@ export function KanbanBoard({
             );
           })}
 
-        {/* Botão lateral "Add Task" pontilhado como na imagem de referência */}
-        <div className="shrink-0 w-64 h-32 pt-1">
-          <button
-            onClick={onOpenNewTaskModal}
-            className="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-sky-500/20 hover:border-sky-400 bg-white/20 dark:bg-[#081226]/30 hover:bg-sky-500/5 flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-sky-400 transition-all cursor-pointer group"
-          >
-            <div className="h-8 w-8 rounded-full border border-slate-300 dark:border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center">
-              <Plus className="h-4 w-4" />
-            </div>
-            <span className="text-xs font-semibold">Nova Tarefa</span>
-          </button>
-        </div>
-      </div>
-
-      <DragOverlay>
-        {activeTask && (
-          <div className="rotate-2 scale-105 shadow-2xl opacity-90">
-            <KanbanCard task={activeTask} onClick={() => {}} />
+          {/* Botão lateral "Nova Tarefa" pontilhado */}
+          <div className="shrink-0 w-64 h-32 pt-1">
+            <button
+              onClick={onOpenNewTaskModal}
+              className="w-full h-full rounded-2xl border-2 border-dashed border-slate-300 dark:border-sky-500/20 hover:border-sky-400 bg-white/20 dark:bg-[#081226]/30 hover:bg-sky-500/5 flex flex-col items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:text-sky-400 transition-all cursor-pointer group"
+            >
+              <div className="h-8 w-8 rounded-full border border-slate-300 dark:border-sky-500/30 group-hover:border-sky-400 flex items-center justify-center">
+                <Plus className="h-4 w-4" />
+              </div>
+              <span className="text-xs font-semibold">Nova Tarefa</span>
+            </button>
           </div>
-        )}
-      </DragOverlay>
-    </DndContext>
+        </div>
+
+        <DragOverlay>
+          {activeTask && (
+            <div className="rotate-2 scale-105 shadow-2xl opacity-90">
+              <KanbanCard task={activeTask} onClick={() => {}} />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }

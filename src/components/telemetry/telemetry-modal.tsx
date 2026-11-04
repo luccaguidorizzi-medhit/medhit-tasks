@@ -60,7 +60,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
 
   if (!canView) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
+      <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-150">
         <div className="w-full max-w-md bg-white/95 dark:bg-[#081226]/95 border border-rose-500/30 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
           <div className="h-12 w-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 mx-auto flex items-center justify-center">
             <Lock className="h-6 w-6" />
@@ -150,7 +150,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150">
-      <div className="w-full max-w-4xl bg-white/95 dark:bg-[#081226]/95 border border-slate-200 dark:border-sky-500/25 rounded-3xl text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+      <div className="w-full max-w-4xl bg-white/95 dark:bg-[#081226]/95 border border-slate-200 dark:border-sky-500/25 rounded-3xl text-slate-900 dark:text-slate-100 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="p-4 px-6 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-100/50 dark:bg-slate-950/40 shrink-0">
           <div className="flex items-center gap-3">

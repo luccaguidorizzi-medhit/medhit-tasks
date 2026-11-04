@@ -1,12 +1,13 @@
 /**
- * MedHit Integrações & Automações
- * Sidebar de Navegação Simplificada e Pragmática (Estilo Monday.com).
+ * MedHit WorkTrack v2 - Sidebar de Navegação (Padrão Monday.com)
+ * Mantido por: Equipe MedHit I&A
  * 
- * 3 seções limpas e objetivas:
- * 1. Início & Minhas Tarefas
- * 2. Projetos & Quadros com menu de contexto
- * 3. Membros, Configurações e Rodapé
- * Assinado por: MedHit Integrações & Automações
+ * Seções estruturadas:
+ * 1. Brand Header + Seletor de Time / Workspace (Área ativa)
+ * 2. Navegação Pessoal (Início & Minhas Tarefas)
+ * 3. Quadros do Time Ativo com Ações Rápidas (+ Novo Quadro, Context Menu)
+ * 4. Alternador Rápido de Times / Outros Espaços
+ * 5. Rodapé com Perfil do Usuário e Configurações
  */
 
 "use client";
@@ -18,25 +19,23 @@ import {
   LayoutDashboard,
   CalendarCheck2,
   FolderKanban,
-  Folder,
   Plus,
-  Users,
   Settings,
   ExternalLink,
   Copy,
   Trash2,
   Check,
-  MoreVertical,
   Lock,
-  Layers,
   HelpCircle,
-  BookOpen,
+  ChevronDown,
+  Layers,
+  Sparkles,
+  X,
+  Menu,
 } from "lucide-react";
 import { useTasks } from "@/context/task-context";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { telemetry } from "@/lib/telemetry";
-import { EducationalTooltip } from "@/components/ui/tooltip";
 import { HelpModal } from "@/components/help/help-modal";
 
 interface SidebarProps {
@@ -68,15 +67,28 @@ export function Sidebar({
   const {
     tasks,
     areas,
+    currentArea,
     currentUser,
     hasPermission,
     setIsNewBoardModalOpen,
     setBoardToDelete,
     setIsDeleteBoardModalOpen,
+    isMobileSidebarOpen,
+    setIsMobileSidebarOpen,
   } = useTasks();
 
   const canCreateBoard = hasPermission("create_board");
   const canDeleteBoard = hasPermission("delete_board");
+
+  // Time / Área ativa no seletor
+  const activeArea =
+    currentArea ||
+    areas.find((a) => a.slug === currentAreaSlug) ||
+    areas.find((a) => pathname.includes(`/${a.slug}/`)) ||
+    areas[0];
+
+  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false);
+  const workspaceMenuRef = useRef<HTMLDivElement>(null);
 
   // Estado do Menu de Contexto
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -91,19 +103,28 @@ export function Sidebar({
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [pathname, setIsMobileSidebarOpen]);
+
+  // Fecha menus ao clicar fora
+  useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
         setContextMenu((prev) => ({ ...prev, isOpen: false }));
+      }
+      if (workspaceMenuRef.current && !workspaceMenuRef.current.contains(e.target as Node)) {
+        setIsWorkspaceMenuOpen(false);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setContextMenu((prev) => ({ ...prev, isOpen: false }));
+        setIsWorkspaceMenuOpen(false);
       }
     };
 
-    if (contextMenu.isOpen) {
+    if (contextMenu.isOpen || isWorkspaceMenuOpen) {
       document.addEventListener("mousedown", handleOutsideClick);
       document.addEventListener("keydown", handleKeyDown);
       window.addEventListener("scroll", () => setContextMenu((prev) => ({ ...prev, isOpen: false })), true);
@@ -113,9 +134,9 @@ export function Sidebar({
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [contextMenu.isOpen]);
+  }, [contextMenu.isOpen, isWorkspaceMenuOpen]);
 
-  const handleBoardContextMenu = (e: React.MouseEvent, proj: any) => {
+  const handleBoardContextMenu = (e: React.MouseEvent, proj: any, area: any) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -128,7 +149,14 @@ export function Sidebar({
       isOpen: true,
       x,
       y,
-      project: proj,
+      project: {
+        id: proj.id,
+        name: proj.name,
+        slug: proj.slug,
+        areaSlug: area.slug,
+        areaName: area.name,
+        color: proj.color || area.color,
+      },
     });
   };
 
@@ -146,7 +174,7 @@ export function Sidebar({
 
     navigator.clipboard.writeText(fullUrl);
     setCopiedLink(true);
-    toast.success("Link do projeto copiado!");
+    toast.success("Link do quadro copiado!");
 
     setTimeout(() => {
       setCopiedLink(false);
@@ -157,7 +185,7 @@ export function Sidebar({
   const handleDeleteBoard = () => {
     if (!contextMenu.project) return;
     if (!canDeleteBoard) {
-      toast.error("Apenas administradores podem excluir projetos.");
+      toast.error("Apenas administradores podem excluir quadros.");
       setContextMenu((prev) => ({ ...prev, isOpen: false }));
       return;
     }
@@ -180,40 +208,91 @@ export function Sidebar({
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
   };
 
-  // Pastas/Tags por projeto extraídas das tarefas existentes
-  const [collapsedSpaces, setCollapsedSpaces] = useState<Record<string, boolean>>({});
+  // Contagem de tarefas atribuídas ao usuário ativo
+  const myPendingTasksCount = tasks.filter((t) => {
+    const isAssigned = (t.assigneeIds || []).some(
+      (a) => a.id === currentUser?.id || a.name?.toLowerCase() === currentUser?.name?.toLowerCase()
+    );
+    const isCompleted = t.statusId === "st-obra-4" || t.statusId === "st-conteudo-4" || t.statusId?.includes("done");
+    return isAssigned && !isCompleted;
+  }).length;
 
-  const toggleSpaceCollapse = (spaceSlug: string) => {
-    setCollapsedSpaces((prev) => ({
-      ...prev,
-      [spaceSlug]: !prev[spaceSlug],
-    }));
-  };
-
-  return (
+  const renderSidebarBody = () => (
     <>
-      <aside className="w-64 border-r border-slate-200 dark:border-sky-500/15 bg-white/95 dark:bg-[#070e1e]/95 backdrop-blur-2xl flex flex-col h-screen select-none shrink-0 z-20">
-        {/* Brand Header */}
-        <div className="p-3.5 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="h-8 w-8 rounded-xl bg-sky-500/10 border border-sky-500/20 p-1 flex items-center justify-center shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
-              <img
-                src="/logo.svg"
-                alt="MedHit Logo"
-                className="h-full w-full object-contain"
+        {/* Seletor de Time / Workspace no Topo (Estilo Monday) */}
+        <div className="p-2 border-b border-slate-200/80 dark:border-white/5 relative" ref={workspaceMenuRef}>
+          <button
+            type="button"
+            onClick={() => setIsWorkspaceMenuOpen(!isWorkspaceMenuOpen)}
+            className="w-full flex items-center justify-between p-2 rounded-lg bg-slate-100/80 dark:bg-white/[0.04] hover:bg-slate-200/70 dark:hover:bg-white/[0.08] transition-colors text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-2 truncate">
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs"
+                style={{ backgroundColor: activeArea?.color || "#0ea5e9" }}
               />
-            </div>
-            <div>
-              <div className="font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-1">
-                <span>Medhit WorkTrack</span>
+              <div className="truncate">
+                <p className="text-[10px] uppercase font-mono tracking-wider text-slate-400 font-semibold">
+                  Espaço de Trabalho
+                </p>
+                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                  {activeArea?.name || "Geral"}
+                </p>
               </div>
             </div>
-          </Link>
+            <ChevronDown className={cn("h-3.5 w-3.5 text-slate-400 transition-transform", isWorkspaceMenuOpen && "rotate-180")} />
+          </button>
+
+          {/* Dropdown de Alternância de Times */}
+          {isWorkspaceMenuOpen && (
+            <div className="absolute top-full left-2 right-2 mt-1 z-50 rounded-xl bg-white dark:bg-[#0b1528] border border-slate-200 dark:border-sky-500/30 p-1.5 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-100">
+              <p className="px-2 py-1 text-[10px] font-mono uppercase text-slate-400 font-semibold border-b border-slate-100 dark:border-white/5 mb-1">
+                Selecione o Time / Squad
+              </p>
+              <div className="space-y-0.5 max-h-56 overflow-y-auto">
+                {areas.map((a) => {
+                  const isSelected = a.slug === activeArea?.slug;
+                  const firstBoard = a.projects?.[0];
+                  return (
+                    <button
+                      key={a.slug}
+                      type="button"
+                      onClick={() => {
+                        setIsWorkspaceMenuOpen(false);
+                        if (firstBoard) {
+                          router.push(`/${a.slug}/${firstBoard.slug}/table`);
+                        } else {
+                          router.push(`/${a.slug}`);
+                        }
+                      }}
+                      className={cn(
+                        "w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer text-left",
+                        isSelected
+                          ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
+                          : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ backgroundColor: a.color || "#0ea5e9" }}
+                        />
+                        <span className="truncate">{a.name}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">
+                        {a.projects?.length || 0} quadros
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Corpo da Navegação */}
-        <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
-          {/* Seção 1: Início & Tarefas */}
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+          {/* Seção 1: Acesso Rápido Pessoal */}
           <div className="space-y-0.5">
             <Link
               href="/"
@@ -226,7 +305,7 @@ export function Sidebar({
             >
               <LayoutDashboard
                 className={cn(
-                  "h-4 w-4",
+                  "h-3.5 w-3.5",
                   pathname === "/" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
                 )}
               />
@@ -236,230 +315,253 @@ export function Sidebar({
             <Link
               href="/today"
               className={cn(
-                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
+                "flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
                 pathname === "/today"
                   ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
               )}
             >
-              <CalendarCheck2
-                className={cn(
-                  "h-4 w-4",
-                  pathname === "/today" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
-                )}
-              />
-              <span>Minhas Tarefas</span>
+              <div className="flex items-center gap-2.5">
+                <CalendarCheck2
+                  className={cn(
+                    "h-3.5 w-3.5",
+                    pathname === "/today" ? "text-sky-500 dark:text-sky-400" : "text-slate-400 dark:text-slate-500"
+                  )}
+                />
+                <span>Minhas Tarefas</span>
+              </div>
+              {myPendingTasksCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-sky-500/20 text-sky-600 dark:text-sky-300 font-bold">
+                  {myPendingTasksCount}
+                </span>
+              )}
             </Link>
           </div>
 
-          {/* Seção 2: Espaços & Pastas (Padrão ClickUp) */}
-          <div className="space-y-3">
-            <div className="px-2.5 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+          {/* Seção 2: Quadros do Time Ativo (Padrão Monday) */}
+          <div className="space-y-1.5">
+            <div className="px-2 flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold">
               <div className="flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-sky-500" />
-                <span>Espaços</span>
+                <FolderKanban className="h-3.5 w-3.5 text-sky-500" />
+                <span>Quadros ({activeArea?.projects?.length || 0})</span>
               </div>
               {canCreateBoard && (
                 <button
                   type="button"
                   onClick={() => setIsNewBoardModalOpen(true)}
                   className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500 transition-colors cursor-pointer"
-                  title="Criar novo espaço / projeto"
+                  title="Criar novo quadro no time"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
               )}
             </div>
 
-            <div className="space-y-2">
-              {areas.map((area) => {
-                const isSpaceCollapsed = !!collapsedSpaces[area.slug];
-                const areaProject = area.projects[0];
-                const projectSlug = areaProject?.slug || area.slug;
-
-                // Extrai pastas definidas no espaço (ClickUp) combinadas com tags das tarefas
-                const areaTasks = tasks.filter((t) => t.areaId === area.slug || t.areaId === (area as any).id || t.projectId === areaProject?.id);
-                const folderTagsMap = new Map<string, number>();
-
-                // 1. Adiciona as pastas oficiais do espaço
-                (area.folders || []).forEach((f) => {
-                  const clean = f.trim();
-                  if (clean) folderTagsMap.set(clean, 0);
-                });
-
-                // 2. Conta as ocorrências pelas tarefas
-                areaTasks.forEach((t) => {
-                  (t.tags || []).forEach((tag) => {
-                    const clean = tag.trim();
-                    if (clean) {
-                      folderTagsMap.set(clean, (folderTagsMap.get(clean) || 0) + 1);
-                    }
-                  });
-                });
-                const folderTags = Array.from(folderTagsMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-
-                const isCurrentSpace = pathname.includes(`/${area.slug}/`);
+            <div className="space-y-0.5">
+              {(activeArea?.projects || []).map((proj) => {
+                const isCurrentProject = pathname.includes(`/${activeArea.slug}/${proj.slug}`);
+                const boardTasks = tasks.filter((t) => t.projectId === proj.id && !t.parentId);
 
                 return (
-                  <div key={area.slug} className="space-y-1">
-                    {/* Espaço Header */}
-                    <div className="flex items-center justify-between px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors group">
-                      <button
-                        type="button"
-                        onClick={() => toggleSpaceCollapse(area.slug)}
-                        className="flex items-center gap-2 text-left truncate flex-1 cursor-pointer"
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs"
-                          style={{ backgroundColor: area.color || "#38bdf8" }}
-                        />
-                        <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                          {area.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          ({areaTasks.length})
-                        </span>
-                      </button>
+                  <div
+                    key={proj.id}
+                    onContextMenu={(e) => handleBoardContextMenu(e, proj, activeArea)}
+                    className="group flex items-center justify-between rounded-lg transition-colors"
+                  >
+                    <Link
+                      href={`/${activeArea.slug}/${proj.slug}/table`}
+                      className={cn(
+                        "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all flex-1 truncate",
+                        isCurrentProject
+                          ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold shadow-xs"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+                      )}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: proj.color || activeArea.color || "#38bdf8" }}
+                      />
+                      <span className="truncate">{proj.name}</span>
+                    </Link>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Link
-                          href={`/${area.slug}/${projectSlug}/table`}
-                          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-sky-500"
-                          title="Abrir quadro geral"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
-                      </div>
+                    <div className="flex items-center gap-1 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {boardTasks.length}
+                      </span>
                     </div>
-
-                    {/* Pastas dentro do Espaço */}
-                    {!isSpaceCollapsed && (
-                      <div className="pl-3.5 pr-1 space-y-0.5 border-l border-slate-200 dark:border-white/10 ml-3">
-                        {/* Ver tudo deste espaço */}
-                        <Link
-                          href={`/${area.slug}/${projectSlug}/table`}
-                          className={cn(
-                            "flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-medium transition-colors",
-                            isCurrentSpace && !pathname.includes("tag=") && !pathname.includes("folder=")
-                              ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                          )}
-                        >
-                          <div className="flex items-center gap-1.5 truncate">
-                            <FolderKanban className="h-3 w-3 text-slate-400" />
-                            <span className="truncate">Todas as Tarefas</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-mono">{areaTasks.length}</span>
-                        </Link>
-
-                        {/* Lista de Pastas (Tags) */}
-                        {folderTags.map(([tag, count]) => {
-                          const isTagActive = isCurrentSpace && (pathname.includes(`tag=${encodeURIComponent(tag)}`) || (typeof window !== "undefined" && window.location.search.includes(encodeURIComponent(tag))));
-                          return (
-                            <Link
-                              key={tag}
-                              href={`/${area.slug}/${projectSlug}/table?tag=${encodeURIComponent(tag)}`}
-                              className={cn(
-                                "flex items-center justify-between px-2 py-1 rounded-md text-[11px] transition-colors group/folder",
-                                isTagActive
-                                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
-                              )}
-                            >
-                              <div className="flex items-center gap-1.5 truncate">
-                                <Folder className="h-3 w-3 text-amber-500/80 shrink-0" />
-                                <span className="truncate">{tag}</span>
-                              </div>
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400">
-                                {count}
-                              </span>
-                            </Link>
-                          );
-                        })}
-
-                        {/* Botão de Nova Pasta rápido */}
-                        <Link
-                          href={`/${area.slug}/${projectSlug}/table`}
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] text-slate-400 hover:text-sky-500 transition-colors"
-                        >
-                          <Plus className="h-2.5 w-2.5" />
-                          <span>+ Nova Pasta</span>
-                        </Link>
-                      </div>
-                    )}
                   </div>
                 );
               })}
-            </div>
 
-            {canCreateBoard && (
-              <div className="pt-1">
-                <EducationalTooltip
-                  title="Criar Novo Espaço"
-                  description="Crie uma nova grande área ou esteira de projetos no workspace institucional."
-                >
-                  <button
-                    type="button"
-                    onClick={() => setIsNewBoardModalOpen(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-sky-500/25 hover:border-sky-500/50 hover:bg-sky-500/5 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-300 text-[11px] font-medium transition-all cursor-pointer"
-                  >
-                    <Plus className="h-3 w-3" />
-                    <span>+ Novo Espaço</span>
-                  </button>
-                </EducationalTooltip>
-              </div>
-            )}
+              {(!activeArea?.projects || activeArea.projects.length === 0) && (
+                <p className="px-2 py-2 text-[11px] text-slate-400 italic">
+                  Nenhum quadro criado neste time.
+                </p>
+              )}
+            </div>
           </div>
+
+          {/* Seção 3: Outros Times (Acesso Rápido) */}
+          {areas.filter((a) => a.slug !== activeArea?.slug).length > 0 && (
+            <div className="pt-2 border-t border-slate-200/70 dark:border-white/5 space-y-1">
+              <div className="px-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1">
+                <Layers className="h-3 w-3" />
+                <span>Outros Espaços</span>
+              </div>
+              <div className="space-y-0.5">
+                {areas
+                  .filter((a) => a.slug !== activeArea?.slug)
+                  .map((otherArea) => {
+                    const firstBoard = otherArea.projects?.[0];
+                    return (
+                      <Link
+                        key={otherArea.slug}
+                        href={firstBoard ? `/${otherArea.slug}/${firstBoard.slug}/table` : `/${otherArea.slug}`}
+                        className="flex items-center justify-between px-2.5 py-1 rounded-lg text-xs text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.04] transition-colors"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <span
+                            className="h-1.5 w-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: otherArea.color || "#94a3b8" }}
+                          />
+                          <span className="truncate text-[11px]">{otherArea.name}</span>
+                        </div>
+                        <span className="text-[9px] font-mono text-slate-400">
+                          {otherArea.projects?.length || 0}
+                        </span>
+                      </Link>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Seção 3: Rodapé com Central de Ajuda & Configurações */}
-        <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1">
-          {/* Botão Central de Ajuda & Guia */}
-          <EducationalTooltip
-            title="Central de Ajuda & Guia"
-            description="Documentação e passo a passo explicativo para novos usuários e equipes."
-          >
-            <button
-              type="button"
-              onClick={() => setIsHelpModalOpen(true)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-300 hover:bg-sky-500/10 transition-all cursor-pointer text-left"
-            >
-              <HelpCircle className="h-4 w-4 text-sky-500" />
-              <span>Ajuda & Documentação</span>
-            </button>
-          </EducationalTooltip>
-
-          {/* Configurações */}
-          <EducationalTooltip
-            title="Configurações do Workspace"
-            description="Gerenciamento de membros, permissões institucionais e preferências."
-          >
+        {/* Rodapé: Perfil, Configurações e Assinatura MedHit */}
+        <div className="p-2.5 border-t border-slate-200 dark:border-sky-500/15 space-y-1.5">
+          <div className="flex items-center justify-between px-1">
             <Link
               href="/settings"
               className={cn(
-                "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all",
-                pathname === "/settings"
-                  ? "bg-sky-500/15 text-sky-600 dark:text-sky-300 font-semibold"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.04]"
+                "flex items-center gap-2 text-xs font-medium transition-colors text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
+                pathname === "/settings" && "text-sky-500 font-semibold"
               )}
             >
-              <Settings className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+              <Settings className="h-3.5 w-3.5" />
               <span>Configurações</span>
             </Link>
-          </EducationalTooltip>
 
-          {/* Assinatura no Rodapé */}
-          <div className="pt-2 border-t border-slate-100 dark:border-white/5 px-2 text-[10px] text-slate-400 flex flex-col gap-0.5 font-mono">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">Medhit WorkTrack</span>
-              <span className="text-sky-500 font-bold text-[9px]">v1.0</span>
+            <button
+              type="button"
+              onClick={() => setIsHelpModalOpen(true)}
+              className="p-1 rounded text-slate-400 hover:text-sky-500 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+              title="Ajuda e Documentação"
+            >
+              <HelpCircle className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Card do Usuário Logado */}
+          <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5">
+            <img
+              src={currentUser?.avatarUrl || "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca"}
+              alt={currentUser?.name || "Usuário"}
+              className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0"
+            />
+            <div className="truncate flex-1 min-w-0">
+              <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
+                {currentUser?.name || "Lucca G."}
+              </p>
+              <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                {currentUser?.role === "owner" ? "Proprietário" : currentUser?.role || "Membro"}
+              </p>
             </div>
-            <span className="text-[9px] text-slate-400 dark:text-slate-500 truncate">
-              by Integrações & Automações
-            </span>
+          </div>
+
+          {/* Assinatura Corporativa Obrigatória MedHit */}
+          <div className="pt-1 px-1 flex items-center justify-between text-[9px] font-mono text-slate-400">
+            <span>MedHit WorkTrack</span>
+            <span className="text-sky-500 font-semibold">Equipe MedHit I&A</span>
           </div>
         </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Sidebar Desktop */}
+      <aside className="hidden md:flex w-60 border-r border-slate-200 dark:border-sky-500/15 bg-white/95 dark:bg-[#070e1e]/95 backdrop-blur-2xl flex-col h-screen select-none shrink-0 z-20">
+        {/* Brand Header Desktop */}
+        <div className="p-3 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/20 p-1 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+              <img
+                src="/logo.svg"
+                alt="MedHit Logo"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div>
+              <div className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+                <span>MedHit WorkTrack</span>
+                <span className="px-1 py-0.2 rounded text-[9px] font-mono bg-sky-500/15 text-sky-600 dark:text-sky-400 font-semibold">
+                  v2.0
+                </span>
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {renderSidebarBody()}
       </aside>
+
+      {/* Drawer Mobile (Overlay com Backdrop - mobile-design) */}
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 md:hidden animate-in fade-in duration-150">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-slate-200 dark:border-sky-500/25 bg-white dark:bg-[#070e1e] shadow-2xl flex flex-col h-screen z-50 animate-in slide-in-from-left duration-200 select-none">
+            {/* Brand Header Mobile com Botão Fechar de 44px */}
+            <div className="p-3 border-b border-slate-200 dark:border-sky-500/15 flex items-center justify-between">
+              <Link
+                href="/"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="flex items-center gap-2 group"
+              >
+                <div className="h-7 w-7 rounded-lg bg-sky-500/10 border border-sky-500/20 p-1 flex items-center justify-center shadow-xs">
+                  <img
+                    src="/logo.svg"
+                    alt="MedHit Logo"
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div>
+                  <div className="font-bold text-xs tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>MedHit WorkTrack</span>
+                    <span className="px-1 py-0.2 rounded text-[9px] font-mono bg-sky-500/15 text-sky-600 dark:text-sky-400 font-semibold">
+                      v2.0
+                    </span>
+                  </div>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+                title="Fechar menu"
+                aria-label="Fechar menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {renderSidebarBody()}
+          </aside>
+        </div>
+      )}
 
       {/* Modal de Ajuda & Documentação */}
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
@@ -487,7 +589,7 @@ export function Sidebar({
               className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-sky-500/10 hover:text-sky-600 dark:hover:text-sky-300 transition-colors cursor-pointer text-left"
             >
               <ExternalLink className="h-3.5 w-3.5 text-sky-500" />
-              <span>Abrir Projeto</span>
+              <span>Abrir Quadro</span>
             </button>
 
             <button
@@ -499,7 +601,7 @@ export function Sidebar({
               ) : (
                 <Copy className="h-3.5 w-3.5 text-slate-400" />
               )}
-              <span>{copiedLink ? "Link Copiado!" : "Copiar Link do Projeto"}</span>
+              <span>{copiedLink ? "Link Copiado!" : "Copiar Link"}</span>
             </button>
 
             <div className="my-1 border-t border-slate-200/60 dark:border-white/5" />
@@ -515,7 +617,7 @@ export function Sidebar({
               )}
             >
               {canDeleteBoard ? <Trash2 className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-              <span>{canDeleteBoard ? "Excluir Projeto" : "Excluir (Restrito)"}</span>
+              <span>{canDeleteBoard ? "Excluir Quadro" : "Excluir (Restrito)"}</span>
             </button>
           </div>
         </div>

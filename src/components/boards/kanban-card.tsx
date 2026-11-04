@@ -72,7 +72,17 @@ const PRIORITY_CONFIG: Record<
 };
 
 export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardProps) {
-  const { deleteTask, hasPermission } = useTasks();
+  const { deleteTask, hasPermission, tasks, currentProject } = useTasks();
+  const taskGroup = currentProject?.groups?.find((g) => g.id === task.groupId);
+  const subtasks = tasks.filter((t) => t.parentId === task.id);
+  const doneSubtasksCount = subtasks.filter(
+    (st) =>
+      st.statusId === "st-obra-4" ||
+      st.statusId === "st-conteudo-4" ||
+      st.customFields?.secondaryStatus === "Feito" ||
+      st.customFields?.secondaryStatus === "Concluído" ||
+      st.statusId?.includes("done")
+  ).length;
   const canDelete = hasPermission("delete_task");
   const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
@@ -159,6 +169,19 @@ export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardPr
       {/* Linha Superior: Prioridade, Tags & Ação de Mover */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-1.5 flex-wrap">
+          {taskGroup && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white shadow-xs"
+              style={{ backgroundColor: taskGroup.color }}
+            >
+              <span>{taskGroup.name}</span>
+            </span>
+          )}
+          {task.customFields?.areaTag && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-sky-500/15 text-sky-600 dark:text-sky-300 border border-sky-500/30">
+              {task.customFields.areaTag}
+            </span>
+          )}
           <span
             className={cn(
               "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border",
@@ -240,6 +263,23 @@ export function KanbanCard({ task, onClick, statuses, onMoveTask }: KanbanCardPr
       {/* Título da Demanda */}
       <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-snug mb-3 group-hover:text-sky-500 transition-colors">
         {task.title}
+      </h3>
+
+      {subtasks.length > 0 && (
+        <div className="mb-2.5 p-1.5 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-200/50 dark:border-white/5">
+          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
+            <span>{subtasks.length} subitens</span>
+            <span>{doneSubtasksCount}/{subtasks.length}</span>
+          </div>
+          <div className="h-1.5 w-full bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-300"
+              style={{ width: `${Math.round((doneSubtasksCount / subtasks.length) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+      <h3 className="hidden">
       </h3>
 
       {/* Rodapé: Prazo, Checklist & Responsáveis */}

@@ -20,6 +20,8 @@ import {
   Project,
   Area,
   Comment,
+  BoardGroup,
+  TaskCustomFields,
   store,
 } from "@/server/services/data-store";
 import { toast } from "sonner";
@@ -128,6 +130,8 @@ interface TaskContextType {
   isNewBoardModalOpen: boolean;
   isNewTeamModalOpen: boolean;
   isDeleteBoardModalOpen: boolean;
+  isMobileSidebarOpen: boolean;
+  setIsMobileSidebarOpen: (open: boolean) => void;
   boardToDelete: Project | null;
   setSelectedTask: (task: Task | null) => void;
   setIsNewTaskModalOpen: (open: boolean) => void;
@@ -142,6 +146,11 @@ interface TaskContextType {
   createProject: (data: { name: string; description?: string; areaSlug: string; color?: string; methodology?: "kanban" | "scrum" | "simple" }) => Project;
   deleteProject: (projectId: string) => void;
   updateProject: (projectId: string, updates: Partial<Project>) => void;
+  createGroup: (projectId: string, name: string, color?: string) => BoardGroup | null;
+  updateGroup: (projectId: string, groupId: string, updates: Partial<BoardGroup>) => void;
+  deleteGroup: (projectId: string, groupId: string) => void;
+  createSubtask: (parentId: string, title: string, initialFields?: Partial<Task>) => Task | null;
+  toggleTaskTimer: (taskId: string) => void;
   createTeam: (data: { name: string; description?: string; color?: string; icon?: string }) => Area;
   updateTeam: (teamId: string, updates: Partial<Area>) => void;
   deleteTeam: (teamId: string) => void;
@@ -190,6 +199,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [isNewTeamModalOpen, setIsNewTeamModalOpen] = useState(false);
   const [isDeleteBoardModalOpen, setIsDeleteBoardModalOpen] = useState(false);
   const [boardToDelete, setBoardToDelete] = useState<Project | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Flag para controle de hidratação e persistência em localStorage
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -209,8 +219,17 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         if (localStorage.getItem("medhit_areas_data_v2")) {
           localStorage.removeItem("medhit_areas_data_v2");
         }
+        if (localStorage.getItem("medhit_areas_data_v3")) {
+          localStorage.removeItem("medhit_areas_data_v3");
+        }
+        if (localStorage.getItem("medhit_tasks_data_v3")) {
+          localStorage.removeItem("medhit_tasks_data_v3");
+        }
+        if (localStorage.getItem("medhit_members_data_v3")) {
+          localStorage.removeItem("medhit_members_data_v3");
+        }
 
-        const storedAreas = localStorage.getItem("medhit_areas_data_v3");
+        const storedAreas = localStorage.getItem("medhit_v2_areas");
         if (storedAreas) {
           const parsed = JSON.parse(storedAreas);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -218,14 +237,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             store.workspace.areas = parsed;
           } else {
             setAreas(store.workspace.areas);
-            localStorage.setItem("medhit_areas_data_v3", JSON.stringify(store.workspace.areas));
+            localStorage.setItem("medhit_v2_areas", JSON.stringify(store.workspace.areas));
           }
         } else {
           setAreas(store.workspace.areas);
-          localStorage.setItem("medhit_areas_data_v3", JSON.stringify(store.workspace.areas));
+          localStorage.setItem("medhit_v2_areas", JSON.stringify(store.workspace.areas));
         }
 
-        const storedTasks = localStorage.getItem("medhit_tasks_data_v3");
+        const storedTasks = localStorage.getItem("medhit_v2_tasks");
         if (storedTasks) {
           const parsed = JSON.parse(storedTasks);
           if (Array.isArray(parsed)) {
@@ -233,11 +252,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             store.tasks = parsed;
           } else {
             setTasks(store.tasks);
-            localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(store.tasks));
+            localStorage.setItem("medhit_v2_tasks", JSON.stringify(store.tasks));
           }
         } else {
           setTasks(store.tasks);
-          localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(store.tasks));
+          localStorage.setItem("medhit_v2_tasks", JSON.stringify(store.tasks));
         }
 
         // Limpa chave legada de membros com duplicações
@@ -248,7 +267,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem("medhit_members_data_v2");
         }
 
-        const storedMembers = localStorage.getItem("medhit_members_data_v3");
+        const storedMembers = localStorage.getItem("medhit_v2_members");
         if (storedMembers) {
           const parsed = JSON.parse(storedMembers);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -285,16 +304,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
             setMembers(uniqueList);
             store.workspace.members = uniqueList;
-            localStorage.setItem("medhit_members_data_v3", JSON.stringify(uniqueList));
+            localStorage.setItem("medhit_v2_members", JSON.stringify(uniqueList));
           } else {
             const seedMembers = store.workspace.members.map((m) => ({ ...m, name: formatMemberName(m.name) }));
             setMembers(seedMembers);
-            localStorage.setItem("medhit_members_data_v3", JSON.stringify(seedMembers));
+            localStorage.setItem("medhit_v2_members", JSON.stringify(seedMembers));
           }
         } else {
           const seedMembers = store.workspace.members.map((m) => ({ ...m, name: formatMemberName(m.name) }));
           setMembers(seedMembers);
-          localStorage.setItem("medhit_members_data_v3", JSON.stringify(seedMembers));
+          localStorage.setItem("medhit_v2_members", JSON.stringify(seedMembers));
         }
 
         // Recupera sessão persistida
@@ -319,7 +338,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_tasks_data_v3", JSON.stringify(tasks));
+        localStorage.setItem("medhit_v2_tasks", JSON.stringify(tasks));
         store.tasks = tasks;
       } catch (e) {
         console.error("Erro ao salvar tarefas:", e);
@@ -406,7 +425,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated && typeof window !== "undefined") {
       try {
-        localStorage.setItem("medhit_areas_data_v3", JSON.stringify(areas));
+        localStorage.setItem("medhit_v2_areas", JSON.stringify(areas));
         store.workspace.areas = areas;
       } catch (e) {
         console.error("Erro ao salvar áreas:", e);
@@ -429,7 +448,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             name: formatMemberName(m.name),
           });
         }
-        localStorage.setItem("medhit_members_data_v3", JSON.stringify(deduped));
+        localStorage.setItem("medhit_v2_members", JSON.stringify(deduped));
         store.workspace.members = deduped;
       } catch (e) {
         console.error("Erro ao salvar membros:", e);
@@ -1078,6 +1097,138 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     return newProject;
   };
 
+  const createGroup = (projectId: string, name: string, color?: string): BoardGroup | null => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para gerenciar grupos.");
+      return null;
+    }
+
+    const newGroupId = `grp-${Date.now()}`;
+    const defaultColors = ["#0ea5e9", "#10b981", "#8b5cf6", "#f59e0b", "#ec4899", "#3b82f6"];
+    let createdGroup: BoardGroup | null = null;
+
+    const updatedAreas = areas.map((area) => ({
+      ...area,
+      projects: area.projects.map((proj) => {
+        if (proj.id === projectId) {
+          const currentGroups = proj.groups || [];
+          const assignedColor = color || defaultColors[currentGroups.length % defaultColors.length];
+          const newGroup: BoardGroup = {
+            id: newGroupId,
+            projectId,
+            name: name.trim() || `Novo Grupo ${currentGroups.length + 1}`,
+            color: assignedColor,
+            position: (currentGroups.length + 1) * 1000,
+            collapsed: false,
+          };
+          createdGroup = newGroup;
+          const updated = {
+            ...proj,
+            groups: [...currentGroups, newGroup],
+          };
+          if (currentProject?.id === projectId) {
+            setCurrentProject(updated);
+          }
+          return updated;
+        }
+        return proj;
+      }),
+    }));
+
+    setAreas(updatedAreas);
+    store.workspace.areas = updatedAreas;
+
+    telemetry.track(
+      "group_created",
+      `Novo grupo "${name}" criado no quadro`,
+      { projectId, groupId: newGroupId },
+      "success",
+      "task-context"
+    );
+
+    toast.success(`Grupo "${name}" criado com sucesso!`);
+    return createdGroup;
+  };
+
+  const updateGroup = (projectId: string, groupId: string, updates: Partial<BoardGroup>) => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para atualizar grupos.");
+      return;
+    }
+
+    const updatedAreas = areas.map((area) => ({
+      ...area,
+      projects: area.projects.map((proj) => {
+        if (proj.id === projectId) {
+          const updatedGroups = (proj.groups || []).map((g) => {
+            if (g.id === groupId) {
+              return { ...g, ...updates };
+            }
+            return g;
+          });
+          const updated = {
+            ...proj,
+            groups: updatedGroups,
+          };
+          if (currentProject?.id === projectId) {
+            setCurrentProject(updated);
+          }
+          return updated;
+        }
+        return proj;
+      }),
+    }));
+
+    setAreas(updatedAreas);
+    store.workspace.areas = updatedAreas;
+  };
+
+  const deleteGroup = (projectId: string, groupId: string) => {
+    if (!hasPermission("edit_task")) {
+      toast.error("Permissão insuficiente para excluir grupos.");
+      return;
+    }
+
+    // Regra de tarefas órfãs: tarefas vinculadas a este groupId perdem o vínculo e caem no grupo padrão (sem grupo)
+    setTasks((prev) =>
+      prev.map((t) => {
+        if (t.projectId === projectId && t.groupId === groupId) {
+          const updated: Task = { ...t, groupId: undefined, updatedAt: new Date().toISOString() };
+          supabase
+            .from("medtask_tasks")
+            .update(mapTaskToRow(updated))
+            .eq("id", t.id)
+            .then();
+          return updated;
+        }
+        return t;
+      })
+    );
+
+    const updatedAreas = areas.map((area) => ({
+      ...area,
+      projects: area.projects.map((proj) => {
+        if (proj.id === projectId) {
+          const updatedGroups = (proj.groups || []).filter((g) => g.id !== groupId);
+          const updated = {
+            ...proj,
+            groups: updatedGroups,
+          };
+          if (currentProject?.id === projectId) {
+            setCurrentProject(updated);
+          }
+          return updated;
+        }
+        return proj;
+      }),
+    }));
+
+    setAreas(updatedAreas);
+    store.workspace.areas = updatedAreas;
+
+    toast.info("Grupo removido. Tarefas vinculadas foram movidas para 'Sem Grupo'.");
+  };
+
   const moveTask = (taskId: string, targetStatusId: string) => {
     if (!hasPermission("edit_task")) {
       toast.error("Permissão insuficiente para movimentar tarefas.");
@@ -1172,9 +1323,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       workspaceId: store.workspace.id,
       projectId: data.projectId || fallbackProjectId,
       areaId: data.areaId || fallbackAreaId,
+      groupId: data.groupId,
+      parentId: data.parentId,
       title: data.title,
       description: data.description || "",
-      taskType: data.taskType || "task",
+      taskType: data.taskType || (data.parentId ? "subtask" : "task"),
       statusId: data.statusId,
       priority: data.priority || "none",
       position: (tasks.length + 1) * 1000,
@@ -1185,6 +1338,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         : [],
       storyPoints: data.storyPoints,
       aiContext: data.aiContext,
+      customFields: data.customFields || {},
       dueDate: data.dueDate,
       tags: data.tags || [],
       checklists: data.checklists || [],
@@ -1241,6 +1395,139 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     );
 
     toast.success("Tarefa excluída");
+  };
+
+  const createSubtask = (
+    parentId: string,
+    title: string,
+    initialFields?: Partial<Task>
+  ): Task | null => {
+    if (!hasPermission("create_task")) {
+      toast.error("Permissão insuficiente para criar subtarefas.");
+      return null;
+    }
+
+    const parentTask = tasks.find((t) => t.id === parentId);
+    if (!parentTask) {
+      toast.error("Tarefa pai não encontrada para criar subtarefa.");
+      return null;
+    }
+
+    const newId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const newSubtask: Task = {
+      id: newId,
+      workspaceId: parentTask.workspaceId,
+      projectId: parentTask.projectId,
+      areaId: parentTask.areaId,
+      groupId: parentTask.groupId,
+      parentId: parentTask.id,
+      title: title.trim(),
+      description: initialFields?.description || "",
+      taskType: "subtask",
+      statusId: initialFields?.statusId || parentTask.statusId,
+      priority: initialFields?.priority || parentTask.priority || "none",
+      position: (tasks.filter((t) => t.parentId === parentId).length + 1) * 1000,
+      assigneeIds: initialFields?.assigneeIds || [],
+      dueDate: initialFields?.dueDate,
+      tags: initialFields?.tags || [],
+      customFields: {
+        secondaryStatus: "Não Iniciado",
+        pillStatus: "Não Iniciado",
+        ...initialFields?.customFields,
+      },
+      checklists: initialFields?.checklists || [],
+      comments: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setTasks((prev) => [...prev, newSubtask]);
+
+    // Persistência no banco Supabase
+    supabase
+      .from("medtask_tasks")
+      .insert(mapTaskToRow(newSubtask))
+      .then();
+
+    telemetry.track(
+      "subtask_created",
+      `Nova subtarefa criada: "${newSubtask.title}" vinculada a "${parentTask.title}"`,
+      { parentId, subtaskId: newId, projectId: newSubtask.projectId },
+      "success",
+      "task-context"
+    );
+
+    toast.success(`Subitem "${title}" adicionado!`);
+    return newSubtask;
+  };
+
+  const toggleTaskTimer = (taskId: string) => {
+    const targetTask = tasks.find((t) => t.id === taskId);
+    if (!targetTask) return;
+
+    const isCurrentlyRunning = !!targetTask.customFields?.timerRunningSince;
+
+    if (isCurrentlyRunning) {
+      // Pausar timer
+      const startTime = new Date(targetTask.customFields!.timerRunningSince!).getTime();
+      const deltaSeconds = Math.max(0, Math.floor((Date.now() - startTime) / 1000));
+      const accumulated = (targetTask.customFields?.timeSpentSeconds || 0) + deltaSeconds;
+
+      const updatedCustomFields: TaskCustomFields = {
+        ...targetTask.customFields,
+        timeSpentSeconds: accumulated,
+        timerRunningSince: null,
+      };
+
+      updateTask(taskId, { customFields: updatedCustomFields });
+      const minutes = Math.floor(accumulated / 60);
+      const seconds = accumulated % 60;
+      toast.info(`Cronômetro pausado (${minutes}m ${seconds}s acumulados).`);
+    } else {
+      // Iniciar timer: primeiro pausar qualquer outra tarefa com timer rodando (regra de timer único)
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId && t.customFields?.timerRunningSince) {
+            const start = new Date(t.customFields.timerRunningSince).getTime();
+            const delta = Math.max(0, Math.floor((Date.now() - start) / 1000));
+            const total = (t.customFields.timeSpentSeconds || 0) + delta;
+            const updated: Task = {
+              ...t,
+              customFields: {
+                ...t.customFields,
+                timeSpentSeconds: total,
+                timerRunningSince: null,
+              },
+              updatedAt: new Date().toISOString(),
+            };
+            supabase
+              .from("medtask_tasks")
+              .update(mapTaskToRow(updated))
+              .eq("id", t.id)
+              .then();
+            return updated;
+          }
+          if (t.id === taskId) {
+            const updated: Task = {
+              ...t,
+              customFields: {
+                ...t.customFields,
+                timerRunningSince: new Date().toISOString(),
+              },
+              updatedAt: new Date().toISOString(),
+            };
+            supabase
+              .from("medtask_tasks")
+              .update(mapTaskToRow(updated))
+              .eq("id", t.id)
+              .then();
+            return updated;
+          }
+          return t;
+        })
+      );
+      toast.success(`Cronômetro iniciado para "${targetTask.title}".`);
+    }
   };
 
   const toggleChecklist = (taskId: string, checklistId: string, itemId: string) => {
@@ -1593,6 +1880,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         isNewTeamModalOpen,
         isDeleteBoardModalOpen,
         boardToDelete,
+        isMobileSidebarOpen,
+        setIsMobileSidebarOpen,
         setSelectedTask,
         setIsNewTaskModalOpen,
         setIsNewBoardModalOpen,
@@ -1606,6 +1895,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         createProject,
         deleteProject,
         updateProject,
+        createGroup,
+        updateGroup,
+        deleteGroup,
+        createSubtask,
+        toggleTaskTimer,
         createTeam,
         updateTeam,
         deleteTeam,
