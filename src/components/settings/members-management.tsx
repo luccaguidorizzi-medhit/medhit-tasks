@@ -86,19 +86,16 @@ export function MembersManagement() {
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteName.trim() || !inviteEmail.trim()) {
-      toast.error("Preencha nome e e-mail");
+      toast.error("Preencha nome e e-mail corporativo");
       return;
     }
     inviteMember({
       name: inviteName.trim(),
       email: inviteEmail.trim(),
       role: inviteRole,
-      initialPassword: invitePassword.trim() || undefined,
     });
     setInviteName("");
     setInviteEmail("");
-    setInvitePassword("");
-    setShowInvitePassword(false);
     setIsInviteModalOpen(false);
   };
 
@@ -380,24 +377,8 @@ export function MembersManagement() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Senha Provisória (Opcional)</label>
-                <div className="relative">
-                  <input
-                    type={showInvitePassword ? "text" : "password"}
-                    placeholder="Deixe em branco para auto-gerar senha forte"
-                    value={invitePassword}
-                    onChange={(e) => setInvitePassword(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-slate-950/70 border border-slate-200 dark:border-white/10 rounded-lg p-2 pr-8 text-xs font-mono outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowInvitePassword(!showInvitePassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                  >
-                    {showInvitePassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                  </button>
-                </div>
+              <div className="p-2.5 rounded-xl border border-sky-500/20 bg-sky-500/10 text-[11px] text-sky-300 leading-relaxed">
+                O convidado receberá um e-mail oficial com o botão <strong>"Ativar Minha Conta"</strong> para definir sua própria senha com total segurança.
               </div>
 
               <div className="space-y-1">

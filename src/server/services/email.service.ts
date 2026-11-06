@@ -200,7 +200,7 @@ export const emailService = {
     <div class="body">
       <p class="greeting">
         Olá, <strong>${name}</strong>!<br>
-        Seu acesso ao <strong>Medhit WorkTrack</strong> foi liberado. Acesse a plataforma para gerenciar projetos, acompanhar entregas e colaborar com o time.
+        Você foi convidado para integrar o <strong>Medhit WorkTrack</strong>. Para começar a gerenciar seus projetos e demandas, clique no botão abaixo para definir sua senha pessoal de acesso e ativar sua conta.
       </p>
 
       <div class="card">
@@ -212,29 +212,18 @@ export const emailService = {
           <span class="label">Nível de Acesso</span>
           <span class="val" style="color: #38bdf8;">${roleName}</span>
         </div>
-        ${
-          password
-            ? `
         <div class="row">
-          <span class="label">Senha Provisória</span>
-          <span class="val" style="color: #34d399;">${password}</span>
+          <span class="label">Status</span>
+          <span class="val" style="color: #38bdf8;">Aguardando Definição de Senha</span>
         </div>
-        `
-            : `
-        <div class="row">
-          <span class="label">Primeiro Acesso</span>
-          <span class="val" style="color: #38bdf8;">Defina sua senha no link</span>
-        </div>
-        `
-        }
       </div>
 
       <div class="btn-wrap">
-        <a href="${finalUrl}" class="btn">Ativar Minha Conta</a>
+        <a href="${finalUrl}" class="btn">Ativar Minha Conta e Criar Senha</a>
       </div>
 
       <p style="font-size: 12px; color: #64748b; text-align: center; margin: 20px 0 0;">
-        Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+        Se o botão não funcionar, copie e cole este link de ativação no seu navegador:<br>
         <a href="${finalUrl}" style="color: #38bdf8; word-break: break-all;">${finalUrl}</a>
       </p>
     </div>

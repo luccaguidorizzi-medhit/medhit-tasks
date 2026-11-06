@@ -1,5 +1,5 @@
 /**
- * Testes Unitários de Integração: MCP Server e Fluxo de Convites
+ * Testes Unitários de Integração: MCP Server e Fluxo de Convites (Sem Senha Provisória)
  * Assinado por: Equipe MedHit I&A
  */
 
@@ -7,14 +7,12 @@ import { describe, it, expect } from "vitest";
 import { store } from "@/server/services/data-store";
 import { emailService } from "@/server/services/email.service";
 
-describe("Fluxo de Convites de Novos Usuários", () => {
-  it("deve simular ou disparar envio de e-mail de convite com link correto para work.medhit.click/invite", async () => {
+describe("Fluxo de Convites de Novos Usuários (Criação Autônoma de Senha)", () => {
+  it("deve disparar e-mail de convite com link de ativação sem exibir senha provisória", async () => {
     const inviteParams = {
       to: "novo.membro@medhit.com.br",
       name: "Novo Colaborador",
       role: "member",
-      password: "temp_password_123",
-      mcpToken: "medtask_user_novomembro_sec9999",
       loginUrl: "https://work.medhit.click/invite",
     };
 
@@ -22,7 +20,7 @@ describe("Fluxo de Convites de Novos Usuários", () => {
     expect(result.success).toBe(true);
   });
 
-  it("deve validar link de ativação com e-mail codificado", () => {
+  it("deve validar link de ativação com e-mail codificado para definição de senha", () => {
     const email = "teste.novo@medhit.com.br";
     const loginUrl = "https://work.medhit.click/invite";
     const finalUrl = `${loginUrl}?email=${encodeURIComponent(email)}`;
