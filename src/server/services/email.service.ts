@@ -72,16 +72,17 @@ export const emailService = {
     body {
       margin: 0;
       padding: 0;
-      background-color: #0b1120;
+      background-color: #070d1a;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #f1f5f9;
       -webkit-font-smoothing: antialiased;
     }
-    table { border-collapse: collapse; }
+    table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    td { padding: 0; }
     .email-container {
       max-width: 580px;
       margin: 40px auto;
-      background-color: #0f172a;
+      background-color: #0b1426;
       border: 1px solid #1e293b;
       border-radius: 16px;
       overflow: hidden;
@@ -89,13 +90,20 @@ export const emailService = {
     }
     .header {
       padding: 36px 32px 28px;
-      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-      border-bottom: 1px solid #1e293b;
+      background: linear-gradient(180deg, #131f38 0%, #0b1426 100%);
+      border-bottom: 1px solid #1e2d4a;
       text-align: center;
+    }
+    .logo-img {
+      display: block;
+      margin: 0 auto 16px;
+      border: 0;
+      outline: none;
+      border-radius: 14px;
     }
     .badge {
       display: inline-block;
-      padding: 4px 14px;
+      padding: 5px 16px;
       border-radius: 9999px;
       font-size: 11px;
       font-weight: 700;
@@ -108,7 +116,7 @@ export const emailService = {
     }
     .title {
       margin: 0 0 8px;
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
       color: #ffffff;
       letter-spacing: -0.02em;
@@ -119,67 +127,76 @@ export const emailService = {
       color: #94a3b8;
     }
     .body {
-      padding: 32px;
+      padding: 36px 32px;
     }
     .greeting {
       font-size: 15px;
-      line-height: 1.6;
+      line-height: 1.7;
       color: #e2e8f0;
-      margin: 0 0 24px;
+      margin: 0 0 26px;
     }
-    .card {
-      background-color: #131d35;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 20px 24px;
-      margin-bottom: 28px;
+    .card-wrap {
+      background-color: #101c36;
+      border: 1px solid #1e2f4f;
+      border-radius: 14px;
+      padding: 18px 24px;
+      margin-bottom: 30px;
     }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #1e293b;
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .info-table td {
+      padding: 12px 0;
       font-size: 13px;
     }
-    .row:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
+    .info-table tr:not(:last-child) td {
+      border-bottom: 1px solid #1a2944;
     }
-    .row:first-child {
-      padding-top: 0;
-    }
-    .label {
+    .info-label {
       color: #94a3b8;
       font-weight: 500;
+      text-align: left;
     }
-    .val {
+    .info-val {
+      text-align: right;
       color: #ffffff;
       font-weight: 600;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 13px;
     }
     .btn-wrap {
       text-align: center;
-      margin: 28px 0;
+      margin: 30px 0 24px;
     }
     .btn {
       display: inline-block;
       background-color: #0284c7;
       color: #ffffff !important;
       text-decoration: none;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 700;
-      padding: 14px 36px;
-      border-radius: 10px;
+      padding: 15px 40px;
+      border-radius: 12px;
       letter-spacing: 0.01em;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
+    }
+    .fallback-note {
+      font-size: 12px;
+      color: #64748b;
+      text-align: center;
+      margin: 20px 0 0;
+      line-height: 1.5;
+    }
+    .fallback-link {
+      color: #38bdf8;
+      word-break: break-all;
+      text-decoration: none;
     }
     .footer {
       padding: 24px 32px;
       text-align: center;
-      background-color: #090e1a;
-      border-top: 1px solid #1e293b;
+      background-color: #080f1d;
+      border-top: 1px solid #16233b;
       font-size: 12px;
       color: #64748b;
       line-height: 1.6;
@@ -192,39 +209,42 @@ export const emailService = {
 <body>
   <div class="email-container">
     <div class="header">
+      <img src="https://work.medhit.click/medhit_logo_extracted.png" alt="MedHit Logo" width="56" height="56" class="logo-img" />
       <div class="badge">Medhit WorkTrack</div>
       <h1 class="title">Seu Acesso Foi Concedido</h1>
-      <p class="subtitle">Bem-vindo ao workspace oficial da MedHit.</p>
+      <p class="subtitle">Bem-vindo ao workspace oficial de gestão da MedHit.</p>
     </div>
 
     <div class="body">
       <p class="greeting">
         Olá, <strong>${name}</strong>!<br>
-        Você foi convidado para integrar o <strong>Medhit WorkTrack</strong>. Para começar a gerenciar seus projetos e demandas, clique no botão abaixo para definir sua senha pessoal de acesso e ativar sua conta.
+        Você foi convidado para colaborar no <strong>Medhit WorkTrack</strong>. Para começar a gerenciar seus quadros, projetos e entregas, clique no botão abaixo para definir sua senha pessoal e ativar seu acesso.
       </p>
 
-      <div class="card">
-        <div class="row">
-          <span class="label">E-mail Cadastrado</span>
-          <span class="val">${to}</span>
-        </div>
-        <div class="row">
-          <span class="label">Nível de Acesso</span>
-          <span class="val" style="color: #38bdf8;">${roleName}</span>
-        </div>
-        <div class="row">
-          <span class="label">Status</span>
-          <span class="val" style="color: #38bdf8;">Aguardando Definição de Senha</span>
-        </div>
+      <div class="card-wrap">
+        <table class="info-table" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td class="info-label" align="left">E-mail Cadastrado</td>
+            <td class="info-val" align="right" style="color: #f1f5f9;">${to}</td>
+          </tr>
+          <tr>
+            <td class="info-label" align="left">Nível de Acesso</td>
+            <td class="info-val" align="right" style="color: #38bdf8; font-weight: 700;">${roleName}</td>
+          </tr>
+          <tr>
+            <td class="info-label" align="left">Status da Conta</td>
+            <td class="info-val" align="right" style="color: #34d399; font-weight: 700;">Aguardando Ativação</td>
+          </tr>
+        </table>
       </div>
 
       <div class="btn-wrap">
         <a href="${finalUrl}" class="btn">Ativar Minha Conta e Criar Senha</a>
       </div>
 
-      <p style="font-size: 12px; color: #64748b; text-align: center; margin: 20px 0 0;">
+      <p class="fallback-note">
         Se o botão não funcionar, copie e cole este link de ativação no seu navegador:<br>
-        <a href="${finalUrl}" style="color: #38bdf8; word-break: break-all;">${finalUrl}</a>
+        <a href="${finalUrl}" class="fallback-link">${finalUrl}</a>
       </p>
     </div>
 
@@ -243,7 +263,7 @@ export const emailService = {
         success: true,
         mocked: true,
         message: "E-mail simulado com sucesso (RESEND_API_KEY ausente)",
-        preview: { to, role: roleName, password },
+        preview: { to, role: roleName },
       };
     }
 
@@ -269,9 +289,6 @@ export const emailService = {
     }
   },
 
-  /**
-   * Envia notificação de tarefa atribuída
-   */
   async sendTaskAssignedEmail({
     to,
     name,

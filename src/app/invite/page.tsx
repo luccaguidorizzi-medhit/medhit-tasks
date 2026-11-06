@@ -95,19 +95,21 @@ function InviteContent() {
 
       <div className="relative w-full max-w-md z-10">
         <div className="rounded-2xl border border-white/10 bg-[#081226]/90 p-8 shadow-2xl backdrop-blur-2xl">
-          {/* Header */}
+          {/* Header Oficial MedHit */}
           <div className="flex flex-col items-center text-center mb-6">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 p-0.5 shadow-lg shadow-sky-500/20 mb-3">
-              <div className="h-full w-full rounded-[10px] bg-slate-950 flex items-center justify-center">
-                <Sparkles className="h-6 w-6 text-sky-400" />
-              </div>
+            <div className="h-14 w-14 rounded-2xl bg-sky-500/10 border border-sky-500/25 p-2 flex items-center justify-center shadow-xl shadow-sky-500/20 mb-3.5 backdrop-blur-md">
+              <img
+                src="/logo.svg"
+                alt="Medhit WorkTrack Logo"
+                className="h-full w-full object-contain drop-shadow"
+              />
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              Ativar Seu Acesso
+            <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
+              Medhit <span className="text-sky-400">WorkTrack</span>
             </h1>
             <p className="text-xs text-slate-400 mt-1 max-w-xs">
-              Defina sua senha pessoal para acessar seus quadros e demandas no Medhit WorkTrack.
+              Defina sua senha pessoal para ativar seu acesso aos quadros e demandas.
             </p>
           </div>
 
