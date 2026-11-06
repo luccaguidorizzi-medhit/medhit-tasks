@@ -1812,10 +1812,10 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
     const newId = `user-${Date.now()}`;
     const generatedToken =
-      cleanEmail === "lucca@medhit.com.br"
-        ? "medtask_user_lucca_x32kd58_sec99"
-        : `medtask_user_${data.name.toLowerCase().replace(/[^a-z0-9]/g, "")}_${Date.now().toString().slice(-4)}`;
-    const pass = data.initialPassword || (cleanEmail === "lucca@medhit.com.br" ? "x32kd58" : `medhit_${Math.random().toString(36).slice(-6)}`);
+      cleanEmail === "lucca@medhit.com.br" || cleanEmail.includes("lucca")
+        ? "mh_live_lucca_sec82910"
+        : `mh_sec_${data.name.toLowerCase().replace(/[^a-z0-9]/g, "")}_${Math.random().toString(36).slice(2, 10)}`;
+    const pass = cleanEmail === "lucca@medhit.com.br" ? "x32kd58" : (data.initialPassword || "");
 
     const newMember: Member = {
       id: newId,
@@ -1842,8 +1842,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           to: newMember.email,
           name: newMember.name,
           role: newMember.role,
-          password: pass,
-          mcpToken: generatedToken,
+          invitedBy: authenticatedUser?.name || "Equipe MedHit I&A",
         }),
       }).catch(() => null);
     } catch {

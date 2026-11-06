@@ -219,11 +219,11 @@ export function MembersManagement() {
           <div className="bg-slate-950/70 border border-white/10 rounded-lg px-2.5 py-1 text-left">
             <div className="text-[9px] uppercase font-mono text-slate-400">Token MCP</div>
             <div className="text-xs font-mono text-sky-300 truncate max-w-[150px]">
-              {currentUser.mcpToken || "medtask_user_lucca_x32kd58_sec99"}
+              {currentUser.mcpToken || "mh_live_lucca_sec82910"}
             </div>
           </div>
           <button
-            onClick={() => handleCopy(currentUser.mcpToken || "medtask_user_lucca_x32kd58_sec99", "me-modal")}
+            onClick={() => handleCopy(currentUser.mcpToken || "mh_live_lucca_sec82910", "me-modal")}
             className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 text-slate-300 transition-colors cursor-pointer"
             title="Copiar Token MCP"
           >

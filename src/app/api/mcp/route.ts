@@ -313,9 +313,7 @@ function authenticateRequest(request: Request): Member | null {
 
   // Token master padrão ou token do Lucca
   if (
-    token === "medtask_user_lucca_x32kd58_sec99" ||
-    token === "medtask_live_9a7f3c21_sec82910" ||
-    token === "x32kd58"
+    token === "mh_live_lucca_sec82910" || token === "medtask_live_9a7f3c21_sec82910"
   ) {
     const lucca = store.workspace.members.find(
       (m) => m.email === "lucca@medhit.com.br" || m.name.toLowerCase().includes("lucca")
@@ -329,7 +327,8 @@ function authenticateRequest(request: Request): Member | null {
 }
 
 function sanitizeMember(m: Member) {
-  const { password, ...safe } = m;
+  // Higienizacao rigorosa: NUNCA expoem senha ou token mcp em listagens ou retornos de agentes
+  const { password, mcpToken, ...safe } = m;
   return safe;
 }
 
@@ -650,7 +649,7 @@ export async function POST(request: Request) {
             email: m.email,
             role: m.role,
             status: m.status,
-            mcpToken: m.mcpToken,
+            avatarUrl: m.avatarUrl,
             lastLoginAt: m.lastLoginAt,
           }));
           return NextResponse.json({
@@ -672,7 +671,7 @@ export async function POST(request: Request) {
                     {
                       user: activeUser ? sanitizeMember(activeUser) : null,
                       connectedTool: "Google Antigravity MCP Client",
-                      signature: "MedHit Integrações & Automações",
+                      signature: "Equipe MedHit I&A",
                     },
                     null,
                     2
@@ -702,15 +701,16 @@ export async function POST(request: Request) {
 
         case "invite_member": {
           const newId = `user-${Date.now()}`;
-          const generatedMcpToken = `medtask_user_${args.name.toLowerCase().replace(/[^a-z0-9]/g, "")}_sec${Date.now().toString().slice(-6)}`;
-          const initialPassword = `medhit_${Math.random().toString(36).slice(-6)}`;
+          const cleanName = args.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const randomSuffix = Math.random().toString(36).substring(2, 10);
+          const generatedMcpToken = `mh_sec_${cleanName}_${randomSuffix}`;
 
           const newMember: Member = {
             id: newId,
             workspaceId: store.workspace.id,
             name: args.name,
             email: args.email,
-            password: initialPassword,
+            password: "", // Usuario define a propria senha no primeiro acesso via /invite
             mcpToken: generatedMcpToken,
             role: args.role,
             avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(args.name)}`,
@@ -720,16 +720,14 @@ export async function POST(request: Request) {
 
           store.workspace.members.push(newMember);
 
-          // Disparo de e-mail via Resend se solicitado
+          // Disparo de e-mail via Resend
           let emailStatus = null;
           if (args.sendEmail !== false) {
             emailStatus = await emailService.sendInviteEmail({
               to: newMember.email,
               name: newMember.name,
-              invitedBy: activeUser ? activeUser.name : "MedHit",
+              invitedBy: activeUser ? activeUser.name : "Equipe MedHit I&A",
               role: newMember.role,
-              password: initialPassword,
-              mcpToken: generatedMcpToken,
             });
           }
 
@@ -742,9 +740,8 @@ export async function POST(request: Request) {
                   type: "text",
                   text: JSON.stringify(
                     {
+                      message: `Convite enviado com sucesso para ${newMember.email}`,
                       member: sanitizeMember(newMember),
-                      initialPassword,
-                      mcpToken: generatedMcpToken,
                       emailResult: emailStatus,
                     },
                     null,

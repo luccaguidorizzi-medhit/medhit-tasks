@@ -26,7 +26,7 @@ export function McpSettings() {
     ? `${window.location.origin}/api/mcp`
     : "https://work.medhit.click/api/mcp";
 
-  const userMcpToken = currentUser?.mcpToken || "medtask_user_lucca_x32kd58_sec99";
+  const userMcpToken = currentUser?.mcpToken || "mh_live_lucca_sec82910";
 
   const copyToClipboard = (text: string, id: string) => {
     navigator.clipboard.writeText(text);

@@ -34,7 +34,7 @@ export const seedData = {
       email: "lucca.guidorizzi@medhit.com.br",
       role: "owner" as const,
       password: "x32kd58",
-      mcpToken: "medtask_user_lucca_x32kd58_sec99",
+      mcpToken: "mh_live_lucca_sec82910",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Lucca",
     },
     {
@@ -42,7 +42,7 @@ export const seedData = {
       email: "thiago.ghiraldini@medhit.com.br",
       role: "owner" as const,
       password: "x32kd58",
-      mcpToken: "medtask_user_thiago_sec100",
+      mcpToken: "mh_live_thiago_sec94821",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thiago",
     },
   ],

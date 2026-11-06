@@ -79,183 +79,106 @@ export const emailService = {
     }
     table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
     td { padding: 0; }
-    .email-container {
-      max-width: 580px;
-      margin: 40px auto;
-      background-color: #0b1426;
-      border: 1px solid #1e293b;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    }
-    .header {
-      padding: 36px 32px 28px;
-      background: linear-gradient(180deg, #131f38 0%, #0b1426 100%);
-      border-bottom: 1px solid #1e2d4a;
-      text-align: center;
-    }
-    .logo-img {
-      display: block;
-      margin: 0 auto 16px;
-      border: 0;
-      outline: none;
-      border-radius: 14px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 5px 16px;
-      border-radius: 9999px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      background-color: rgba(14, 165, 233, 0.15);
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      margin-bottom: 16px;
-    }
-    .title {
-      margin: 0 0 8px;
-      font-size: 26px;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-    }
-    .subtitle {
-      margin: 0;
-      font-size: 14px;
-      color: #94a3b8;
-    }
-    .body {
-      padding: 36px 32px;
-    }
-    .greeting {
-      font-size: 15px;
-      line-height: 1.7;
-      color: #e2e8f0;
-      margin: 0 0 26px;
-    }
-    .card-wrap {
-      background-color: #101c36;
-      border: 1px solid #1e2f4f;
-      border-radius: 14px;
-      padding: 18px 24px;
-      margin-bottom: 30px;
-    }
-    .info-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .info-table td {
-      padding: 12px 0;
-      font-size: 13px;
-    }
-    .info-table tr:not(:last-child) td {
-      border-bottom: 1px solid #1a2944;
-    }
-    .info-label {
-      color: #94a3b8;
-      font-weight: 500;
-      text-align: left;
-    }
-    .info-val {
-      text-align: right;
-      color: #ffffff;
-      font-weight: 600;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-    .btn-wrap {
-      text-align: center;
-      margin: 30px 0 24px;
-    }
-    .btn {
-      display: inline-block;
-      background-color: #0284c7;
-      color: #ffffff !important;
-      text-decoration: none;
-      font-size: 15px;
-      font-weight: 700;
-      padding: 15px 40px;
-      border-radius: 12px;
-      letter-spacing: 0.01em;
-      box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
-    }
-    .fallback-note {
-      font-size: 12px;
-      color: #64748b;
-      text-align: center;
-      margin: 20px 0 0;
-      line-height: 1.5;
-    }
-    .fallback-link {
-      color: #38bdf8;
-      word-break: break-all;
-      text-decoration: none;
-    }
-    .footer {
-      padding: 24px 32px;
-      text-align: center;
-      background-color: #080f1d;
-      border-top: 1px solid #16233b;
-      font-size: 12px;
-      color: #64748b;
-      line-height: 1.6;
-    }
-    .footer strong {
-      color: #94a3b8;
-    }
   </style>
 </head>
-<body>
-  <div class="email-container">
-    <div class="header">
-      <img src="https://work.medhit.click/medhit_logo_extracted.png" alt="MedHit Logo" width="56" height="56" class="logo-img" />
-      <div class="badge">Medhit WorkTrack</div>
-      <h1 class="title">Seu Acesso Foi Concedido</h1>
-      <p class="subtitle">Bem-vindo ao workspace oficial de gestão da MedHit.</p>
+<body style="margin: 0; padding: 24px 0; background-color: #070d1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f1f5f9;">
+  <div style="max-width: 580px; margin: 0 auto; background-color: #0b1426; border: 1px solid #1e293b; border-radius: 16px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+    
+    <!-- Top Header com Logo Oficial MedHit -->
+    <div style="padding: 36px 32px 28px; background: linear-gradient(180deg, #131f38 0%, #0b1426 100%); border-bottom: 1px solid #1e2d4a; text-align: center;">
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+        <tr>
+          <td align="center" style="padding-bottom: 14px;">
+            <img src="https://work.medhit.click/medhit_logo_extracted.png" alt="MedHit Logo" width="56" height="56" style="display: block; margin: 0 auto; border: 0; outline: none; border-radius: 14px;" />
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom: 12px;">
+            <span style="display: inline-block; padding: 5px 16px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background-color: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+              Medhit WorkTrack
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom: 6px;">
+            <h1 style="margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.02em;">
+              Seu Acesso Foi Concedido
+            </h1>
+          </td>
+        </tr>
+        <tr>
+          <td align="center">
+            <p style="margin: 0; font-size: 14px; color: #94a3b8;">
+              Bem-vindo ao workspace oficial de gestão da MedHit.
+            </p>
+          </td>
+        </tr>
+      </table>
     </div>
 
-    <div class="body">
-      <p class="greeting">
-        Olá, <strong>${name}</strong>!<br>
-        Você foi convidado para colaborar no <strong>Medhit WorkTrack</strong>. Para começar a gerenciar seus quadros, projetos e entregas, clique no botão abaixo para definir sua senha pessoal e ativar seu acesso.
+    <!-- Corpo do Email -->
+    <div style="padding: 36px 32px;">
+      <p style="font-size: 15px; line-height: 1.7; color: #e2e8f0; margin: 0 0 24px;">
+        Olá, <strong style="color: #ffffff;">${name}</strong>!<br>
+        Seu acesso ao <strong>Medhit WorkTrack</strong> foi liberado. Acesse a plataforma para gerenciar projetos, acompanhar entregas e colaborar com o time.
       </p>
 
-      <div class="card-wrap">
-        <table class="info-table" role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
+      <!-- Cartao de Detalhes da Conta com espacamento robusto e colunas independentes -->
+      <div style="background-color: #101c36; border: 1px solid #1e2f4f; border-radius: 14px; padding: 18px 24px; margin-bottom: 28px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
           <tr>
-            <td class="info-label" align="left">E-mail Cadastrado</td>
-            <td class="info-val" align="right" style="color: #f1f5f9;">${to}</td>
+            <td align="left" width="45%" style="width: 45%; padding: 14px 10px 14px 0; color: #94a3b8; font-size: 13px; font-weight: 500; text-align: left; vertical-align: middle; border-bottom: 1px solid #1a2944;">
+              E-mail Cadastrado
+            </td>
+            <td align="right" width="55%" style="width: 55%; padding: 14px 0 14px 10px; color: #f1f5f9; font-size: 13px; font-weight: 600; text-align: right; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; border-bottom: 1px solid #1a2944;">
+              ${to}
+            </td>
           </tr>
           <tr>
-            <td class="info-label" align="left">Nível de Acesso</td>
-            <td class="info-val" align="right" style="color: #38bdf8; font-weight: 700;">${roleName}</td>
+            <td align="left" width="45%" style="width: 45%; padding: 14px 10px 14px 0; color: #94a3b8; font-size: 13px; font-weight: 500; text-align: left; vertical-align: middle; border-bottom: 1px solid #1a2944;">
+              Nível de Acesso
+            </td>
+            <td align="right" width="55%" style="width: 55%; padding: 14px 0 14px 10px; color: #38bdf8; font-size: 13px; font-weight: 700; text-align: right; vertical-align: middle; border-bottom: 1px solid #1a2944;">
+              ${roleName}
+            </td>
           </tr>
           <tr>
-            <td class="info-label" align="left">Status da Conta</td>
-            <td class="info-val" align="right" style="color: #34d399; font-weight: 700;">Aguardando Ativação</td>
+            <td align="left" width="45%" style="width: 45%; padding: 14px 10px 14px 0; color: #94a3b8; font-size: 13px; font-weight: 500; text-align: left; vertical-align: middle;">
+              Status da Conta
+            </td>
+            <td align="right" width="55%" style="width: 55%; padding: 14px 0 14px 10px; color: #34d399; font-size: 13px; font-weight: 700; text-align: right; vertical-align: middle;">
+              Aguardando Ativação
+            </td>
           </tr>
         </table>
       </div>
 
-      <div class="btn-wrap">
-        <a href="${finalUrl}" class="btn">Ativar Minha Conta e Criar Senha</a>
-      </div>
+      <!-- Botao de Acao Destacado -->
+      <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0 24px; text-align: center;">
+        <tr>
+          <td align="center">
+            <a href="${finalUrl}" target="_blank" style="display: inline-block; background-color: #0284c7; color: #ffffff !important; text-decoration: none; font-size: 15px; font-weight: 700; padding: 15px 38px; border-radius: 12px; letter-spacing: 0.01em; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45); text-align: center;">
+              Ativar Minha Conta
+            </a>
+          </td>
+        </tr>
+      </table>
 
-      <p class="fallback-note">
-        Se o botão não funcionar, copie e cole este link de ativação no seu navegador:<br>
-        <a href="${finalUrl}" class="fallback-link">${finalUrl}</a>
+      <!-- Fallback Link -->
+      <p style="font-size: 12px; color: #64748b; text-align: center; margin: 24px 0 0; line-height: 1.6;">
+        Se o botão não funcionar, copie e cole este link no seu navegador:<br>
+        <a href="${finalUrl}" target="_blank" style="color: #38bdf8; word-break: break-all; text-decoration: none;">${finalUrl}</a>
       </p>
     </div>
 
-    <div class="footer">
-      <p style="margin: 0 0 4px;"><strong>Medhit WorkTrack</strong> • Gestão de Tarefas &amp; Projetos</p>
-      <p style="margin: 0;">Desenvolvido e mantido por <strong>MedHit Integrações &amp; Automações</strong></p>
+    <!-- Rodape Corporativo -->
+    <div style="padding: 24px 32px; text-align: center; background-color: #080f1d; border-top: 1px solid #16233b; font-size: 12px; color: #64748b; line-height: 1.6;">
+      <p style="margin: 0 0 4px;"><strong style="color: #94a3b8;">Medhit WorkTrack</strong> • Gestão de Tarefas &amp; Projetos</p>
+      <p style="margin: 0;">Mantido e operado por <strong style="color: #94a3b8;">Equipe MedHit I&amp;A</strong></p>
     </div>
   </div>
 </body>
-</html>
-    `;
+</html>`;
 
     if (!resend) {
       console.log(`[Resend Simulação] E-mail de convite para: ${to}`);
