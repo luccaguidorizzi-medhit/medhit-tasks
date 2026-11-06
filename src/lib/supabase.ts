@@ -9,7 +9,7 @@ export const supabase = createClient(
 
 /**
  * Converte um registro do banco medtask_tasks (snake_case) para a interface Task (camelCase)
- * Inclui desserialização defensiva para campos v2 (groupId, customFields) sem quebrar dados legados
+ * Inclui desserialização defensiva para campos v2 (groupId, customFields, statusChangedAt)
  */
 export function mapRowToTask(row: any): Task {
   let groupId: string | undefined = row.group_id || undefined;
@@ -17,7 +17,9 @@ export function mapRowToTask(row: any): Task {
   let aiContextText: string | undefined = row.ai_context || undefined;
 
   // Desserialização defensiva de metadados v2
-  if (row.ai_context && typeof row.ai_context === "string" && row.ai_context.trim().startsWith("{")) {
+  if (row.custom_fields && typeof row.custom_fields === "object") {
+    customFields = row.custom_fields;
+  } else if (row.ai_context && typeof row.ai_context === "string" && row.ai_context.trim().startsWith("{")) {
     try {
       const parsed = JSON.parse(row.ai_context);
       if (parsed && typeof parsed === "object" && parsed.__medhit_v2) {
@@ -30,6 +32,17 @@ export function mapRowToTask(row: any): Task {
     }
   }
 
+  const statusChangedAt =
+    row.status_changed_at || row.updated_at || row.created_at || new Date().toISOString();
+
+  const daysInCurrentStatus = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(statusChangedAt).getTime()) / (1000 * 60 * 60 * 24))
+  );
+
+  const externalId = row.external_id || customFields?.externalId || undefined;
+  const isArchived = Boolean(row.is_archived);
+
   return {
     id: row.id,
     workspaceId: row.workspace_id || "ws-medhit-001",
@@ -40,6 +53,11 @@ export function mapRowToTask(row: any): Task {
     description: row.description || "",
     taskType: row.task_type || "task",
     statusId: row.status_id,
+    statusChangedAt,
+    daysInCurrentStatus,
+    externalId,
+    isArchived,
+    archivedAt: row.archived_at || undefined,
     priority: row.priority || "none",
     position: Number(row.position) || 1000,
     reporterId: row.reporter_id || undefined,
@@ -55,6 +73,7 @@ export function mapRowToTask(row: any): Task {
     customFields,
     tags: Array.isArray(row.tags) ? row.tags : [],
     checklists: Array.isArray(row.checklists) ? row.checklists : [],
+    attachments: Array.isArray(row.attachments) ? row.attachments : [],
     comments: Array.isArray(row.comments) ? row.comments : [],
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
@@ -76,6 +95,10 @@ export function mapTaskToRow(task: Partial<Task>): Record<string, any> {
   if (task.description !== undefined) row.description = task.description;
   if (task.taskType !== undefined) row.task_type = task.taskType;
   if (task.statusId !== undefined) row.status_id = task.statusId;
+  if (task.statusChangedAt !== undefined) row.status_changed_at = task.statusChangedAt;
+  if (task.externalId !== undefined) row.external_id = task.externalId;
+  if (task.isArchived !== undefined) row.is_archived = task.isArchived;
+  if (task.archivedAt !== undefined) row.archived_at = task.archivedAt;
   if (task.priority !== undefined) row.priority = task.priority;
   if (task.position !== undefined) row.position = task.position;
   if (task.reporterId !== undefined) row.reporter_id = task.reporterId;
@@ -89,11 +112,16 @@ export function mapTaskToRow(task: Partial<Task>): Record<string, any> {
   if (task.storyPoints !== undefined) row.story_points = task.storyPoints;
   if (task.tags !== undefined) row.tags = task.tags;
   if (task.checklists !== undefined) row.checklists = task.checklists;
+  if (task.attachments !== undefined) row.attachments = task.attachments;
   if (task.comments !== undefined) row.comments = task.comments;
   if (task.createdAt !== undefined) row.created_at = task.createdAt;
   if (task.updatedAt !== undefined) row.updated_at = task.updatedAt;
 
-  // Se houver groupId ou customFields, serializa com flag v2
+  // Persiste tanto na coluna custom_fields JSONB quanto em ai_context para retrocompatibilidade
+  if (task.customFields !== undefined) {
+    row.custom_fields = task.customFields;
+  }
+
   if (task.groupId !== undefined || task.customFields !== undefined) {
     row.ai_context = JSON.stringify({
       __medhit_v2: true,

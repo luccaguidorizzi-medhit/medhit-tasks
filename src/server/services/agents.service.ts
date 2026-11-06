@@ -104,6 +104,45 @@ export const agentsService = {
     return newEvent;
   },
 
+  requestHumanApproval(input: {
+    taskId: string;
+    agentId: string;
+    runId: string;
+    requestedAction: string;
+    payload?: Record<string, unknown>;
+  }): Approval {
+    const agent = store.workspace.agents.find((a) => a.id === input.agentId);
+    const task = store.tasks.find((t) => t.id === input.taskId);
+
+    const newApproval: Approval = {
+      id: `appr-${Date.now()}`,
+      workspaceId: store.workspace.id,
+      taskId: input.taskId,
+      taskTitle: task?.title || "Demanda",
+      agentId: input.agentId,
+      agentName: agent?.name || "Agente IA",
+      runId: input.runId,
+      requestedAction: input.requestedAction,
+      payload: input.payload || {},
+      status: "pending",
+      requestedAt: new Date().toISOString(),
+    };
+
+    store.approvals.unshift(newApproval);
+    const run = store.agentRuns.find((r) => r.id === input.runId);
+    if (run) {
+      run.status = "waiting_approval";
+      run.events.push({
+        id: `ev-${Date.now()}`,
+        type: "message",
+        content: `Aguardando aprovação humana para ação: "${input.requestedAction}"`,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    return newApproval;
+  },
+
   completeTask(runId: string) {
     const run = store.agentRuns.find((r) => r.id === runId);
     if (!run) return null;

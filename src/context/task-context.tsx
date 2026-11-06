@@ -22,6 +22,7 @@ import {
   Comment,
   BoardGroup,
   TaskCustomFields,
+  CustomFieldDefinition,
   store,
 } from "@/server/services/data-store";
 import { toast } from "sonner";
@@ -154,6 +155,11 @@ interface TaskContextType {
   createTeam: (data: { name: string; description?: string; color?: string; icon?: string }) => Area;
   updateTeam: (teamId: string, updates: Partial<Area>) => void;
   deleteTeam: (teamId: string) => void;
+  createStatus: (projectId: string, data: { name: string; color?: string; position?: number; category?: Status["category"]; slaDays?: number }) => Status | null;
+  updateStatus: (projectId: string, statusId: string, updates: Partial<Status>) => void;
+  deleteStatus: (projectId: string, statusId: string, targetStatusIdForTasks?: string) => void;
+  createCustomField: (projectId: string, field: { name: string; key: string; type: CustomFieldDefinition["type"]; description?: string }) => void;
+
   createFolder: (areaSlug: string, folderName: string) => void;
   deleteFolder: (areaSlug: string, folderName: string) => void;
   deleteTask: (taskId: string) => void;
@@ -229,19 +235,25 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
           localStorage.removeItem("medhit_members_data_v3");
         }
 
+        // Hidratação a partir de /api/workspace (Supabase)
+        fetch("/api/workspace")
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.workspace?.areas && Array.isArray(data.workspace.areas) && data.workspace.areas.length > 0) {
+              setAreas(data.workspace.areas);
+              store.workspace.areas = data.workspace.areas;
+              localStorage.setItem("medhit_v2_areas", JSON.stringify(data.workspace.areas));
+            }
+          })
+          .catch(() => null);
+
         const storedAreas = localStorage.getItem("medhit_v2_areas");
-        if (storedAreas) {
+        if (storedAreas && (!store.workspace.areas || store.workspace.areas.length === 0)) {
           const parsed = JSON.parse(storedAreas);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setAreas(parsed);
             store.workspace.areas = parsed;
-          } else {
-            setAreas(store.workspace.areas);
-            localStorage.setItem("medhit_v2_areas", JSON.stringify(store.workspace.areas));
           }
-        } else {
-          setAreas(store.workspace.areas);
-          localStorage.setItem("medhit_v2_areas", JSON.stringify(store.workspace.areas));
         }
 
         const storedTasks = localStorage.getItem("medhit_v2_tasks");
@@ -427,6 +439,13 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       try {
         localStorage.setItem("medhit_v2_areas", JSON.stringify(areas));
         store.workspace.areas = areas;
+
+        // Persistência em tempo real no Supabase
+        fetch("/api/workspace", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ areas }),
+        }).catch((err) => console.warn("[Sync Workspace] Falha:", err));
       } catch (e) {
         console.error("Erro ao salvar áreas:", e);
       }
@@ -1027,6 +1046,108 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   };
 
 
+
+  const createStatus = (
+    projectId: string,
+    data: { name: string; color?: string; position?: number; category?: Status["category"]; slaDays?: number }
+  ): Status | null => {
+    let created: Status | null = null;
+    const updatedAreas = areas.map((a) => ({
+      ...a,
+      projects: a.projects.map((p) => {
+        if (p.id === projectId || p.slug === projectId) {
+          const newStatusId = `st-${p.id}-${Date.now().toString().slice(-6)}`;
+          const newStatus: Status = {
+            id: newStatusId,
+            workspaceId: store.workspace.id,
+            projectId: p.id,
+            name: data.name,
+            color: data.color || "#38bdf8",
+            position: data.position ?? (p.statuses.length + 1) * 1000,
+            category: data.category || "in_progress",
+            slaDays: data.slaDays,
+          };
+          created = newStatus;
+          const newStatuses = [...p.statuses, newStatus].sort((s1, s2) => s1.position - s2.position);
+          return { ...p, statuses: newStatuses };
+        }
+        return p;
+      }),
+    }));
+
+    if (created) {
+      setAreas(updatedAreas);
+      toast.success(`Coluna "${data.name}" criada com sucesso!`);
+    }
+    return created;
+  };
+
+  const updateStatus = (projectId: string, statusId: string, updates: Partial<Status>) => {
+    const updatedAreas = areas.map((a) => ({
+      ...a,
+      projects: a.projects.map((p) => {
+        if (p.id === projectId || p.slug === projectId) {
+          const newStatuses = p.statuses
+            .map((s) => (s.id === statusId ? { ...s, ...updates } : s))
+            .sort((s1, s2) => s1.position - s2.position);
+          return { ...p, statuses: newStatuses };
+        }
+        return p;
+      }),
+    }));
+    setAreas(updatedAreas);
+    toast.success("Coluna atualizada com sucesso!");
+  };
+
+  const deleteStatus = (projectId: string, statusId: string, targetStatusIdForTasks?: string) => {
+    const updatedAreas = areas.map((a) => ({
+      ...a,
+      projects: a.projects.map((p) => {
+        if (p.id === projectId || p.slug === projectId) {
+          return { ...p, statuses: p.statuses.filter((s) => s.id !== statusId) };
+        }
+        return p;
+      }),
+    }));
+    setAreas(updatedAreas);
+
+    if (targetStatusIdForTasks) {
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.projectId === projectId && t.statusId === statusId
+            ? { ...t, statusId: targetStatusIdForTasks, statusChangedAt: new Date().toISOString() }
+            : t
+        )
+      );
+    }
+    toast.success("Coluna removida com sucesso!");
+  };
+
+  const createCustomField = (
+    projectId: string,
+    field: { name: string; key: string; type: CustomFieldDefinition["type"]; description?: string }
+  ) => {
+    const updatedAreas = areas.map((a) => ({
+      ...a,
+      projects: a.projects.map((p) => {
+        if (p.id === projectId || p.slug === projectId) {
+          const existing = (p.customFieldDefinitions || []).filter((f) => f.key !== field.key);
+          const newField: CustomFieldDefinition = {
+            id: `cf-${p.id}-${field.key}`,
+            projectId: p.id,
+            name: field.name,
+            key: field.key,
+            type: field.type,
+            description: field.description,
+          };
+          return { ...p, customFieldDefinitions: [...existing, newField] };
+        }
+        return p;
+      }),
+    }));
+    setAreas(updatedAreas);
+    toast.success(`Campo personalizado "${field.name}" criado!`);
+  };
 
   const createProject = (data: {
     name: string;
@@ -1902,6 +2023,11 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         createTeam,
         updateTeam,
         deleteTeam,
+    createStatus,
+    updateStatus,
+    deleteStatus,
+    createCustomField,
+
         createFolder,
         deleteFolder,
         deleteTask,

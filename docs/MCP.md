@@ -1,199 +1,199 @@
-# Model Context Protocol (MCP) — Servidor MedHit WorkTrack
+# Model Context Protocol (MCP) & REST API — MedHit WorkTrack
 
 > **Mantido por:** Equipe MedHit I&A  
-> **Protocolo:** Model Context Protocol (MCP) — Versão 2024-11-05  
-> **Endpoint Oficial:** `https://work.medhit.click/api/mcp`  
-> **Transporte:** Streamable JSON-RPC 2.0 sobre HTTP POST  
-> **Autenticação:** `Authorization: Bearer <MCP_TOKEN>`
+> **Protocolo:** Model Context Protocol (MCP) — Especificação 2024-11-05  
+> **Servidor MCP:** `POST https://work.medhit.click/api/mcp`  
+> **API REST Direta (Apps Script / Forms / n8n):** `POST https://work.medhit.click/api/cards/sync`  
+> **Autenticação:** `Authorization: Bearer <MCP_TOKEN>` ou `<SERVICE_TOKEN>`
 
 ---
 
-## 1. Visão Geral da Arquitetura
+## 1. Visão Geral da Arquitetura Unificada
 
-O **MedHit WorkTrack** dispõe de um servidor MCP nativo e enterprise-grade, desenhado para que agentes autônomos de Inteligência Artificial (Google Antigravity, Cursor IDE, Claude Desktop, fluxos no n8n e microsserviços internos) operem demandas, quadros e governança corporativa com o mesmo rigor de isolamento e rastreabilidade dos usuários humanos.
+O **MedHit WorkTrack** adota uma arquitetura de sincronização viva baseada no **Supabase** (`medtask_workspaces`, `medtask_tasks`, `medtask_service_tokens`, `medtask_webhooks`). 
 
-### Princípios de Segurança e Governança
-
-1. **Zero Credential Leakage:** Senhas de usuários e tokens MCP de outros colaboradores **nunca** são expostos em payloads, listagens, logs ou schemas.
-2. **Tokens Criptográficos Individuais:** Cada colaborador e agente possui seu próprio token assinado (`mh_live_...` para credenciais mestras ativas e `mh_sec_...` para tokens de membros).
-3. **Auditoria e Contexto de Execução:** Toda ação executada via MCP vincula-se ao `activeUser` autenticado pelo Bearer token, garantindo atribuição fidedigna de autoria e integridade no log do sistema.
-4. **Assinatura Corporativa Obrigatória:** Todas as operações reportam autoria exclusiva da **Equipe MedHit I&A**.
+### Problema Resolvido: Zero Divergência entre Tela e MCP
+Anteriormente, criações de quadros no navegador ficavam isoladas no `localStorage` do usuário local. Agora:
+- **Toda alteração de quadro, status ou card na interface web** é persistida em tempo real no Supabase.
+- **Toda alteração realizada via MCP, Apps Script ou n8n** é gravada no Supabase e refletida imediatamente na tela de todos os colaboradores.
+- O ambiente do MCP e o ambiente da tela apontam para a **mesma e única fonte da verdade corporativa**.
 
 ---
 
-## 2. Como Conectar seus Agentes
+## 2. Squad PosgradoMed & Pipelines Nativos
 
-### A. Google Antigravity (`~/.gemini/config/mcp_config.json`)
+O workspace inclui nativamente a squad **PosgradoMed** com pipelines configurados para o piloto:
+
+### A. Pipeline: Validação de Currículos (`proj-posgrado-curriculos`)
+- **Colunas Padrão:**
+  1. `Recebido / Triagem` (todo, SLA: 2 dias)
+  2. `Em Análise Técnica` (in_progress, SLA: 3 dias)
+  3. `Pendente Documento` (review, SLA: 5 dias)
+  4. `Currículo Deferido` (done)
+  5. `Indeferido` (cancelled)
+- **Campos Customizados:**
+  - `studentEmail` (E-mail do Aluno)
+  - `externalId` (ID Externo / Inscrição)
+  - `cpfNumber` (Nº do CPF)
+  - `driveFolderUrl` (Pasta do Drive com PDFs)
+  - `editalDeadline` (Prazo do Edital)
+
+### B. Pipeline: Validação de CPF (`proj-posgrado-cpf`)
+- **Colunas Padrão:**
+  1. `Aguardando Envio` (todo, SLA: 2 dias)
+  2. `Em Conferência Cadastral` (in_progress, SLA: 2 dias)
+  3. `Pendência na Receita` (review, SLA: 4 dias)
+  4. `CPF Validado & Aprovado` (done)
+  5. `Cadastro Rejeitado` (cancelled)
+- **Campos Customizados:**
+  - `studentEmail` (E-mail do Aluno)
+  - `externalId` (ID de Envio)
+  - `cpfNumber` (Número de CPF)
+  - `driveFolderUrl` (Pasta do Google Drive)
+  - `cpfDocUrl` (Comprovante Receita / PDF)
+
+---
+
+## 3. Catálogo Completo das Ferramentas MCP
+
+### A. Gestão de Colunas & Status do Projeto (P0 - Item 1)
+
+| Ferramenta | Parâmetros | Descrição |
+| :--- | :--- | :--- |
+| `create_status` | `projectId` (req), `name` (req), `color`, `position`, `category`, `slaDays` | Cria uma nova coluna no quadro (ex: "Em Análise Médica"). |
+| `update_status` | `projectId` (req), `statusId` (req), `name`, `color`, `position`, `category`, `slaDays` | Renomeia, troca cor, reordena ou altera o SLA de uma coluna. |
+| `delete_status` | `projectId` (req), `statusId` (req), `targetStatusIdForTasks` (opcional) | Remove a coluna e opcionalmente migra os cards existentes para outra coluna. |
+
+### B. Responsável do Card & Status Tracking (P0 - Itens 2 e 4)
+
+- **`assigneeId` Flexível:** Em `create_task` e `update_task`, você pode passar `assigneeId` informando o ID (`user-1`), o e-mail (`vinicius.takatsu@mundorevalida.com.br`) ou o nome do colaborador. O sistema mapeia e atribui automaticamente.
+- **`statusChangedAt` & Tempo Parado:** Todo card expõe:
+  - `statusChangedAt`: Data/hora ISO em que o card entrou na coluna atual.
+  - `daysInCurrentStatus`: Total de dias parado na coluna (útil para alertas de SLA e "parado há X dias").
+
+### C. Campos Personalizados por Projeto (P0 - Item 3)
+
+| Ferramenta | Parâmetros | Descrição |
+| :--- | :--- | :--- |
+| `create_custom_field` | `projectId` (req), `name` (req), `key` (req), `type` (`text\|number\|date\|url\|select`, req), `description` | Cria a definição de um campo customizado no projeto. |
+| `set_task_custom_fields` | `taskId` (req), `customFields` (object, req) | Grava valores nos campos personalizados do card. |
+
+### D. Checklists Completos (P0 - Item 5)
+
+| Ferramenta | Parâmetros | Descrição |
+| :--- | :--- | :--- |
+| `create_checklist` | `taskId` (req), `title` (req) | Cria um novo checklist no card. |
+| `add_checklist_item` | `taskId` (req), `checklistId` (req), `title` (req) | Adiciona um item ao checklist. |
+| `delete_checklist_item` | `taskId` (req), `checklistId` (req), `itemId` (req) | Exclui um item de checklist. |
+| `toggle_checklist_item` | `taskId` (req), `checklistId` (req), `itemId` (req) | Marca ou desmarca a conclusão de um item. |
+
+### E. Tokens de Serviço com Escopo Restrito (P0 - Item 6)
+
+Para que automações (Google Apps Script, n8n, webhooks) não utilizem tokens pessoais de Owner:
+- `create_service_token`: Gera um token `mh_svc_...` restrito a um `projectId`. Se o script tentar acessar outro quadro, recebe `403 Forbidden`.
+- `list_service_tokens`: Lista tokens ativos e seus escopos.
+- `revoke_service_token`: Invalida e revoga um token.
+
+### F. Automação, Deduplicação & Anexos (P1 - Itens 7, 9, 10, 11, 12)
+
+| Ferramenta | Parâmetros | Descrição |
+| :--- | :--- | :--- |
+| `get_task_by_external_id` | `externalId` (req), `projectId` (opcional) | Busca o card pelo ID externo do formulário/aluno para evitar duplicatas. |
+| `register_webhook` | `url` (req), `projectId` (opcional), `events` (opcional) | Cadastra URL para receber notificação HTTP sempre que um card mudar de coluna. |
+| `list_webhooks` / `delete_webhook` | `webhookId` | Gerencia os webhooks de saída ativos. |
+| `add_tag` / `remove_tag` | `taskId` (req), `tag` (req) | Adiciona ou remove etiquetas do card. |
+| `add_attachment` | `taskId` (req), `title` (req), `url` (req), `type` | Anexa links (Google Drive, PDF de currículo, comprovante do CPF). |
+| `archive_task` / `unarchive_task` | `taskId` (req) | Arquiva ou desarquiva um card sem excluí-lo. |
+
+---
+
+## 4. Endpoint HTTP Direto para Google Forms & Apps Script (P1 - Item 8)
+
+Para automações no Google Forms / Sheets / Apps Script, você não precisa de bibliotecas MCP complexas. Basta uma chamada HTTP REST direta:
+
+### Endpoint: `POST https://work.medhit.click/api/cards/sync`
+
+**Comportamento (UPSERT Inteligente):**
+- Se o card com `externalId` já existir no projeto -> Atualiza os dados e colunas sem duplicar.
+- Se não existir -> Cria o card automaticamente na coluna desejada.
+
+### Exemplo em Google Apps Script:
+
+```javascript
+function onFormSubmit(e) {
+  var token = "mh_svc_posgrado_appscript"; // Token gerado via create_service_token
+  var url = "https://work.medhit.click/api/cards/sync";
+  
+  var payload = {
+    projectId: "proj-posgrado-curriculos",
+    externalId: "aluno-" + e.namedValues['ID'][0],
+    title: e.namedValues['Nome Completo'][0],
+    statusId: "st-pos-curr-1", // Recebido / Triagem
+    priority: "high",
+    customFields: {
+      studentEmail: e.namedValues['E-mail'][0],
+      cpfNumber: e.namedValues['CPF'][0],
+      driveFolderUrl: e.namedValues['Link da Pasta do Drive'][0],
+      editalDeadline: "2026-12-15"
+    }
+  };
+
+  var options = {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "Authorization": "Bearer " + token
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  };
+
+  var response = UrlFetchApp.fetch(url, options);
+  Logger.log(response.getContentText());
+}
+```
+
+### Mover Card via REST (`POST https://work.medhit.click/api/cards/move`)
+
+```javascript
+UrlFetchApp.fetch("https://work.medhit.click/api/cards/move", {
+  method: "post",
+  contentType: "application/json",
+  headers: { "Authorization": "Bearer " + token },
+  payload: JSON.stringify({
+    externalId: "aluno-123",
+    projectId: "proj-posgrado-curriculos",
+    targetStatusId: "st-pos-curr-2" // Em Análise Técnica
+  })
+});
+```
+
+---
+
+## 5. Webhook de Saída (Exemplo de Payload Recebido)
+
+Quando um card é movido de coluna, o MedHit WorkTrack envia um `POST` com:
 
 ```json
 {
-  "mcpServers": {
-    "medhit-tasks": {
-      "type": "http",
-      "url": "https://work.medhit.click/api/mcp",
-      "headers": {
-        "Authorization": "Bearer SEU_TOKEN_MCP_MEDHIT"
-      }
+  "event": "card.moved",
+  "timestamp": "2026-11-06T18:40:00Z",
+  "card": {
+    "id": "task-12345",
+    "title": "Dr. Carlos Eduardo",
+    "projectId": "proj-posgrado-curriculos",
+    "statusId": "st-pos-curr-4",
+    "previousStatusId": "st-pos-curr-2",
+    "statusChangedAt": "2026-11-06T18:40:00Z",
+    "externalId": "aluno-987",
+    "customFields": {
+      "studentEmail": "carlos@medico.com.br",
+      "cpfNumber": "123.456.789-00",
+      "driveFolderUrl": "https://drive.google.com/..."
     }
   }
 }
 ```
-
-### B. Cursor IDE (`~/.cursor/mcp.json`)
-
-```json
-{
-  "mcpServers": {
-    "medhit-tasks": {
-      "url": "https://work.medhit.click/api/mcp",
-      "headers": {
-        "Authorization": "Bearer SEU_TOKEN_MCP_MEDHIT"
-      }
-    }
-  }
-}
-```
-
-### C. Claude Desktop (`claude_desktop_config.json`)
-
-```json
-{
-  "mcpServers": {
-    "medhit-tasks": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote-client",
-        "--url",
-        "https://work.medhit.click/api/mcp",
-        "--header",
-        "Authorization: Bearer SEU_TOKEN_MCP_MEDHIT"
-      ]
-    }
-  }
-}
-```
-
-### D. Chamada Direta via cURL (HTTP JSON-RPC 2.0)
-
-```bash
-curl -X POST https://work.medhit.click/api/mcp \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer SEU_TOKEN_MCP_MEDHIT" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "req-1",
-    "method": "tools/call",
-    "params": {
-      "name": "list_tasks",
-      "arguments": {
-        "priority": "urgent"
-      }
-    }
-  }'
-```
-
----
-
-## 3. Catálogo Completo das 24 Ferramentas (MCP Tools)
-
-### Grupo 1: Áreas & Squads (3 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `list_areas` | *Nenhum* | Lista todas as áreas de negócio/squads do workspace com seus projetos e estatísticas. |
-| `create_area` | `name` (string, req), `description` (string), `color` (string), `icon` (string) | Cria uma nova squad de trabalho no workspace corporativo. |
-| `delete_area` | `areaId` (string, req) | Remove uma área e desvincula seus projetos dependentes. |
-
-### Grupo 2: Quadros & Projetos (4 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `list_projects` | `areaId` (string, opcional) | Lista quadros/projetos de uma área específica ou de todo o ecossistema MedHit. |
-| `get_project` | `projectId` (string, req) | Retorna a estrutura detalhada de um projeto, colunas kanban, sprints e metas. |
-| `create_project` | `name` (string, req), `areaId` (string, req), `description` (string), `color` (string) | Instancia um novo projeto Kanban em uma squad determinada. |
-| `delete_project` | `projectId` (string, req) | Exclui o quadro especificado e todas as tarefas vinculadas a ele. |
-
-### Grupo 3: Tarefas & Demandas — CRUD Completo (6 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `list_tasks` | `projectId` (string), `statusId` (string), `priority` (string), `search` (string) | Consulta tarefas com filtragem avançada por projeto, coluna, urgência ou texto. |
-| `get_task` | `taskId` (string, req) | Retorna todos os dados da tarefa: checklists, histórico, anexos e comentários. |
-| `create_task` | `title` (string, req), `projectId` (string, req), `statusId` (string, req), `priority` (string), `description` (string), `assigneeId` (string), `dueDate` (string), `tags` (array) | Cria uma nova demanda no quadro indicado. |
-| `update_task` | `taskId` (string, req), campos para atualizar (`title`, `description`, `priority`, `dueDate`, `assigneeId`, etc.) | Atualiza metadados ou conteúdo de uma demanda existente. |
-| `move_task` | `taskId` (string, req), `targetStatusId` (string, req), `position` (number, opcional) | Move a tarefa entre colunas do kanban (ex: de Backlog para Em Progresso ou Concluído). |
-| `delete_task` | `taskId` (string, req) | Exclui permanentemente a tarefa especificada. |
-
-### Grupo 4: Colaboração & Checklists (2 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `add_comment` | `taskId` (string, req), `content` (string, req) | Adiciona um comentário oficial à tarefa assinado pelo usuário/agente ativo. |
-| `toggle_checklist_item` | `taskId` (string, req), `checklistId` (string, req), `itemId` (string, req) | Alterna o estado de conclusão (checked/unchecked) de um item de checklist. |
-
-### Grupo 5: Governança de Membros & Acessos (4 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `list_members` | *Nenhum* | Lista membros ativos e funções no workspace. **Higienizado:** nunca expõe senhas ou tokens alheios. |
-| `get_current_user` | *Nenhum* | Retorna os dados do usuário autenticado no token ativo e a assinatura institucional `Equipe MedHit I&A`. |
-| `update_member_role` | `memberId` (string, req), `role` (`"owner" \| "admin" \| "member" \| "guest"`, req) | Altera o nível hierárquico e permissões RBAC de um colaborador. |
-| `invite_member` | `name` (string, req), `email` (string, req), `role` (string, req), `sendEmail` (boolean, opcional) | Cria convite para novo colaborador, gera token MCP seguro e dispara convite transacional com link de ativação de senha. |
-
-### Grupo 6: Orquestração de Agentes Autônomos de IA (5 Ferramentas)
-
-| Ferramenta | Parâmetros | Descrição |
-| :--- | :--- | :--- |
-| `list_agents` | *Nenhum* | Lista todos os agentes de IA cadastrados no sistema (Dev, Copy, Tráfego, Automações). |
-| `claim_next_task` | `agentId` (string, req) | O agente reivindica a próxima tarefa pendente em sua fila de execução. |
-| `report_progress` | `runId` (string, req), `eventType` (`"thought" \| "tool_call" \| "tool_result" \| "message" \| "error"`, req), `content` (string, req) | Registra raciocínio ou evento de execução do agente no histórico da demanda. |
-| `request_approval` | `taskId` (string, req), `agentId` (string, req), `requestedAction` (string, req), `payload` (object, opcional) | Pausa a execução do agente e solicita aprovação de um gestor humano para ações de risco. |
-| `complete_task` | `runId` (string, req) | Finaliza a execução do agente e move a demanda para o status concluído. |
-
----
-
-## 4. Estrutura de Respostas e Tratamento de Erros
-
-O servidor obedece estritamente às especificações JSON-RPC 2.0:
-
-### Exemplo de Resposta com Sucesso
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "req-1",
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "{\n  \"id\": \"task-123\",\n  \"title\": \"Configurar Webhook WhatsApp\",\n  \"statusId\": \"in_progress\"\n}"
-      }
-    ]
-  }
-}
-```
-
-### Exemplo de Resposta de Erro
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "req-1",
-  "error": {
-    "code": -32602,
-    "message": "Tarefa não encontrada para o ID informado"
-  }
-}
-```
-
----
-
-## 5. Auditoria e Rastreabilidade
-
-Todas as invocações feitas via MCP alimentam a central de auditoria (`src/server/services/data-store.ts`), registrando:
-- Identificador do usuário / agente autor da ação
-- Método e ferramenta invocada
-- Timestamp no padrão ISO 8601
-- Sucesso ou falha da operação
 
 ---
 *Documentação oficial mantida pela **Equipe MedHit I&A**.*

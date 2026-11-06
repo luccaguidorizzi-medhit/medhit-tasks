@@ -47,6 +47,7 @@ export interface Status {
   category: "backlog" | "todo" | "in_progress" | "review" | "done" | "cancelled";
   wipLimit?: number;
   definitionOfDone?: string;
+  slaDays?: number;
 }
 
 export interface ChecklistItem {
@@ -96,6 +97,24 @@ export interface BoardGroup {
   collapsed?: boolean;
 }
 
+export interface CustomFieldDefinition {
+  id: string;
+  projectId: string;
+  name: string;
+  key: string;
+  type: "text" | "number" | "date" | "url" | "select";
+  options?: string[];
+  description?: string;
+}
+
+export interface TaskAttachment {
+  id: string;
+  title: string;
+  url: string;
+  type?: string;
+  createdAt?: string;
+}
+
 export interface TaskCustomFields {
   secondaryStatus?: string;
   pillStatus?: string;
@@ -107,6 +126,13 @@ export interface TaskCustomFields {
   driveUrl?: string;
   videoUrl?: string;
   durationText?: string;
+  studentEmail?: string;
+  externalId?: string;
+  driveFolderUrl?: string;
+  editalDeadline?: string;
+  cpfNumber?: string;
+  cpfDocUrl?: string;
+  [key: string]: any;
 }
 
 export interface Task {
@@ -119,6 +145,11 @@ export interface Task {
   description: string;
   taskType: "task" | "bug" | "story" | "epic" | "subtask" | "agent_task";
   statusId: string;
+  statusChangedAt?: string;
+  daysInCurrentStatus?: number;
+  externalId?: string;
+  isArchived?: boolean;
+  archivedAt?: string;
   priority: "urgent" | "high" | "medium" | "low" | "none";
   position: number;
   reporterId?: string;
@@ -134,6 +165,7 @@ export interface Task {
   customFields?: TaskCustomFields;
   tags?: string[];
   checklists: Checklist[];
+  attachments?: TaskAttachment[];
   comments: Comment[];
   createdAt: string;
   updatedAt: string;
@@ -165,6 +197,7 @@ export interface Project {
   methodology: "simple" | "kanban" | "scrum" | "scrumban";
   template?: "general" | "content_production";
   groups?: BoardGroup[];
+  customFieldDefinitions?: CustomFieldDefinition[];
   statuses: Status[];
   sprints: Sprint[];
 }
@@ -274,7 +307,7 @@ function initializeData(): {
   }));
 
   const areas: Area[] = seedData.areas.map((areaSeed, areaIdx) => ({
-    id: `area-${areaIdx + 1}`,
+    id: (areaSeed as any).id || `area-${areaIdx + 1}`,
     workspaceId: WORKSPACE_ID,
     name: areaSeed.name,
     slug: areaSeed.slug,
@@ -284,8 +317,9 @@ function initializeData(): {
     folders: (areaSeed as any).folders || [],
     projects: (areaSeed.projects || []).map((p: any) => ({
       ...p,
-      areaId: `area-${areaIdx + 1}`,
+      areaId: (areaSeed as any).id || `area-${areaIdx + 1}`,
       workspaceId: WORKSPACE_ID,
+      customFieldDefinitions: (p as any).customFieldDefinitions || [],
     })),
   }));
 
