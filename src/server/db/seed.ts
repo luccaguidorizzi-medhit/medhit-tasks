@@ -45,6 +45,14 @@ export const seedData = {
       mcpToken: "mh_live_thiago_sec94821",
       avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Thiago",
     },
+    {
+      name: "Vinicius Takatsu",
+      email: "vinicius.takatsu@mundorevalida.com.br",
+      role: "owner" as const,
+      password: "", // Define a própria senha no primeiro acesso via /invite
+      mcpToken: "mh_live_vinicius_sec77219",
+      avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Vinicius%20Takatsu",
+    },
   ],
   agents: [
     {
