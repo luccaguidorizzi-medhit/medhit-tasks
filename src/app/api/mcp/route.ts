@@ -288,6 +288,7 @@ const MCP_TOOLS = [
         statusId: { type: "string" },
         priority: { type: "string" },
         search: { type: "string" },
+        externalId: { type: "string", description: "Filtrar tarefas pelo ID externo único (ex: ID da submissão do formulário)" },
         includeArchived: { type: "boolean" },
       },
     },
@@ -1159,6 +1160,9 @@ export async function POST(request: Request) {
           if (args.search) {
             const q = args.search.toLowerCase();
             list = list.filter((t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+          }
+          if (args.externalId) {
+            list = list.filter((t) => t.externalId === args.externalId || t.customFields?.externalId === args.externalId);
           }
           return NextResponse.json({
             jsonrpc: "2.0",
