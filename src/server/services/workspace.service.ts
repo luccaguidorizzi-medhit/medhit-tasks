@@ -16,6 +16,7 @@ export interface CreateStatusInput {
   position?: number;
   category?: Status["category"];
   slaDays?: number;
+  slaType?: Status["slaType"];
 }
 
 export interface UpdateStatusInput {
@@ -26,6 +27,7 @@ export interface UpdateStatusInput {
   position?: number;
   category?: Status["category"];
   slaDays?: number;
+  slaType?: Status["slaType"];
 }
 
 export interface CreateServiceTokenInput {
@@ -56,7 +58,15 @@ export const workspaceService = {
         .single();
 
       if (!error && data && Array.isArray(data.areas) && data.areas.length > 0) {
-        store.workspace.areas = data.areas;
+        const seen = new Set<string>();
+        const deduped: Area[] = [];
+        for (const a of data.areas) {
+          if (!seen.has(a.id)) {
+            seen.add(a.id);
+            deduped.push(a);
+          }
+        }
+        store.workspace.areas = deduped;
         if (data.name) store.workspace.name = data.name;
         if (data.settings) store.workspace.settings = data.settings;
         return store.workspace;
@@ -80,7 +90,18 @@ export const workspaceService = {
         name: store.workspace.name || "MedHit",
         slug: store.workspace.slug || "medhit",
         settings: store.workspace.settings || {},
-        areas: store.workspace.areas,
+        areas: (() => {
+          const seen = new Set<string>();
+          const deduped: Area[] = [];
+          for (const a of store.workspace.areas) {
+            if (!seen.has(a.id)) {
+              seen.add(a.id);
+              deduped.push(a);
+            }
+          }
+          store.workspace.areas = deduped;
+          return deduped;
+        })(),
         updated_at: new Date().toISOString(),
       };
 
@@ -129,6 +150,7 @@ export const workspaceService = {
       position,
       category: input.category || "in_progress",
       slaDays: input.slaDays,
+      slaType: input.slaType || "calendar",
     };
 
     project.statuses.push(newStatus);
@@ -154,6 +176,7 @@ export const workspaceService = {
     if (input.position !== undefined) status.position = input.position;
     if (input.category !== undefined) status.category = input.category;
     if (input.slaDays !== undefined) status.slaDays = input.slaDays;
+    if (input.slaType !== undefined) status.slaType = input.slaType;
 
     project.statuses.sort((a, b) => a.position - b.position);
 

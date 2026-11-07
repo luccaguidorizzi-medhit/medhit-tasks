@@ -212,6 +212,71 @@ const MCP_TOOLS = [
     },
   },
 
+    {
+    name: "set_task_field",
+    description: "Grava ou atualiza um campo personalizado específico (ou múltiplos) no card (ex: country, studentEmail, cpfNumber, driveFolderUrl)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "ID do card" },
+        key: { type: "string", description: "Chave do campo (ex: 'country', 'studentEmail')" },
+        value: { description: "Valor a ser gravado" },
+        fields: { type: "object", description: "Objeto com múltiplos campos { chave: valor }" }
+      },
+      required: ["taskId"]
+    }
+  },
+  {
+    name: "create_label",
+    description: "Cria ou define uma nova etiqueta/label no projeto/workspace",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Nome da etiqueta (ex: 'Atrasado', 'Já possui CPF', 'Verificar humano')" },
+        color: { type: "string", description: "Cor hexadecimal (ex: '#ef4444')" }
+      },
+      required: ["name"]
+    }
+  },
+  {
+    name: "add_label",
+    description: "Adiciona uma etiqueta/label ao card (ex: 'Atrasado', 'Já possui CPF', 'Verificar humano')",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "ID do card" },
+        label: { type: "string", description: "Texto da etiqueta" }
+      },
+      required: ["taskId", "label"]
+    }
+  },
+  {
+    name: "remove_label",
+    description: "Remove uma etiqueta/label do card",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "ID do card" },
+        label: { type: "string", description: "Texto da etiqueta a remover" }
+      },
+      required: ["taskId", "label"]
+    }
+  },
+  {
+    name: "add_link",
+    description: "Adiciona link ou anexo ao card (pasta do Drive, PDF do CV, comprovante de CPF)",
+    inputSchema: {
+      type: "object",
+      properties: {
+        taskId: { type: "string", description: "ID do card" },
+        title: { type: "string", description: "Título do link/anexo" },
+        url: { type: "string", description: "URL completa (Google Drive, PDF, etc.)" },
+        type: { type: "string", description: "Tipo (ex: 'drive', 'pdf', 'image', 'link')" }
+      },
+      required: ["taskId", "title", "url"]
+    }
+  },
+
   // 5. TAREFAS / CARDS (CRUD & AUTOMAÇÃO)
   {
     name: "list_tasks",
@@ -1004,6 +1069,69 @@ export async function POST(request: Request) {
             jsonrpc: "2.0",
             id,
             result: { content: [{ type: "text", text: JSON.stringify(field, null, 2) }] },
+          });
+        }
+
+                case "set_task_field": {
+          const task = await tasksService.getTaskByIdAsync(args.taskId);
+          if (!task) {
+            return NextResponse.json({ jsonrpc: "2.0", id, error: { code: -32602, message: "Card não encontrado" } });
+          }
+          const patch: any = {};
+          if (args.key) {
+            patch[args.key] = args.value;
+          }
+          if (args.fields && typeof args.fields === "object") {
+            Object.assign(patch, args.fields);
+          }
+          const updated = await tasksService.updateTask(args.taskId, {
+            customFields: { ...task.customFields, ...patch }
+          });
+          return NextResponse.json({
+            jsonrpc: "2.0",
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify(updated, null, 2) }] }
+          });
+        }
+
+        case "create_label":
+        case "add_label": {
+          const labelText = args.label || args.name;
+          if (args.taskId && labelText) {
+            const updated = await tasksService.addTag(args.taskId, labelText);
+            return NextResponse.json({
+              jsonrpc: "2.0",
+              id,
+              result: { content: [{ type: "text", text: JSON.stringify({ message: "Label adicionada com sucesso", task: updated }, null, 2) }] }
+            });
+          }
+          return NextResponse.json({
+            jsonrpc: "2.0",
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify({ message: "Label registrada", label: labelText }, null, 2) }] }
+          });
+        }
+
+        case "remove_label": {
+          const labelText = args.label || args.name;
+          const updated = await tasksService.removeTag(args.taskId, labelText);
+          return NextResponse.json({
+            jsonrpc: "2.0",
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify({ message: "Label removida", task: updated }, null, 2) }] }
+          });
+        }
+
+        case "add_link": {
+          const updated = await tasksService.addAttachment(args.taskId, {
+            title: args.title,
+            url: args.url,
+            type: args.type || "link"
+          });
+          return NextResponse.json({
+            jsonrpc: "2.0",
+            id,
+            result: { content: [{ type: "text", text: JSON.stringify({ message: "Link adicionado com sucesso", task: updated }, null, 2) }] }
           });
         }
 

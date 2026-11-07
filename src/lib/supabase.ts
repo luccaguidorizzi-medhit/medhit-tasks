@@ -1,3 +1,20 @@
+export function calculateBusinessDays(startDate: Date | string, endDate: Date | string = new Date()): number {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return 0;
+  
+  let count = 0;
+  const cur = new Date(start.getTime());
+  while (cur < end) {
+    const day = cur.getDay();
+    if (day !== 0 && day !== 6) { // 0: domingo, 6: sábado
+      count++;
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return count;
+}
+
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 import type { Task, TaskCustomFields } from "@/server/services/data-store";
@@ -35,6 +52,7 @@ export function mapRowToTask(row: any): Task {
   const statusChangedAt =
     row.status_changed_at || row.updated_at || row.created_at || new Date().toISOString();
 
+  const businessDaysInCurrentStatus = calculateBusinessDays(statusChangedAt);
   const daysInCurrentStatus = Math.max(
     0,
     Math.floor((Date.now() - new Date(statusChangedAt).getTime()) / (1000 * 60 * 60 * 24))
@@ -55,6 +73,7 @@ export function mapRowToTask(row: any): Task {
     statusId: row.status_id,
     statusChangedAt,
     daysInCurrentStatus,
+    businessDaysInCurrentStatus,
     externalId,
     isArchived,
     archivedAt: row.archived_at || undefined,

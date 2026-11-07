@@ -48,6 +48,7 @@ export interface Status {
   wipLimit?: number;
   definitionOfDone?: string;
   slaDays?: number;
+  slaType?: "calendar" | "business";
 }
 
 export interface ChecklistItem {
@@ -132,6 +133,12 @@ export interface TaskCustomFields {
   editalDeadline?: string;
   cpfNumber?: string;
   cpfDocUrl?: string;
+  country?: string;
+  product?: string;
+  language?: string;
+  isMercosul?: string | boolean;
+  alreadyHasCpf?: string | boolean;
+  despachanteSentDate?: string;
   [key: string]: any;
 }
 
@@ -147,6 +154,7 @@ export interface Task {
   statusId: string;
   statusChangedAt?: string;
   daysInCurrentStatus?: number;
+  businessDaysInCurrentStatus?: number;
   externalId?: string;
   isArchived?: boolean;
   archivedAt?: string;
