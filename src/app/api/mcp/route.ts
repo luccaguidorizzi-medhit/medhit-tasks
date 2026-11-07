@@ -1136,7 +1136,7 @@ export async function POST(request: Request) {
         }
 
         case "set_task_custom_fields": {
-          const updated = tasksService.updateTask(args.taskId, { customFields: args.customFields });
+          const updated = await tasksService.updateTask(args.taskId, { customFields: args.customFields });
           if (!updated) {
             return NextResponse.json({ jsonrpc: "2.0", id, error: { code: -32602, message: "Tarefa não encontrada" } });
           }
@@ -1210,7 +1210,7 @@ export async function POST(request: Request) {
 
         case "update_task": {
           const { taskId, ...updates } = args;
-          const updated = tasksService.updateTask(taskId, updates);
+          const updated = await tasksService.updateTask(taskId, updates);
           if (!updated) {
             return NextResponse.json({
               jsonrpc: "2.0",
@@ -1226,7 +1226,7 @@ export async function POST(request: Request) {
         }
 
         case "move_task": {
-          const moved = tasksService.moveTask(args.taskId, args.targetStatusId, args.position);
+          const moved = await tasksService.moveTask(args.taskId, args.targetStatusId, args.position);
           if (!moved) {
             return NextResponse.json({
               jsonrpc: "2.0",

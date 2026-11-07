@@ -20,7 +20,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    const updated = tasksService.updateTask(id, body);
+    const updated = await tasksService.updateTask(id, body);
     if (!updated) {
       return NextResponse.json({ error: "Tarefa não encontrada" }, { status: 404 });
     }

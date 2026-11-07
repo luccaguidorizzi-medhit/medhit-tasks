@@ -106,7 +106,7 @@ export async function POST(request: Request) {
         updates.tags = Array.from(new Set([...(existingTask.tags || []), ...tags]));
       }
 
-      const updated = tasksService.updateTask(existingTask.id, updates);
+      const updated = await tasksService.updateTask(existingTask.id, updates);
       return NextResponse.json({
         success: true,
         action: "updated",

@@ -233,7 +233,18 @@ export const tasksService = {
     return newTask;
   },
 
-  updateTask(id: string, updates: Partial<Task> & { assigneeId?: string }): Task | null {
+    async ensureTaskLoaded(id: string): Promise<Task | null> {
+    let task: Task | null | undefined = store.tasks.find((t) => t.id === id);
+    if (!task) {
+      task = await this.getTaskByIdAsync(id);
+      if (task) {
+        store.tasks.push(task);
+      }
+    }
+    return task || null;
+  },
+
+  async updateTask(id: string, updates: Partial<Task> & { assigneeId?: string }): Promise<Task | null> {
     const taskIndex = store.tasks.findIndex((t) => t.id === id);
     if (taskIndex === -1) return null;
 
@@ -286,17 +297,15 @@ export const tasksService = {
     });
 
     // Atualização no Supabase
-    void (async () => {
-      try {
-        const { error } = await supabase
-          .from("medtask_tasks")
-          .update(mapTaskToRow(updatedTask))
-          .eq("id", id);
-        if (error) console.error("[tasksService] Erro ao atualizar tarefa no Supabase:", error);
-      } catch (err) {
-        console.error("[tasksService] Exceção ao atualizar no Supabase:", err);
-      }
-    })();
+    try {
+      const { error } = await supabase
+        .from("medtask_tasks")
+        .update(mapTaskToRow(updatedTask))
+        .eq("id", id);
+      if (error) console.error("[tasksService] Erro ao atualizar tarefa no Supabase:", error);
+    } catch (err) {
+      console.error("[tasksService] Exceção ao atualizar no Supabase:", err);
+    }
 
     // Dispara webhook se mudou de coluna
     if (statusChanged) {
@@ -310,8 +319,8 @@ export const tasksService = {
     return updatedTask;
   },
 
-  moveTask(taskId: string, targetStatusId: string, newPosition?: number) {
-    const task = store.tasks.find((t) => t.id === taskId);
+  async moveTask(taskId: string, targetStatusId: string, newPosition?: number): Promise<Task | null> {
+    const task = await this.ensureTaskLoaded(taskId);
     if (!task) return null;
 
     const oldStatusId = task.statusId;
@@ -343,22 +352,20 @@ export const tasksService = {
     }
 
     // Persiste mudança no Supabase
-    void (async () => {
-      try {
-        const { error } = await supabase
-          .from("medtask_tasks")
-          .update({
-            status_id: targetStatusId,
-            status_changed_at: nowIso,
-            ...(typeof newPosition === "number" ? { position: newPosition } : {}),
-            updated_at: nowIso,
-          })
-          .eq("id", taskId);
-        if (error) console.error("[tasksService] Erro ao mover tarefa no Supabase:", error);
-      } catch (err) {
-        console.error("[tasksService] Exceção ao mover tarefa no Supabase:", err);
-      }
-    })();
+    try {
+      const { error } = await supabase
+        .from("medtask_tasks")
+        .update({
+          status_id: targetStatusId,
+          status_changed_at: nowIso,
+          ...(typeof newPosition === "number" ? { position: newPosition } : {}),
+          updated_at: nowIso,
+        })
+        .eq("id", taskId);
+      if (error) console.error("[tasksService] Erro ao mover tarefa no Supabase:", error);
+    } catch (err) {
+      console.error("[tasksService] Exceção ao mover tarefa no Supabase:", err);
+    }
 
     return task;
   },

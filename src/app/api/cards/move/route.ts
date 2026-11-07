@@ -65,11 +65,11 @@ export async function POST(request: Request) {
     }
 
     // Move a tarefa (atualiza statusChangedAt e dispara webhooks)
-    const moved = tasksService.moveTask(targetTask.id, targetStatusId);
+    const moved = await tasksService.moveTask(targetTask.id, targetStatusId);
 
     // Se passou campos adicionais para atualizar no mesmo movimento
     if (customFields && moved) {
-      tasksService.updateTask(targetTask.id, { customFields });
+      await tasksService.updateTask(targetTask.id, { customFields });
     }
 
     return NextResponse.json({
